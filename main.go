@@ -44,7 +44,8 @@ func main() {
 	}
 
 	tmpl := template.Must(template.ParseFiles("www/index.html"))
-
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("www/js"))))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("www/css"))))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		data := struct {
 			ArcGISKey string
