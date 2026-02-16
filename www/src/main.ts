@@ -1,4 +1,3 @@
-    // declare const require: any; // needed for TypeScript to allow AMD
 import esriConfig from "@arcgis/core/config"
 import SimpleMarkerSymbol from "@arcgis/core/symbols/SimpleMarkerSymbol.js";
 import Map from "@arcgis/core/Map";
@@ -53,7 +52,7 @@ function placeMarkerAtCoords(view: MapView, coords: Coordinates) {
     const markerSymbol = new SimpleMarkerSymbol({
         style: "circle",
         color: "cyan",
-        size: 6
+        size: 2
     });
 
     const pointGraphic = new Graphic({
