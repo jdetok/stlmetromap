@@ -25,3 +25,5 @@ func GetRealtime() gtfs.Realtime {
 	realtimeData, _ := gtfs.ParseRealtime(b, &gtfs.ParseRealtimeOptions{})
 	return *realtimeData
 }
+
+

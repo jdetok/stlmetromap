@@ -8,7 +8,8 @@ import "@arcgis/core/assets/esri/themes/light/main.css";
 
 esriConfig.apiKey = (window as any).ARCGIS_API_KEY;
 
-type Coordinates = { latitude: number, longitude: number };
+type Coordinates = { latitude: number, longitude: number, name: string, typ: RouteType };
+type RouteType = 'bus' | 'mlr' | 'mlb' | 'mlc';
 
 window.addEventListener("DOMContentLoaded", () => {
     const map = new Map({
@@ -30,13 +31,14 @@ window.addEventListener("DOMContentLoaded", () => {
         async () => {
             console.log("MapView ready");
             const stops = await getStops();
-            stops.forEach((c) => placeMarkerAtCoords(view, c));
+            stops.forEach((c) => placeMarkerAtCoords(view, c))   
         },
         (e: Error) => console.error("MapView failed:", e)
   );
 });
 
 async function getStops(): Promise<Coordinates[]> {
+    // const url = (typ == 'bus') ? '/stops' : `/${typ}stops`;
     const res = await fetch("/stops");
     if (!res.ok) {
         throw new Error(`failed to fetch`)
@@ -48,11 +50,13 @@ async function getStops(): Promise<Coordinates[]> {
 
 function placeMarkerAtCoords(view: MapView, coords: Coordinates) {
     const point = new Point({ latitude: coords.latitude, longitude: coords.longitude });
+    const color = (coords.typ == 'bus') ? 'green' : (coords.typ == 'mlc') ? 'purple' : (coords.typ == 'mlb') ? 'blue' : 'red';
+    const size = (coords.typ == 'bus') ? 3 : 8;
 
     const markerSymbol = new SimpleMarkerSymbol({
         style: "circle",
-        color: "cyan",
-        size: 2
+        color: color,
+        size: size
     });
 
     const pointGraphic = new Graphic({
