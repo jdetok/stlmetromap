@@ -4,13 +4,23 @@
     <title>Justin DeKock MRP</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css" />
+
+    <!-- <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css" /> -->
     
-    <style>html, body, #map { height: 100vh; margin: 0; }</style>
-    <script>window.ARCGIS_API_KEY = "{{ .ArcGISKey }}";</script>
-    <script src="https://js.arcgis.com/4.34/"></script>
+    <script>
+        window.ARCGIS_API_KEY = "{{ .ArcGISKey }}";
+    </script>
+    <!-- <script src="https://js.arcgis.com/4.34/"></script> -->
     <script type="module" src="/js/main.js"></script>
     <link rel="stylesheet" href="/css/style.css" />
+    <!-- <style>
+        html, body, #map { height: 100vh; margin: 0; }
+    </style> -->
+    <style>
+        html, body { height: 100%; margin: 0; }
+        #map { height: 100vh; width: 100vw; }
+    </style>
+
 </head>
 
 <body>

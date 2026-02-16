@@ -1,0 +1,30 @@
+{
+  "name": "stlmetromap",
+  "version": "0.0.1",
+  "description": "",
+  "main": "ts/index.html",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jdetok/stlmetromap.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/jdetok/stlmetromap/issues"
+  },
+  "homepage": "https://github.com/jdetok/stlmetromap#readme",
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "@arcgis/core": "^4.34.8"
+  }
+}
