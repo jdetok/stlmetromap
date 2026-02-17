@@ -6,39 +6,56 @@ import Graphic from "@arcgis/core/Graphic";
 import Point from "@arcgis/core/geometry/Point";
 import "@arcgis/core/assets/esri/themes/light/main.css";
 
-esriConfig.apiKey = (window as any).ARCGIS_API_KEY;
+const BUS_STOP_SIZE = 3;
+const ML_STOP_SIZE = 8;
+const BUS_STOP_COLOR = 'mediumseagreen';
+const MLB_STOP_COLOR = 'blue';
+const MLR_STOP_COLOR = 'red';
+const MLC_STOP_COLOR = 'purple';
+
+const BASEMAP = 'dark-gray';
+const MAP_CONTAINER = 'map';
+const STLWKID = 4326;
+const STLCOORDS = {
+    xmin: -90.32,
+    ymin: 38.53,
+    xmax: -90.15,
+    ymax: 38.75,
+};
 
 type Coordinates = { latitude: number, longitude: number, name: string, typ: RouteType };
 type RouteType = 'bus' | 'mlr' | 'mlb' | 'mlc';
 
+esriConfig.apiKey = (window as any).ARCGIS_API_KEY;
+
 window.addEventListener("DOMContentLoaded", () => {
     const map = new Map({
-        basemap: "dark-gray"
+        basemap: BASEMAP
     });
 
     const view = new MapView({
-        container: "map",
+        container: MAP_CONTAINER,
         map,
         extent: {
-            xmin: -90.32,
-            ymin: 38.53,
-            xmax: -90.15,
-            ymax: 38.75,
-            spatialReference: { wkid: 4326 }
+            xmin: STLCOORDS.xmin,
+            ymin: STLCOORDS.ymin,
+            xmax: STLCOORDS.xmax,
+            ymax: STLCOORDS.ymax,
+            spatialReference: { wkid: STLWKID }
         }
     });
-      view.when(
-        async () => {
-            console.log("MapView ready");
-            const stops = await getStops();
-            stops.forEach((c) => placeMarkerAtCoords(view, c))   
-        },
-        (e: Error) => console.error("MapView failed:", e)
-  );
+    view.when(
+        async () => { await placeStopsOnMap(view); },
+        (e: Error) => console.error("failed to build or display map:", e)
+    );
 });
 
+async function placeStopsOnMap(view: MapView) {
+    const stops = await getStops();
+    stops.forEach((c) => placeMarkerAtCoords(view, c));
+}
+
 async function getStops(): Promise<Coordinates[]> {
-    // const url = (typ == 'bus') ? '/stops' : `/${typ}stops`;
     const res = await fetch("/stops");
     if (!res.ok) {
         throw new Error(`failed to fetch`)
@@ -49,18 +66,20 @@ async function getStops(): Promise<Coordinates[]> {
 }
 
 function placeMarkerAtCoords(view: MapView, coords: Coordinates) {
-    const point = new Point({ latitude: coords.latitude, longitude: coords.longitude });
-    const color = (coords.typ == 'bus') ? 'green' : (coords.typ == 'mlc') ? 'purple' : (coords.typ == 'mlb') ? 'blue' : 'red';
-    const size = (coords.typ == 'bus') ? 3 : 8;
+    const color = (
+        (coords.typ == 'bus') ? BUS_STOP_COLOR :
+        (coords.typ == 'mlc') ? MLC_STOP_COLOR :
+        (coords.typ == 'mlb') ? MLB_STOP_COLOR : MLR_STOP_COLOR
+    );
 
     const markerSymbol = new SimpleMarkerSymbol({
-        style: "circle",
+        style: 'circle',
         color: color,
-        size: size
+        size: (coords.typ == 'bus') ? BUS_STOP_SIZE : ML_STOP_SIZE
     });
 
     const pointGraphic = new Graphic({
-        geometry: point,
+        geometry: new Point({ latitude: coords.latitude, longitude: coords.longitude }),
         symbol: markerSymbol
     });
 
