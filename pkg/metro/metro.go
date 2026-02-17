@@ -13,6 +13,7 @@ const (
 	METRO_REALTIME_URL = "https://www.metrostlouis.org/RealTimeData/StlRealcTimeVehicles.pb"
 )
 
+// slice of cleaned/transformed stops, returned to client from /stops endpoint
 type StopMarkers struct {
 	Stops []StopMarker `json:"stops"`
 }
@@ -22,19 +23,21 @@ type StopMarker struct {
 	Name string `json:"name"`
 	StopType string `json:"typ"`
 	Routes []Route `json:"routes"`
-	Coords Coordiantes `json:"coords"`
+	Coords Coordiantes `json:"yx"`
 }
 
 type Route struct {
-	ID string 	`json:"routeId"`
-	Name string `json:"routeName"`
-	NameLong string `json:"routeNameLong"`
+	ID string 	`json:"id"`
+	Name string `json:"name"`
+	NameLong string `json:"nameLong"`
 }
 
 type Coordiantes struct {
 	La float64 `json:"latitude"`
 	Lo float64 `json:"longitude"`
 }
+
+type Routes map[*gtfs.Stop]map[*gtfs.Route]struct{}
 
 func GetStatic() (*gtfs.Static, error) {
 	resp, err := http.Get(METRO_STATIC_URL)
@@ -48,14 +51,17 @@ func GetStatic() (*gtfs.Static, error) {
 	return gtfs.ParseStatic(b, gtfs.ParseStaticOptions{})
 }
 
-func GetRealtime() gtfs.Realtime {
-	resp, _ := http.Get(METRO_REALTIME_URL)
-	b, _ := io.ReadAll(resp.Body)
-	realtimeData, _ := gtfs.ParseRealtime(b, &gtfs.ParseRealtimeOptions{})
-	return *realtimeData
+func GetRealtime() (*gtfs.Realtime, error) {
+	resp, err := http.Get(METRO_REALTIME_URL)
+	if err != nil { 
+		return nil, fmt.Errorf("get request failed: %w", err) 
+	}
+	b, err := io.ReadAll(resp.Body)
+	if err != nil { 
+		return nil, fmt.Errorf("failed to read response body: %w", err) 
+	}
+	return gtfs.ParseRealtime(b, &gtfs.ParseRealtimeOptions{})
 }
-
-type Routes map[*gtfs.Stop]map[*gtfs.Route]struct{}
 
 func MapRoutesToStops(s *gtfs.Static) Routes {
 	rts := Routes{}
@@ -86,9 +92,11 @@ func (r Routes) BuildStops() *StopMarkers {
 		isMLR := false
 		for rt := range v {
 			if rt.ShortName == "MLB" {
+				if isMLB { continue }
 				isMLB = true
 			}
 			if rt.ShortName == "MLR" {
+				if isMLR { continue }
 				isMLR = true
 			}
 			sm.Routes = append(sm.Routes, Route{

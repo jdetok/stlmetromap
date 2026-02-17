@@ -12,7 +12,7 @@ const ML_STOP_SIZE = 8;
 const BUS_STOP_COLOR = 'mediumseagreen';
 const MLB_STOP_COLOR = 'blue';
 const MLR_STOP_COLOR = 'red';
-const MLC_STOP_COLOR = 'purple';
+const MLC_STOP_COLOR = 'magenta';
 
 const BASEMAP = 'dark-gray';
 const MAP_CONTAINER = 'map';
@@ -31,24 +31,28 @@ type StopMarker = {
     name: string,
     typ: RouteType,
     routes: Route[],
-    coords: Coordinates,
+    yx: Coordinates,
 }
 
 type Route = {
     id: string | number,
     name: string,
+    nameLong: string,
 }
 
 type Coordinates = { latitude: number, longitude: number, name: string, typ: RouteType };
 
 type RouteType = 'bus' | 'mlr' | 'mlb' | 'mlc';
 
+const BUS = 'MetroBus';
+const ML = 'MetroLink (Light Rail)';
+
 const RouteTypes: Record<RouteType, string> = {
-    bus: 'MetroBus',
-    mlr: 'MetroLink Red Line',
-    mlb: 'MetroLink Blue Line',
-    mlc: 'MetroLink Red/Blue Line'
-}
+    bus: BUS,
+    mlr: ML,
+    mlb: ML,
+    mlc: ML
+};
 
 window.addEventListener("DOMContentLoaded", () => {
     esriConfig.apiKey = (window as any).ARCGIS_API_KEY;
@@ -74,24 +78,21 @@ window.addEventListener("DOMContentLoaded", () => {
     });
     view.when(
         async () => {
-            // TODO ASAP: CONVERT LAYER TO USE NEW METRO STOPS ENDPOINT
-            console.log(await getMetroStops());
             await buildStopLayers(map);
          },
         (e: Error) => console.error("failed to build or display map:", e)
     );
 });
 
-// get metro bus and train stops from go server & create graphics for each on layers
 async function buildStopLayers(map: Map) {
-    let busStops: Coordinates[] = [];
-    let mlStops: Coordinates[] = [];
-    let stopLayersToAdd: Coordinates[][] = [busStops, mlStops];
+    let busStops: StopMarker[] = [];
+    let mlStops: StopMarker[] = [];
+    let stopLayersToAdd: StopMarker[][] = [busStops, mlStops];
 
-    const allStops = await getStops();
+    const stopMarkers = await getStops();
 
-    allStops.forEach((c) => {
-        c.typ === 'bus' ? busStops.push(c) : mlStops.push(c);
+    stopMarkers.stops.forEach((stop) => {
+        stop.typ === 'bus' ? busStops.push(stop) : mlStops.push(stop);
     });
 
     for (const sl of stopLayersToAdd) {
@@ -99,39 +100,45 @@ async function buildStopLayers(map: Map) {
     }
 }
 
-function makeStopLayer(coords: Coordinates[]): GraphicsLayer {
+function makeStopLayer(stops: StopMarker[]): GraphicsLayer {
     let layer = new GraphicsLayer();
     let graphics: Graphic[] = [];
-    coords.forEach((c) => {
-        graphics.push(makeStopGraphic(c));
+    stops.forEach((stop) => {
+        graphics.push(makeStopGraphic(stop));
     });
     layer.addMany(graphics);
     return layer;
 }
 
-function makeStopGraphic(c: Coordinates): Graphic {
+function makeStopGraphic(stop: StopMarker): Graphic {
     const color = (
-        (c.typ == 'bus') ? BUS_STOP_COLOR :
-        (c.typ == 'mlc') ? MLC_STOP_COLOR :
-        (c.typ == 'mlb') ? MLB_STOP_COLOR : MLR_STOP_COLOR
+        (stop.typ == 'bus') ? BUS_STOP_COLOR :
+        (stop.typ == 'mlc') ? MLC_STOP_COLOR :
+        (stop.typ == 'mlb') ? MLB_STOP_COLOR : MLR_STOP_COLOR
     );
     return new Graphic({
-        geometry: new Point({ latitude: c.latitude, longitude: c.longitude }),
-        symbol: createMarkerSymbol(color, (c.typ == 'bus') ? BUS_STOP_SIZE : ML_STOP_SIZE),
+        geometry: new Point({ latitude: stop.yx.latitude, longitude: stop.yx.longitude }),
+        symbol: createMarkerSymbol(color, (stop.typ == 'bus') ? BUS_STOP_SIZE : ML_STOP_SIZE),
         attributes: {
-            "name": c.name,
-            "type": RouteTypes[c.typ],
+            "name": stop.name,
+            "type": RouteTypes[stop.typ],
+            "routes": stop.routes.map(r => `${r.name} | ${r.nameLong}`).join(', '),
         },
         popupTemplate: {
             title: "{name}",
             content: [
-                { type: "fields", fieldInfos: [{ fieldName: "type", label: "Route Type" }] }
+                {
+                    type: "fields", fieldInfos: [
+                        { fieldName: "type", label: "Service Type:" },
+                        { fieldName: "routes", label: "Routes Served:" },
+                    ]
+                }
             ]
         },
     });
 }
 
-async function getStops(): Promise<Coordinates[]> {
+async function getStops(): Promise<StopMarkers> {
     const res = await fetch("/stops");
     if (!res.ok) {
         throw new Error(`failed to fetch`)
@@ -140,17 +147,6 @@ async function getStops(): Promise<Coordinates[]> {
     console.trace(`response: ${data.length}`);
     return data;
 }
-
-async function getMetroStops(): Promise<StopMarkers> {
-    const res = await fetch("/metrostops");
-    if (!res.ok) {
-        throw new Error(`failed to fetch`)
-    }
-    const data = await res.json();
-    console.trace(`response: ${data.length}`);
-    return data;
-}
-
 
 function createMarkerSymbol(color: string, size: number) {
     return new SimpleMarkerSymbol({

@@ -27,7 +27,6 @@ func main() {
 	rts := metro.MapRoutesToStops(staticData)
 
 	cleanStops := rts.BuildStops()
-	// fmt.Println(cleanStops)
 
 	g, ctx := errgroup.WithContext(context.Background())
 
@@ -35,8 +34,6 @@ func main() {
 		return srv.SetupServer(ctx, staticData, cleanStops)
 	})
 	
-
-
 	if err := g.Wait(); err != nil {
 		log.Fatal(err)
 	}
