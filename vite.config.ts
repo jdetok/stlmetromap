@@ -12,6 +12,8 @@ export default defineConfig(({ mode }) => ({
         "@arcgis/core/Graphic",
         "@arcgis/core/geometry/Point",
         "@arcgis/core/symbols/SimpleMarkerSymbol",
+        "@arcgis/map-components/components/arcgis-legend",
+        "@arcgis/map-components/components/arcgis-expand",
       ],
     },
     build: {

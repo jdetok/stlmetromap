@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"text/template"
+	"time"
 
 	"github.com/jamespfennell/gtfs"
 	"github.com/jdetok/stlmetromap/pkg/metro"
@@ -36,7 +37,7 @@ func SetupServer(ctx context.Context, static *gtfs.Static, stops *metro.StopMark
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	fmt.Println("listening...")
+	fmt.Printf("listening at %v...\n", time.Now())
 	return http.ListenAndServe(":3333", nil)
 }
 
