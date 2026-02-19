@@ -33,9 +33,15 @@ const IL_COUNTIES: Record<string, string> = {
     "Bond County": "005",
 }
 const MO_COUNTY_NAMES = Object.keys(MO_COUNTIES).join("','");
-const MO_COUNTY_FIPS = Object.values(MO_COUNTIES).join("','");
 const IL_COUNTY_NAMES = Object.keys(IL_COUNTIES).join("','");
+const MO_COUNTY_FIPS = Object.values(MO_COUNTIES).join("','");
 const IL_COUNTY_FIPS = Object.values(IL_COUNTIES).join("','");
+
+const ARCGIS_CENSUS_TRACTS_URL = "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0";
+const ARCGIS_CENSUS_TRACTS_EXP = `(STATE_FIPS = '29' AND COUNTY_FIPS IN ('${MO_COUNTY_FIPS}')) OR (STATE_FIPS = '17' AND COUNTY_FIPS IN ('${IL_COUNTY_FIPS}'))`;
+const ARCGIS_CENSUS_COUNTIES_URL = "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Counties/FeatureServer/0";
+const ARCGIS_CENSUS_COUNTIES_EXP = `(STATE_ABBR = 'MO' AND NAME IN ('${MO_COUNTY_NAMES}')) OR (STATE_ABBR = 'IL' AND NAME IN ('${IL_COUNTY_NAMES}'))`;
+    
 const POPLMAP_ALPHA = 0.1;
 const BUS_STOP_SIZE = 3.5;
 const ML_STOP_SIZE = 8;
@@ -217,12 +223,8 @@ async function buildCountyLayer(map: Map) {
 function makeCountyLayer(): FeatureLayer {
     return new FeatureLayer({
         title: "St. Louis MSA Counties",
-        url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Counties/FeatureServer/0",
-        definitionExpression: `
-            (STATE_NAME = 'Missouri' AND NAME IN ('${MO_COUNTY_NAMES}'))
-            OR
-            (STATE_NAME = 'Illinois' AND NAME IN ('${IL_COUNTY_NAMES}'))
-        `,
+        url: ARCGIS_CENSUS_COUNTIES_URL,
+        definitionExpression: ARCGIS_CENSUS_COUNTIES_EXP,
         renderer: new SimpleRenderer({
             symbol: new SimpleFillSymbol({
                 color: [255, 255, 255, 0.05], // nearly transparent fill
@@ -239,7 +241,7 @@ function makeCountyLayer(): FeatureLayer {
                 {
                     type: "fields",
                     fieldInfos: [
-                        { fieldName: "STATE_NAME", label: "State: " },
+                        { fieldName: "STATE_ABBR", label: "State: " },
                         { fieldName: "POPULATION", label: "Population: " },
                     ]
                 }
@@ -253,32 +255,32 @@ async function buildPopulationLayer(map: Map): Promise<void> {
 }
 
 async function makePopulationLayer(): Promise<FeatureLayer> {
-    return await (async function(): Promise<FeatureLayer> {
-        return new FeatureLayer({
-            title: "Census Tract Population Density",
-            url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0",
-            definitionExpression: `(STATE_FIPS = '29' AND COUNTY_FIPS IN ('${MO_COUNTY_FIPS}')) OR (STATE_FIPS = '17' AND COUNTY_FIPS IN ('${IL_COUNTY_FIPS}'))`,
-            renderer: new ClassBreaksRenderer({
-                field: "POPULATION",
-                classBreakInfos: [
-                    { minValue: 0,     maxValue: 1000,  symbol: new SimpleFillSymbol({ color: [253, 231, 37,  POPLMAP_ALPHA] }) },
-                    { minValue: 1000, maxValue: 3000, symbol: new SimpleFillSymbol({ color: [94, 201, 98, POPLMAP_ALPHA] }) },
-                    { minValue: 3000,  maxValue: 6000,  symbol: new SimpleFillSymbol({ color: [20,  110, 105, POPLMAP_ALPHA] }) },
-                    { minValue: 6000,  maxValue: 8000,  symbol: new SimpleFillSymbol({ color: [33,  85,  110, POPLMAP_ALPHA] }) },
-                    { minValue: 8000,  maxValue: 10000, symbol: new SimpleFillSymbol({ color: [44,  60,  105, POPLMAP_ALPHA] }) },
-                    { minValue: 10000, maxValue: 99999, symbol: new SimpleFillSymbol({ color: [50,  1,   63,  POPLMAP_ALPHA] }) },
-                ],
-            }),
-            popupTemplate: {
-                title: "{STATE_ABBR}-{COUNTY_FIPS}",
-                content: [{
-                    type: "fields", fieldInfos: [
-                        { fieldName: "POPULATION", label: "Population: " },
-                        { fieldName: "POP_SQMI", label: "Population/Mi^2: " },
-                        { fieldName: "STATE_FIPS", label: "State FIPS: " },
-                    ]
-                }]
-            }
-        });
-    })();
+    return new FeatureLayer({
+        title: "Census Tract Population Density",
+        url: ARCGIS_CENSUS_TRACTS_URL,
+        definitionExpression: ARCGIS_CENSUS_TRACTS_EXP,
+        renderer: new ClassBreaksRenderer({
+            field: "POPULATION",
+            classBreakInfos: [
+                { minValue: 0,     maxValue: 1000,  symbol: new SimpleFillSymbol({ color: [253, 231, 37,  POPLMAP_ALPHA] }) },
+                { minValue: 1000, maxValue: 3000, symbol: new SimpleFillSymbol({ color: [94, 201, 98, POPLMAP_ALPHA] }) },
+                { minValue: 3000,  maxValue: 6000,  symbol: new SimpleFillSymbol({ color: [20,  110, 105, POPLMAP_ALPHA] }) },
+                { minValue: 6000,  maxValue: 8000,  symbol: new SimpleFillSymbol({ color: [33,  85,  110, POPLMAP_ALPHA] }) },
+                { minValue: 8000,  maxValue: 10000, symbol: new SimpleFillSymbol({ color: [44,  60,  105, POPLMAP_ALPHA] }) },
+                { minValue: 10000, maxValue: 99999, symbol: new SimpleFillSymbol({ color: [50,  1,   63,  POPLMAP_ALPHA] }) },
+            ],
+        }),
+        popupTemplate: {
+            title: "Tract {TRACT_FIPS}",
+            content: [{
+                type: "fields", fieldInfos: [
+                    { fieldName: "POPULATION", label: "Population: " },
+                    { fieldName: "POP_SQMI", label: "Population/Mi^2: " },
+                    { fieldName: "STATE_ABBR", label: "State: " },
+                    { fieldName: "STATE_FIPS", label: "State FIPS: " },
+                    { fieldName: "COUNTY_FIPS", label: "County FIPS: " },
+                ]
+            }]
+        }
+    });
 }
