@@ -12,6 +12,7 @@ import SimpleRenderer from "@arcgis/core/renderers/SimpleRenderer";
 import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
 import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol";
 import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer";
+import type Renderer from "@arcgis/core/renderers/Renderer";
 import "@arcgis/core/assets/esri/themes/light/main.css";
 
 const MO_COUNTIES: Record<string, string> = {
@@ -36,19 +37,15 @@ const MO_COUNTY_NAMES = Object.keys(MO_COUNTIES).join("','");
 const IL_COUNTY_NAMES = Object.keys(IL_COUNTIES).join("','");
 const MO_COUNTY_FIPS = Object.values(MO_COUNTIES).join("','");
 const IL_COUNTY_FIPS = Object.values(IL_COUNTIES).join("','");
-
-const ARCGIS_CENSUS_TRACTS_URL = "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0";
 const ARCGIS_CENSUS_TRACTS_EXP = `(STATE_FIPS = '29' AND COUNTY_FIPS IN ('${MO_COUNTY_FIPS}')) OR (STATE_FIPS = '17' AND COUNTY_FIPS IN ('${IL_COUNTY_FIPS}'))`;
-const ARCGIS_CENSUS_COUNTIES_URL = "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Counties/FeatureServer/0";
 const ARCGIS_CENSUS_COUNTIES_EXP = `(STATE_ABBR = 'MO' AND NAME IN ('${MO_COUNTY_NAMES}')) OR (STATE_ABBR = 'IL' AND NAME IN ('${IL_COUNTY_NAMES}'))`;
-    
-const POPLMAP_ALPHA = 0.1;
+const POPLMAP_ALPHA = 0.15;
 const BUS_STOP_SIZE = 3.5;
 const ML_STOP_SIZE = 8;
 const BUS_STOP_COLOR = 'mediumseagreen';
 const MLB_STOP_COLOR = 'blue';
 const MLR_STOP_COLOR = 'red';
-const MLC_STOP_COLOR = 'magenta';
+const MLC_STOP_COLOR = 'purple';
 const BASEMAP = 'dark-gray';
 const MAP_CONTAINER = 'map';
 const STLWKID = 4326;
@@ -83,6 +80,71 @@ type Route = {
 type Coordinates = { latitude: number, longitude: number, name: string, typ: RouteType };
 type RouteType = 'bus' | 'mlr' | 'mlb' | 'mlc';
 
+type FeatureLayerMeta = {
+    title: string,
+    url: string,
+    defEx: string,
+    renderer: Renderer,
+    popupTemplate?: __esri.PopupTemplateProperties,
+    popupEnabled?: boolean,
+    idx?: number,
+};
+
+const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
+    title: "St. Louis MSA Counties",
+    url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Counties/FeatureServer/0",
+    defEx: ARCGIS_CENSUS_COUNTIES_EXP,
+    renderer: new SimpleRenderer({
+        symbol: new SimpleFillSymbol({
+            color: [255, 255, 255, 0.05],
+            outline: new SimpleLineSymbol({
+                color: [250, 250, 250, 0.8],
+                width: 2,
+                style: "solid"
+            })
+        })
+    }),
+    popupTemplate: {
+        title: "{NAME}",
+        content: [{
+            type: "fields",
+            fieldInfos: [
+                { fieldName: "STATE_ABBR", label: "State: " },
+                { fieldName: "POPULATION", label: "Population: " },
+            ]
+        }],
+    },
+};
+
+const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
+    title: "Census Tract Population Density",
+    url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Tracts/FeatureServer/0",
+    defEx: ARCGIS_CENSUS_TRACTS_EXP,
+    renderer: new ClassBreaksRenderer({
+        field: "POP_SQMI",
+        classBreakInfos: [
+            { minValue: 0, maxValue: 2500, symbol: new SimpleFillSymbol({ color: [94, 150, 98, POPLMAP_ALPHA] }) },
+            { minValue: 2500, maxValue: 5000, symbol: new SimpleFillSymbol({ color: [17, 200, 152, POPLMAP_ALPHA] }) },
+            { minValue: 5000, maxValue: 7500, symbol: new SimpleFillSymbol({ color: [0, 210, 255, POPLMAP_ALPHA] }) },
+            { minValue: 7500, maxValue: 10000, symbol: new SimpleFillSymbol({ color: [44, 60, 255, POPLMAP_ALPHA] }) },
+            { minValue: 10000, maxValue: 99999, symbol: new SimpleFillSymbol({ color: [50, 1, 63, POPLMAP_ALPHA] }) },
+        ],
+    }),
+    popupTemplate: {
+        title: "{STATE_ABBR} Census Tract {TRACT_FIPS}",
+        content: [{
+            type: "fields",
+            fieldInfos: [
+                { fieldName: "STATE_ABBR", label: "State: " },
+                { fieldName: "STATE_FIPS", label: "State FIPS: " },
+                { fieldName: "COUNTY_FIPS", label: "County FIPS: " },
+                { fieldName: "POPULATION", label: "Population: " },
+                { fieldName: "POP_SQMI", label: "Population/Mi^2: " },
+            ]
+        }]
+    }
+};
+
 // ENTRY POINT
 window.addEventListener("DOMContentLoaded", () => {
     esriConfig.apiKey = (window as any).ARCGIS_API_KEY;
@@ -105,15 +167,41 @@ window.addEventListener("DOMContentLoaded", () => {
             dockOptions: {buttonEnabled: false}
         }
     });
-    view.when(async () => { // map entrypoint
+    view.when(async () => { // ADD LAYERS TO MAP VIEW
         await Promise.all([
-            buildCountyLayer(map),
-            buildPopulationLayer(map),
             buildStopLayers(map),
+            buildFeatureLayer(map, LAYER_CENSUS_COUNTIES, 0),
+            buildFeatureLayer(map, LAYER_CENSUS_TRACTS, 1),
         ]);
         buildLegend(view);
     }, (e: Error) => console.error("failed to build or display map:", e))
 });
+
+// BUILD FEATURE LATER FROM AN EXISTING HOSTED FEATURE SERVICE
+async function buildFeatureLayer(map: Map, meta: FeatureLayerMeta, idx?: number): Promise<void> {
+    return map.add(await makeFeatureLayer(meta), idx);
+}
+async function makeFeatureLayer(meta: FeatureLayerMeta): Promise<FeatureLayer> {
+    return new FeatureLayer({
+        title: meta.title,
+        url: meta.url,
+        definitionExpression: meta.defEx,
+        renderer: meta.renderer,
+        popupTemplate: meta.popupTemplate,
+    });
+}
+
+// wait for layers to exist then add expandable legend to map
+// as long as the layers have a title and renderer function they will add to the legend automatically
+function buildLegend(view: MapView) {
+    view.ui.add(new Expand({
+        view,
+        content: new Legend({
+            view: view,
+        }),
+        expanded: true,
+    }), "top-right");
+}
 
 // get metro stops from backend
 async function getStops(): Promise<StopMarkers> {
@@ -122,20 +210,6 @@ async function getStops(): Promise<StopMarkers> {
         throw new Error(`failed to fetch`)
     }
     return await res.json();
-}
-
-// wait for layers to exist then add expandable legend to map
-// as long as the layers have a title and renderer function they will add to the legend automatically
-function buildLegend(view: MapView) {
-    const expand = new Expand({
-        view,
-        content: new Legend({
-            view: view,
-        }),
-        expanded: true,
-    });
-    view.ui.add(expand, "top-right");
-    // await Promise.all(map.layers.toArray().map((l) => view.whenLayerView(l as any)));
 }
 
 // create and add feature layers to map for each stop category
@@ -154,7 +228,6 @@ async function buildStopLayers(map: Map): Promise<void> {
             case 'mlb': mlb.push(s); break;
             case 'mlr': mlr.push(s); break;
         }
-
     });
     return (async function () {
         map.add(await makeStopLayer(bus, 'MetroBus Stops', BUS_STOP_COLOR, BUS_STOP_SIZE));
@@ -170,16 +243,14 @@ async function makeStopLayer(stops: StopMarker[],
     color: string,
     size: number
 ): Promise<FeatureLayer> {
-    const source = stops.map((stop, i) => new Graphic({
-        geometry: new Point({ latitude: stop.yx.latitude, longitude: stop.yx.longitude }),
+    const source = stops.map((s) => new Graphic({
+        geometry: new Point({ latitude: s.yx.latitude, longitude: s.yx.longitude }),
         attributes: {
-            ObjectID: i + 1, // required
-            name: stop.name,
-            type: RouteTypes[stop.typ],
-            routes: stop.routes.map(r => `${r.name}-${r.nameLong}`).join(", "),
+            name: s.name,
+            type: RouteTypes[s.typ],
+            routes: s.routes.map(r => `${r.name}-${r.nameLong}`).join(", "),
         }
     }))
-
     return new FeatureLayer({
         title,
         source,
@@ -187,7 +258,6 @@ async function makeStopLayer(stops: StopMarker[],
         objectIdField: "ObjectID",
         geometryType: "point",
         fields: [
-            new Field({ name: "ObjectID", alias: "ObjectID", type: "oid" }),
             new Field({ name: "name", alias: "Name", type: "string" }),
             new Field({ name: "type", alias: "Service Type", type: "string" }),
             new Field({ name: "routes", alias: "Routes Served", type: "string" }),
@@ -214,73 +284,4 @@ function createMarkerSymbol(color: string, size: number) {
         color: color,
         size: size
     }); 
-}
-
-async function buildCountyLayer(map: Map) {
-    map.add(makeCountyLayer(), 0);
-}
-
-function makeCountyLayer(): FeatureLayer {
-    return new FeatureLayer({
-        title: "St. Louis MSA Counties",
-        url: ARCGIS_CENSUS_COUNTIES_URL,
-        definitionExpression: ARCGIS_CENSUS_COUNTIES_EXP,
-        renderer: new SimpleRenderer({
-            symbol: new SimpleFillSymbol({
-                color: [255, 255, 255, 0.05], // nearly transparent fill
-                outline: new SimpleLineSymbol({
-                    color: [200, 200, 200, 0.8],
-                    width: 1.5,
-                    style: "solid"
-                })
-            })
-        }),
-        popupTemplate: {
-            title: "{NAME}",
-            content: [
-                {
-                    type: "fields",
-                    fieldInfos: [
-                        { fieldName: "STATE_ABBR", label: "State: " },
-                        { fieldName: "POPULATION", label: "Population: " },
-                    ]
-                }
-            ]
-        }
-    });
-}
-
-async function buildPopulationLayer(map: Map): Promise<void> {
-    return map.add(makePopulationLayer(), 1);
-}
-
-async function makePopulationLayer(): Promise<FeatureLayer> {
-    return new FeatureLayer({
-        title: "Census Tract Population Density",
-        url: ARCGIS_CENSUS_TRACTS_URL,
-        definitionExpression: ARCGIS_CENSUS_TRACTS_EXP,
-        renderer: new ClassBreaksRenderer({
-            field: "POPULATION",
-            classBreakInfos: [
-                { minValue: 0,     maxValue: 1000,  symbol: new SimpleFillSymbol({ color: [253, 231, 37,  POPLMAP_ALPHA] }) },
-                { minValue: 1000, maxValue: 3000, symbol: new SimpleFillSymbol({ color: [94, 201, 98, POPLMAP_ALPHA] }) },
-                { minValue: 3000,  maxValue: 6000,  symbol: new SimpleFillSymbol({ color: [20,  110, 105, POPLMAP_ALPHA] }) },
-                { minValue: 6000,  maxValue: 8000,  symbol: new SimpleFillSymbol({ color: [33,  85,  110, POPLMAP_ALPHA] }) },
-                { minValue: 8000,  maxValue: 10000, symbol: new SimpleFillSymbol({ color: [44,  60,  105, POPLMAP_ALPHA] }) },
-                { minValue: 10000, maxValue: 99999, symbol: new SimpleFillSymbol({ color: [50,  1,   63,  POPLMAP_ALPHA] }) },
-            ],
-        }),
-        popupTemplate: {
-            title: "Tract {TRACT_FIPS}",
-            content: [{
-                type: "fields", fieldInfos: [
-                    { fieldName: "POPULATION", label: "Population: " },
-                    { fieldName: "POP_SQMI", label: "Population/Mi^2: " },
-                    { fieldName: "STATE_ABBR", label: "State: " },
-                    { fieldName: "STATE_FIPS", label: "State FIPS: " },
-                    { fieldName: "COUNTY_FIPS", label: "County FIPS: " },
-                ]
-            }]
-        }
-    });
 }
