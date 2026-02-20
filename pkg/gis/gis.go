@@ -47,9 +47,10 @@ func getPoplDensity(area string, popl float64) float64 {
 }
 
 type GeoIDPopl map[string]float64
+type GeoAttrs map[string]any
 type GeoPoplFeature struct {
     Geometry   Geo                    `json:"geometry"`
-    Attributes map[string]any `json:"attributes"`
+    Attributes GeoAttrs `json:"attributes"`
 }
 
 type GeoTractFeatures struct {

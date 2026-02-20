@@ -4,3 +4,4 @@ google_transit/
 .env
 node_modules/
 package-lock.json
+js/

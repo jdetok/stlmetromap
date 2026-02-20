@@ -32,8 +32,8 @@ export class MapWindow extends HTMLElement {
 
         // container INSIDE the component
         this.mapDiv = document.createElement("div");
-        this.mapDiv.style.width = "100%";
-        this.mapDiv.style.height = "100%";
+        this.mapDiv.style.width = "60%";
+        this.mapDiv.style.height = "60%";
         this.mapDiv.style.minHeight = "300px"; // prevents it from collapsing
 
         // optional: component-level styles
@@ -41,8 +41,8 @@ export class MapWindow extends HTMLElement {
         style.textContent = `
         :host {
             display: block;
-            width: 100%;
-            height: 100%;
+            width: 60%;
+            height: 60%;
         }
         `;
 
