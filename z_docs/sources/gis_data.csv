@@ -1,0 +1,5 @@
+Data Description,Source,URL,Notes
+Population by census tract,api.census.gov,https://api.census.gov/data/2023/acs/acs5
+US Counties polygons,tigerweb.geo.census.gov,https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2025/MapServer/82
+US Census tracts polygons,tigerweb.geo.census.gov,https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2025/MapServer/8
+Metro Data,metrostlouis.org,https://www.metrostlouis.org/Transit/google_transit.zip
