@@ -9,12 +9,34 @@ import (
 
 	"github.com/jamespfennell/gtfs"
 	"github.com/jdetok/stlmetromap/pkg/gis"
+	"github.com/jdetok/stlmetromap/pkg/util"
+)
+
+const ( 
+	GET_DATA = false
+	SAVE_DATA = false
+	DATA_FILE = "./data/persist.json"
 )
 
 func SetupServer(ctx context.Context, static *gtfs.Static, stops *gis.StopMarkers) error {
-	layers, err := gis.BuildLayers(ctx)
-	if err != nil {
-		return err
+	var err error
+	layers := &gis.Layers{}
+
+	if GET_DATA || (!GET_DATA && !util.FileExists(DATA_FILE)) {
+		layers, err = gis.BuildLayers(ctx)
+		if err != nil {
+			return err
+		}
+	} else {
+		if !util.FileExists(DATA_FILE) {
+			return err
+		}
+		if err := layers.StructFromJSONFile(DATA_FILE); err != nil {
+			return err
+		}
+	}
+	if SAVE_DATA {
+		layers.StructToJSONFile(DATA_FILE)
 	}
 
 	http.HandleFunc("/counties", func(w http.ResponseWriter, r *http.Request) {

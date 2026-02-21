@@ -6,3 +6,4 @@ node_modules/
 package-lock.json
 www/js/**/*.js*
 www/js/**/*.css*
+data/persist.json

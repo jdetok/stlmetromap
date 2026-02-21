@@ -7,6 +7,7 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/jdetok/stlmetromap/pkg/util"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -16,6 +17,14 @@ type Layers struct {
 	Tracts         *GeoData
 	PoplDens       GeoIDPopl
 	TractsPoplDens *GeoTractFeatures
+}
+
+func (l *Layers) StructToJSONFile(fname string) error {
+	return util.WriteStructToJSONFile(l, fname)
+}
+
+func (l *Layers) StructFromJSONFile(fname string) error {
+	return util.FillStructFromJSONFile(l, fname)
 }
 
 func BuildLayers(ctx context.Context) (*Layers, error) {
