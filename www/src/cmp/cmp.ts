@@ -1,9 +1,14 @@
-import { MapWindow, TAG } from "./map-window.js";
+import * as mw from "./map-window.js";
+import * as hb from "./hdr-bar.js";
 
 const COMPONENTS = [
     {
-        tag: TAG,
-        cls: MapWindow
+        tag: mw.TAG,
+        cls: mw.MapWindow,
+    },
+    {
+        tag: hb.TAG,
+        cls: hb.HeadBar,
     }
 ]
 
