@@ -34,13 +34,10 @@ export class MapWindow extends HTMLElement {
         const root = this.attachShadow({ mode: "open" });
 
         this.div = document.createElement("div");
-        this.div.style.width = "100%";
-        this.div.style.height = "100%";
-        this.div.style.overflow = "hidden";
-        this.div.style.position = "relative";
-        this.div.style.minHeight = "300px"; // prevents it from collapsing
-        const style = document.createElement("style");
-        style.textContent = STYLE;
+        this.div.style.minHeight = "100%"; // important, won't be visible otherwise
+
+        // const style = document.createElement("style");
+        // style.textContent = STYLE;
         this.map = new Map({
             basemap: BASEMAP
         });
@@ -65,17 +62,24 @@ export class MapWindow extends HTMLElement {
             buildLegend(this.view);
         }, (e: Error) => console.error("failed to build or display map:", e))
         
-        root.append(style, this.div);
+        root.append(this.addStyling(), this.div);
+    }
+    addStyling(): HTMLStyleElement {
+        return Object.assign(document.createElement('style'), { textContent: STYLE });
     }
 };
 
 const STYLE = `
 :host {
+    --popup-bdr: 2px solid black;
+    --popup-bdrrad: .5rem;
+    --popup-bg: rgba(192, 201, 209, 0.85);
     position: relative;
     overflow: hidden;
     display: block;
     width: 100%;
     height: 100%;
+
 }
 
 .esri-component * {
@@ -94,13 +98,15 @@ const STYLE = `
 .esri-ui-top-right    { top: 15px;    right: 15px;  }
 .esri-ui-bottom-left  { bottom: 15px; left: 15px;   }
 .esri-ui-bottom-right { bottom: 15px; right: 15px;  }
-.esri-popup__main-container {
+
+.esri-popup {
+    margin: 0 auto;
+    width: fit-content;
+    max-width: 400px;
     padding: .5rem;
     background-color: var(--popup-bg);
     border: 2px solid black;
     border-radius: 1rem;
-    width: 20%;
-    margin: 0 auto;
 }
 
 .esri-expand__content-container {
@@ -117,10 +123,14 @@ const STYLE = `
 }
 
 .esri-attribution {
+    display: none;
     position: absolute;
-    bottom: 0;
+    /* top: 100%; */
+    bottom: auto;
     left: 0;
     right: 0;
+    margin-top: 2px;
+    height: 16px;
     pointer-events: auto;
 }
 `

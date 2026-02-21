@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-
 export default defineConfig(({ mode }) => ({
     define: {
         "process.env.NODE_ENV": JSON.stringify(mode === "production" ? "production" : "development"),
@@ -22,14 +21,15 @@ export default defineConfig(({ mode }) => ({
             entry: "www/src/main.ts",
             name: "stlmetromap",
             formats: ["es"],
-            fileName: () => "main.js", 
+            fileName: () => "main.js",
         },
         outDir: "www/js",
-        emptyOutDir: false,          
-        sourcemap: true,
+        emptyOutDir: false,
+        // sourcemap: true,
         rollupOptions: {
             output: {
-                inlineDynamicImports: true,
+                format: "es"
+                // inlineDynamicImports: true,
             },
         },
     },

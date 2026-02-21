@@ -17,7 +17,7 @@ export function buildLegend(view: MapView) {
         }),
         expanded: true,
         mode: 'floating',
-    }), "top-right");
+    }), "bottom-right");
 }
 
 export async function buildFeatureLayer(map: Map, meta: FeatureLayerMeta, idx?: number): Promise<void> {
@@ -51,5 +51,6 @@ async function makeFeatureLayer(meta: FeatureLayerMeta): Promise<FeatureLayer> {
         renderer: meta.renderer,
         popupTemplate: meta.popupTemplate,
         fields: meta.fields,
+        // visible: true,
     });
 }
