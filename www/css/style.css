@@ -2,6 +2,7 @@
     --popup-bg: rgba(192, 201, 209, 0.85);
     --popup-bdr: 2px solid black;
     --popup-bdrrad: .5rem;
+    --map-margin: 1rem;
 }
 html, body {
     background-color: rgba(141, 202, 255, 0.3);
@@ -13,11 +14,13 @@ html, body {
 
 #map {
     margin: 0 auto;
-    width: 94%;
+    /* width: 94%; */
+    margin-left: var(--map-margin);
+    margin-right: var(--map-margin);
     border: 8px solid black;
     border-radius: 2rem;
-    height: 93%;
-    max-height: 99vh;
+    height: 100%;
+    max-height: 95vh;
 }
 #map > * {
     border-radius: 1.5rem;

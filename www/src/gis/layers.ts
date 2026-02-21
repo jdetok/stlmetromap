@@ -16,6 +16,7 @@ export function buildLegend(view: MapView) {
             view: view,
         }),
         expanded: true,
+        mode: 'floating',
     }), "top-right");
 }
 

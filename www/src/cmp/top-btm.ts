@@ -1,4 +1,4 @@
-export const TAG = 'hdr-bar';
+export const TAG = 'top-btm';
 export const CHANGE_SIZE_AT = 900;
 
 type listItem = {
@@ -23,7 +23,7 @@ function newHdrEl(lbl: string, short?: string, href?: string, items?: listItem[]
     };
 }
 
-export class HeadBar extends HTMLElement {
+export class TopBtm extends HTMLElement {
     public tag: string;
     public hdrItems: hdrEl[];
     constructor() {

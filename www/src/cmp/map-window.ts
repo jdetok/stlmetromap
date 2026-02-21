@@ -75,7 +75,7 @@ const STYLE = `
     overflow: hidden;
     display: block;
     width: 100%;
-    height: max-content%;
+    height: 100%;
 }
 
 .esri-component * {

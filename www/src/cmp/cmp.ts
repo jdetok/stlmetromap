@@ -1,5 +1,5 @@
 import * as mw from "./map-window.js";
-import * as hb from "./hdr-bar.js";
+import * as tb from "./top-btm.js";
 
 const COMPONENTS = [
     {
@@ -7,8 +7,8 @@ const COMPONENTS = [
         cls: mw.MapWindow,
     },
     {
-        tag: hb.TAG,
-        cls: hb.HeadBar,
+        tag: tb.TAG,
+        cls: tb.TopBtm,
     }
 ]
 
