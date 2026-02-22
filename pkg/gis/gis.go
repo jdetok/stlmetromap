@@ -17,6 +17,7 @@ type Layers struct {
 	Tracts         *GeoData
 	PoplDens       GeoIDPopl
 	TractsPoplDens *GeoTractFeatures
+	Bikes *GeoBikeData
 }
 
 func (l *Layers) StructToJSONFile(fname string) error {
@@ -33,6 +34,7 @@ func BuildLayers(ctx context.Context) (*Layers, error) {
 	counties := &GeoData{}
 	tracts := &GeoData{}
 	poplDens := GeoIDPopl{}
+	bikes := &GeoBikeData{}
 
 	g.Go(func() error {
 		mo, err := FetchACSPopulation(ctx, "29", []string{"099", "071", "183", "189", "219", "510"})
@@ -76,6 +78,7 @@ func BuildLayers(ctx context.Context) (*Layers, error) {
 		Tracts:         tracts,
 		PoplDens:       poplDens,
 		TractsPoplDens: JoinPopulation(tracts, poplDens),
+		Bikes: bikes,
 	}, nil
 }
 
@@ -105,6 +108,7 @@ func getPoplDensity(area string, popl float64) float64 {
 
 type GeoIDPopl map[string]float64
 type GeoAttrs map[string]any
+
 type GeoPoplFeature struct {
 	Geometry   Geo      `json:"geometry"`
 	Attributes GeoAttrs `json:"attributes"`

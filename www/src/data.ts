@@ -138,7 +138,7 @@ export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
     ],
     renderer: new SimpleRenderer({
         symbol: new SimpleFillSymbol({
-            color: [255, 255, 255, 0.05],
+            color: [255, 255, 255, 0],
             outline: new SimpleLineSymbol({
                 color: [250, 250, 250, 0.5],
                 width: 1.5,

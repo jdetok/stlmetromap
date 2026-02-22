@@ -16,6 +16,7 @@ const (
 	GET_DATA = false
 	SAVE_DATA = false
 	DATA_FILE = "./data/persist.json"
+	CYCLE_FILE = "data/cycle_osm.geojson"
 )
 
 func SetupServer(ctx context.Context, static *gtfs.Static, stops *gis.StopMarkers) error {
@@ -39,6 +40,13 @@ func SetupServer(ctx context.Context, static *gtfs.Static, stops *gis.StopMarker
 		layers.StructToJSONFile(DATA_FILE)
 	}
 
+	bikes := &gis.GeoBikeData{}
+	bikes, err = gis.LoadBikePathFile(CYCLE_FILE)
+	if err != nil {
+		return fmt.Errorf("failed to fetch bikes: %w", err)
+	}
+	layers.Bikes = bikes
+
 	http.HandleFunc("/counties", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(layers.Counties)
@@ -55,6 +63,10 @@ func SetupServer(ctx context.Context, static *gtfs.Static, stops *gis.StopMarker
 	})
 	http.HandleFunc("/stops/ml", func(w http.ResponseWriter, r *http.Request) {
 		HandleMetroStops(w, r, &gis.StopMarkers{Stops: stops.MlStops})
+	})
+	http.HandleFunc("/bikes", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(layers.Bikes)
 	})
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("www/js"))))
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("www/css"))))
