@@ -1,9 +1,14 @@
 import Map from "@arcgis/core/Map";
 import MapView from "@arcgis/core/views/MapView";
-import Zoom from "@arcgis/core/widgets/Zoom"
-import { buildFeatureLayer, buildLegend } from "../gis/layers.js";
+import Graphic from "@arcgis/core/Graphic";
+import Polygon from "@arcgis/core/geometry/Polygon";
+import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
+import LayerList from "@arcgis/core/widgets/LayerList";
+import Expand from "@arcgis/core/widgets/Expand";
+import Legend from "@arcgis/core/widgets/Legend";
+import { buildFeatureLayer } from "../gis/layers.js";
 import { buildStopLayers } from "../gis/metro.js";
-import { STLCOORDS, STLWKID, BASEMAP, LAYER_CENSUS_COUNTIES, LAYER_CENSUS_TRACTS } from "../global.js";
+import { FeatureLayerMeta, STLCOORDS, STLWKID, BASEMAP, LAYER_CENSUS_COUNTIES, LAYER_CENSUS_TRACTS } from "../global.js";
 
 export const TAG = 'map-window';
 
@@ -22,20 +27,17 @@ export function newMapCoords(
 }
 
 export class MapWindow extends HTMLElement {
-    public tag: string;
-    public coords: mapCoords;
+    private coords: mapCoords;
     private div!: HTMLDivElement;
     private view: __esri.MapView;
-    public map: __esri.Map;
-    constructor() {
+    private map: __esri.Map;
+    public constructor() {
         super();
-        this.tag = TAG;
-        this.coords = newMapCoords(STLCOORDS.xmin, STLCOORDS.ymin, STLCOORDS.xmax, STLCOORDS.ymax, STLWKID);
 
         const root = this.attachShadow({ mode: "open" });
+        this.div = Object.assign(document.createElement("div"), { style: "min-height: 100%;" });
 
-        this.div = document.createElement("div");
-        this.div.style.minHeight = "100%"; // important, won't be visible otherwise
+        this.coords = newMapCoords(STLCOORDS.xmin, STLCOORDS.ymin, STLCOORDS.xmax, STLCOORDS.ymax, STLWKID);
 
         this.map = new Map({
             basemap: BASEMAP
@@ -48,30 +50,72 @@ export class MapWindow extends HTMLElement {
             popupEnabled: true,
             popup: {
                 dockEnabled: false,
-                dockOptions: {buttonEnabled: false}
+                dockOptions: { buttonEnabled: false }
             }
         });
 
         this.view.when(async () => { // ADD LAYERS TO MAP VIEW
-            this.view.ui.move('zoom', 'bottom-left');
-            await Promise.all([
-                buildStopLayers(this.map),
-                buildFeatureLayer(this.map, LAYER_CENSUS_COUNTIES, 0),
-                buildFeatureLayer(this.map, LAYER_CENSUS_TRACTS, 1),
-            ]);
-            buildLegend(this.view);
-            if (this.view.ui) {
-                this.view.ui.move('zoom', 'bottom-right');
-            }
+            await buildStopLayers(this.map);
+            // await buildFeatureLayer(this.map, LAYER_CENSUS_COUNTIES, 0);
+            // await buildFeatureLayer(this.map, LAYER_CENSUS_TRACTS, 1);
+
+            this.map.add(await this.makeFeatureLayer(LAYER_CENSUS_COUNTIES), 0);
+            this.map.add(await this.makeFeatureLayer(LAYER_CENSUS_TRACTS), 1);
+
+            // add UI buttons/popups
+            this.view.ui.add(this.addLayerList(), 'bottom-left');
+            this.view.ui.add(this.addLegend(), 'bottom-right')
         }, (e: Error) => console.error("failed to build or display map:", e))
 
         root.append(this.addStyling(), this.div);
     }
-    addStyling(): HTMLStyleElement {
+    private addStyling(): HTMLStyleElement {
         return Object.assign(document.createElement('style'), { textContent: STYLE });
     }
-};
-
+    private addLayerList(): Expand {
+        return new Expand({
+            view: this.view,
+            content: new LayerList({ view: this.view }),
+            expanded: true,
+        });
+    }
+    private addLegend(): Expand {
+        return new Expand({
+            view: this.view,
+            content: new Legend({
+                view: this.view,
+            }),
+            expanded: true,
+            mode: 'floating',
+        });
+    }
+    private async makeFeatureLayer(meta: FeatureLayerMeta): Promise<FeatureLayer> {
+        try {
+            if (meta.dataUrl) {
+                const res = await fetch(meta.dataUrl);
+                const data = await res.json();
+                console.log("layer data:", data);
+                meta.source = data.features.map((f: any) => new Graphic({
+                    geometry: new Polygon({
+                        rings: f.geometry.rings,
+                        spatialReference: { wkid: STLWKID }
+                    }),
+                    attributes: f.attributes,
+                }));
+            }
+        } catch (e) { throw new Error("no data source for layer: " + meta.title); }
+        return new FeatureLayer({
+            title: meta.title,
+            source: meta.source,
+            objectIdField: "ObjectID",
+            geometryType: "polygon",
+            spatialReference: { wkid: STLWKID },
+            renderer: meta.renderer,
+            popupTemplate: meta.popupTemplate,
+            fields: meta.fields,
+        });
+    };
+}
 const STYLE = `
 :host {
     --popup-bdr: 2px solid black;
@@ -82,7 +126,10 @@ const STYLE = `
     display: block;
     width: 100%;
     height: 100%;
-
+    --calcite-color-brand: var(--popup-bg);
+    --calcite-popover-background-color: var(--popup-bg);
+    --calcite-popover-corner-radius: 1rem;
+    --calcite-popover-padding: 1rem;
 }
 
 .esri-component * {
@@ -102,21 +149,19 @@ const STYLE = `
 .esri-ui-bottom-left  { bottom: 15px; left: 15px;   }
 .esri-ui-bottom-right { bottom: 15px; right: 15px;  }
 
+
 .esri-popup {
+    background-color: var(--popup-bg);
     margin: 0 auto;
     width: fit-content;
     max-width: 400px;
     padding: .5rem;
-    background-color: var(--popup-bg);
-    border: 2px solid black;
-    border-radius: 1rem;
+    border-radius: var(--popup-bdrrad);
 }
 
+/* force legend padding */
 .esri-expand__content-container {
     padding: .5rem;
-    border: var(--popup-bdr);
-    border-radius: var(--popup-bdrrad);
-    background-color: var(--popup-bg);
 }
 
 .esri-ui-manual-container {
@@ -128,7 +173,6 @@ const STYLE = `
 .esri-attribution {
     display: none;
     position: absolute;
-    /* top: 100%; */
     bottom: auto;
     left: 0;
     right: 0;

@@ -66,11 +66,7 @@ export async function buildStopLayers(map: Map): Promise<void> {
 }
 
 // make feature layers for a specific stop category 
-async function makeStopLayer(stops: StopMarker[],
-    title: string,
-    color: string,
-    size: number
-): Promise<FeatureLayer> {
+async function makeStopLayer(stops: StopMarker[], title: string, color: string, size: number): Promise<FeatureLayer> {
     const source = stops.map((s) => new Graphic({
         geometry: new Point({ latitude: s.yx.latitude, longitude: s.yx.longitude }),
         attributes: {
