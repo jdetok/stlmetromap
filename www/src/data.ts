@@ -5,8 +5,8 @@ import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer";
 import SimpleMarkerSymbol from "@arcgis/core/symbols/SimpleMarkerSymbol.js";
 import Point from "@arcgis/core/geometry/Point";
 import Graphic from "@arcgis/core/Graphic";
-import Renderer from "@arcgis/core/renderers/Renderer";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
+import { FeatureLayerMeta, StopMarkers, StopMarker, RouteType } from './types.js'
 
 export const STLWKID = 4326;
 export const BASEMAP = 'dark-gray';
@@ -25,25 +25,14 @@ export const STLCOORDS = {
     xmax: -90.15,
     ymax: 38.75,
 };
-
-export type FeatureLayerMeta = {
-    title: string;
-    source?: Graphic[];
-    dataUrl?: string;
-    renderer: Renderer;
-    popupTemplate?: __esri.PopupTemplateProperties;
-    fields?: __esri.FieldProperties[];
-    geometryType?: 'point' | 'polygon' | 'polyline';
-    toGraphics?: (data: any) => Graphic[];
-}
-type Route = {
-    id: string | number,
-    name: string,
-    nameLong: string,
-}
-
-type Coordinates = { latitude: number, longitude: number, name: string, typ: RouteType };
-type RouteType = 'bus' | 'mlr' | 'mlb' | 'mlc';
+const STOP_FIELDS: __esri.FieldProperties[] = [
+    { name: "ObjectID", alias: "ObjectID", type: "oid" },
+    { name: "id", alias: "ID", type: "string" },
+    { name: "name", alias: "Name", type: "string" },
+    { name: "typ", alias: "Service Type", type: "string" },
+    { name: "type", alias: "Stop Type", type: "string" },
+    { name: "routes", alias: "Routes Served", type: "string" },
+];
 
 const routeTypes: Record<RouteType, string> = {
     bus: BUS,
@@ -52,16 +41,7 @@ const routeTypes: Record<RouteType, string> = {
     mlc: ML
 };
 
-type StopMarkers = {stops: StopMarker[]}
-type StopMarker = {
-    id: string | number,
-    name: string,
-    typ: RouteType,
-    routes: Route[],
-    yx: Coordinates,
-}
-
-export const stopsToGraphics = (data: StopMarkers) => {
+const stopsToGraphics = (data: StopMarkers) => {
     return data.stops.map((s: StopMarker, i: number) => new Graphic({
         geometry: new Point({
             latitude: s.yx.latitude,
@@ -83,13 +63,7 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
     title: "MetroBus Stops",
     dataUrl: "/stops/bus",
     geometryType: "point",
-    fields: [
-        { name: "ObjectID", alias: "ObjectID", type: "oid" },
-        { name: "ID", alias: "ID", type: "string" },
-        { name: "name", alias: "Name", type: "string" },
-        { name: "type", alias: "Service Type", type: "string" },
-        { name: "routes", alias: "Routes Served", type: "string" },
-    ],
+    fields: STOP_FIELDS,
     renderer: new SimpleRenderer({
         symbol: new SimpleMarkerSymbol({ style: 'circle', color: BUS_STOP_COLOR, size: BUS_STOP_SIZE }),
     }),
@@ -109,14 +83,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
     title: "MetroLink Stops",
     dataUrl: "/stops/ml",
     geometryType: "point",
-    fields: [
-        { name: "ObjectID", alias: "ObjectID", type: "oid" },
-        { name: "id", alias: "ID", type: "string" },
-        { name: "name", alias: "Name", type: "string" },
-        { name: "typ", alias: "Service Type", type: "string" },
-        { name: "type", alias: "Stop Type", type: "string" },
-        { name: "routes", alias: "Routes Served", type: "string" },
-    ],
+    fields: STOP_FIELDS,
     renderer: new UniqueValueRenderer({
         field: "typ",
         uniqueValueInfos: [

@@ -6,11 +6,10 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import LayerList from "@arcgis/core/widgets/LayerList";
 import Expand from "@arcgis/core/widgets/Expand";
 import Legend from "@arcgis/core/widgets/Legend";
-import "@arcgis/core/assets/esri/themes/light/main.css";
+import { FeatureLayerMeta } from "../types.js";
 import {
-    FeatureLayerMeta, STLCOORDS, STLWKID, BASEMAP,
-    LAYER_BUS_STOPS, LAYER_ML_STOPS, LAYER_CENSUS_COUNTIES, LAYER_CENSUS_TRACTS
-} from "../global.js";
+    STLCOORDS, STLWKID, BASEMAP, LAYER_BUS_STOPS, LAYER_ML_STOPS, LAYER_CENSUS_COUNTIES, LAYER_CENSUS_TRACTS
+} from "../data.js";
 
 export const TAG = 'map-window';
 

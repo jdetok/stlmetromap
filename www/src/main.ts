@@ -1,3 +1,4 @@
+import "@arcgis/core/assets/esri/themes/light/main.css";
 import * as mw from "./cmp/map-window.js";
 import * as tb from "./cmp/top-btm.js";
 
