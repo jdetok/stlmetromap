@@ -8,6 +8,7 @@ import Polyline from "@arcgis/core/geometry/Polyline";
 import Graphic from "@arcgis/core/Graphic";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
 import { FeatureLayerMeta, StopMarkers, StopMarker, RouteType, cplethEls } from './types.js'
+export const BASEMAP = 'dark-gray';
 export const STLWKID = 4326;
 export const STLCOORDS = {
     xmin: -90.32,
@@ -15,14 +16,15 @@ export const STLCOORDS = {
     xmax: -90.15,
     ymax: 38.75,
 };
-
-export const BASEMAP = 'dark-gray';
 const BUS = 'Bus';
 const ML = 'Light Rail';
 const BUS_STOP_SIZE = 4;
 const ML_STOP_SIZE = 10;
-const CYCLE_COLOR = [208, 148, 75, 0.9];
-const COUNTIES_OUTLINE = [250, 250, 250, 0.5];
+const CYCLE_PATH_COLOR = [208, 148, 75, 0.7];
+const CYCLE_PATH_SIZE = .8;
+const COUNTIES_OUTLINE_COLOR = [250, 250, 250, 0.5];
+const COUNTIES_OUTLINE_SIZE = 1.5;
+const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
 const BUS_STOP_COLOR = 'mediumseagreen';
 const MLB_STOP_COLOR = 'blue';
 const MLR_STOP_COLOR = 'red';
@@ -32,8 +34,6 @@ const POPLDENS_ALPHA = 0.15;
 const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
     [0, 2500, [94, 150, 98]], [2500, 5000, [17, 200, 152]], [5000, 7500, [0, 210, 255]], [7500, 10000, [44, 60, 255]], [10000, 99999, [50, 1, 63]],
 ];
-// const TRACTS_OUTLINE = 
-
 
 const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },
@@ -60,7 +60,6 @@ const makeChoroplethLevels = (levels: cplethEls[]): __esri.ClassBreakInfoPropert
     }
     return lvls;
 }
-
 const stopsToGraphics = (data: StopMarkers) => {
     return data.stops.map((s: StopMarker, i: number) => new Graphic({
         geometry: new Point({
@@ -86,16 +85,6 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
     fields: STOP_FIELDS,
     renderer: new SimpleRenderer({
         symbol: new SimpleMarkerSymbol({ style: 'circle', color: BUS_STOP_COLOR, size: BUS_STOP_SIZE }),
-        // visualVariables: [{
-        //     type: "size",
-        //     stops: [
-        //         { value: 288895, size: 2.5 },
-        //         { value: 100000,  size: 3.5 },
-        //         { value: 50000,  size: 5.0 },
-        //         { value: 20000,  size: 15.0 }, 
-        //     ],
-
-        // } as any]
     }),
     popupTemplate: {
         title: "{type} Stop: {name}",
@@ -167,10 +156,10 @@ export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
     ],
     renderer: new SimpleRenderer({
         symbol: new SimpleFillSymbol({
-            color: [255, 255, 255, 0],
+            color: COUNTIES_INNER_COLOR,
             outline: new SimpleLineSymbol({
-                color: COUNTIES_OUTLINE,
-                width: 1.5,
+                color: COUNTIES_OUTLINE_COLOR,
+                width: COUNTIES_OUTLINE_SIZE,
                 style: "solid"
             })
         })
@@ -240,9 +229,9 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
     ],
     renderer: new SimpleRenderer({
         symbol: new SimpleLineSymbol({
-            width: .8,
+            width: CYCLE_PATH_SIZE,
             style: "solid",
-            color: CYCLE_COLOR,
+            color: CYCLE_PATH_COLOR,
         }),
     }),
     popupTemplate: {
