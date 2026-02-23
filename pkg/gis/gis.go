@@ -18,6 +18,7 @@ type Layers struct {
 	PoplDens       GeoIDPopl
 	TractsPoplDens *GeoTractFeatures
 	Bikes *GeoBikeData
+	Railroad *GeoData
 }
 
 func (l *Layers) StructToJSONFile(fname string) error {
@@ -33,6 +34,7 @@ func BuildLayers(ctx context.Context) (*Layers, error) {
 
 	counties := &GeoData{}
 	tracts := &GeoData{}
+	rails := &GeoData{}
 	poplDens := GeoIDPopl{}
 	bikes := &GeoBikeData{}
 
@@ -69,6 +71,15 @@ func BuildLayers(ctx context.Context) (*Layers, error) {
 		return nil
 	})
 
+	g.Go(func() error {
+		var err error
+		rails, err = FetchTigerRR(ctx, 9)
+		if err != nil {
+			return fmt.Errorf("failed to fetch railroad: %w", err)
+		}
+		return nil
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
@@ -79,6 +90,7 @@ func BuildLayers(ctx context.Context) (*Layers, error) {
 		PoplDens:       poplDens,
 		TractsPoplDens: JoinPopulation(tracts, poplDens),
 		Bikes: bikes,
+		Railroad: rails,
 	}, nil
 }
 

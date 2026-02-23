@@ -268,8 +268,7 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
         content: [{
             type: "fields",
             fieldInfos: [
-                { fieldName: "highway", label: "Type" },
-                { fieldName: "surface", label: "Surface" },
+                { fieldName: "surface", label: "Surface: " },
             ],
         }],
     },

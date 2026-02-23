@@ -21,6 +21,7 @@ const (
 	ACS_GET     = "B01003_001E,GEO_ID"
 	ACS_FOR     = "tract:*"
 	ACS_KEY     = "CENSUS_API_KEY"
+	TIGER_RR    = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Transportation/MapServer/"
 )
 
 func FetchTigerData(ctx context.Context, serverNum int) (*GeoData, error) {
@@ -48,7 +49,33 @@ func FetchTigerData(ctx context.Context, serverNum int) (*GeoData, error) {
 
 	return result, nil
 }
+func FetchTigerRR(ctx context.Context, serverNum int) (*GeoData, error) {
+	url := fmt.Sprintf("%s%d/query?%s", TIGER_RR, serverNum, url.Values{
+		"f":              {"json"},
+		"where":          {"1=1"},
+		"geometry":       {"-91,38,-89.5,39.2"},
+		"geometryType":   {"esriGeometryEnvelope"},
+		"outFields":      {"*"},
+		"inSR":           {"4326"},
+		"returnGeometry": {"true"},
+	}.Encode())
 
+	fmt.Println("querying:", url)
+
+	resp, err := get.Get(get.NewGetRequest(ctx, url, true, 1, 3))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var result = &GeoData{}
+	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+		fmt.Println("error decoding JSON:", err)
+	}
+	fmt.Println("fetched", len(result.Features), "features")
+
+	return result, nil
+}
 func FetchACSPopulation(ctx context.Context, state string, counties []string) (GeoIDPopl, error) {
 	popByGEOID := GeoIDPopl{}
 	var mu sync.Mutex
