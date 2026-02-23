@@ -8,6 +8,7 @@ import Polyline from "@arcgis/core/geometry/Polyline";
 import Graphic from "@arcgis/core/Graphic";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
 import { FeatureLayerMeta, StopMarkers, StopMarker, RouteType, cplethEls } from './types.js'
+
 export const BASEMAP = 'dark-gray';
 export const STLWKID = 4326;
 export const STLCOORDS = {
@@ -16,25 +17,57 @@ export const STLCOORDS = {
     xmax: -90.15,
     ymax: 38.75,
 };
-const BUS = 'Bus';
-const ML = 'Light Rail';
-const BUS_STOP_SIZE = 4;
-const ML_STOP_SIZE = 10;
-const CYCLE_PATH_COLOR = [208, 148, 75, 0.7];
-const CYCLE_PATH_SIZE = .8;
+
+// TRACTCS LAYER
+const TRACTS_LAYER_TTL = "Census Tract Population Density";
+const TRACTS_LAYER_URL = "/tracts";
+// CENSUS TRACTS/POPULATION DENSITY LAYER
+// tuples of min, max, 3 digit rgb. builder func addss the POPLDENS_APLHA value for rgba to each
+const POPLDENS_ALPHA = 0.15;
+const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
+    [0, 2500, [94, 150, 98]],
+    [2500, 5000, [17, 200, 152]],
+    [5000, 7500, [0, 210, 255]],
+    [7500, 10000, [44, 60, 255]],
+    [10000, 99999, [50, 1, 63]],
+];
+
+// COUNTIES LAYER
+const COUNTIES_LAYER_TTL = "St. Louis MSA Counties";
+const COUNTIES_LAYER_URL = "/counties";
 const COUNTIES_OUTLINE_COLOR = [250, 250, 250, 0.5];
 const COUNTIES_OUTLINE_SIZE = 1.5;
 const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
+
+// BUS STOPS LAYER
+const BUS_LAYER_TTL = "MetroBus Stops";
+const BUS_LAYER_URL = "/stops/bus";
 const BUS_STOP_COLOR = 'mediumseagreen';
+const BUS_STOP_SIZE = 4;
+
+// METRO STOP LAYER
+const ML_LAYER_TTL = "MetroLink Stops";
+const ML_LAYER_URL = "/stops/ml";
+const ML_STOP_SIZE = 10;
 const MLB_STOP_COLOR = 'blue';
 const MLR_STOP_COLOR = 'red';
 const MLC_STOP_COLOR = 'purple';
-const POPLDENS_ALPHA = 0.15;
-// tuples of min, max, 3 digit rgb. builder func addss the POPLDENS_APLHA value for rgba to each
-const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
-    [0, 2500, [94, 150, 98]], [2500, 5000, [17, 200, 152]], [5000, 7500, [0, 210, 255]], [7500, 10000, [44, 60, 255]], [10000, 99999, [50, 1, 63]],
-];
 
+// CYCLE LAYER
+const CYCLE_LAYER_TTL = "Cycling Paths";
+const CYCLE_LAYER_URL = "/bikes";
+const CYCLE_LAYER_COLOR = [208, 148, 75, 0.7];
+const CYCLE_LAYER_SIZE = .8;
+
+// Labels used in bus/metro stop popups
+const BUS = 'Bus';
+const ML = 'Light Rail';
+const routeTypes: Record<RouteType, string> = {
+    bus: BUS,
+    mlr: ML,
+    mlb: ML,
+    mlc: ML
+};
 const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },
     { name: "id", alias: "ID", type: "string" },
@@ -44,12 +77,7 @@ const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "routes", alias: "Routes Served", type: "string" },
 ];
 
-const routeTypes: Record<RouteType, string> = {
-    bus: BUS,
-    mlr: ML,
-    mlb: ML,
-    mlc: ML
-};
+// create choropleth levels for the array of min/max/color
 const newChoroplethLevel = (c: cplethEls) => {
         return { minValue: c[0], maxValue: c[1], symbol: new SimpleFillSymbol({ color: [...c[2], POPLDENS_ALPHA] })};
 }
@@ -60,7 +88,9 @@ const makeChoroplethLevels = (levels: cplethEls[]): __esri.ClassBreakInfoPropert
     }
     return lvls;
 }
-const stopsToGraphics = (data: StopMarkers) => {
+
+// create and return an array of graphics from passed bus/metro stop locations
+const stopsToGraphics = (data: StopMarkers): Graphic[] => {
     return data.stops.map((s: StopMarker, i: number) => new Graphic({
         geometry: new Point({
             latitude: s.yx.latitude,
@@ -78,9 +108,10 @@ const stopsToGraphics = (data: StopMarkers) => {
     }));
 };
 
+// LAYERS DEFINED HERE: TO ADD NEW LAYER, CREATE A CONFIG HERE AND ADD IT TO THE ARRAY IN map-window.ts
 export const LAYER_BUS_STOPS: FeatureLayerMeta = {
-    title: "MetroBus Stops",
-    dataUrl: "/stops/bus",
+    title: BUS_LAYER_TTL,
+    dataUrl: BUS_LAYER_URL,
     geometryType: "point",
     fields: STOP_FIELDS,
     renderer: new SimpleRenderer({
@@ -99,8 +130,8 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
 }
 
 export const LAYER_ML_STOPS: FeatureLayerMeta = {
-    title: "MetroLink Stops",
-    dataUrl: "/stops/ml",
+    title: ML_LAYER_TTL,
+    dataUrl: ML_LAYER_URL,
     geometryType: "point",
     fields: STOP_FIELDS,
     renderer: new UniqueValueRenderer({
@@ -114,8 +145,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
                     color: MLR_STOP_COLOR,
                     size: ML_STOP_SIZE,
                 }),
-            },
-            {
+            }, {
                 value: "mlb",
                 label: "Blue Line",
                 symbol: new SimpleMarkerSymbol({
@@ -123,8 +153,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
                     color: MLB_STOP_COLOR,
                     size: ML_STOP_SIZE,
                 }),
-            },
-            {
+            }, {
                 value: "mlc",
                 label: "Blue/Red",
                 symbol: new SimpleMarkerSymbol({
@@ -148,8 +177,8 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
 }
 
 export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
-    title: "St. Louis MSA Counties",
-    dataUrl: "/counties",
+    title: COUNTIES_LAYER_TTL,
+    dataUrl: COUNTIES_LAYER_URL, 
     geometryType: "polygon",
     fields: [
         { name: "NAME", alias: "Name", type: "string" },
@@ -177,8 +206,8 @@ export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
 };
 
 export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
-    title: "Census Tract Population Density",
-    dataUrl: "/tracts",
+    title: TRACTS_LAYER_TTL,
+    dataUrl: TRACTS_LAYER_URL,
     geometryType: "polygon",
     fields: [
         { name: "GEOID", alias: "GEOID", type: "string" },
@@ -218,8 +247,8 @@ export const cyclingToGraphics = (data: any) => {
 };
 
 export const LAYER_CYCLING: FeatureLayerMeta = {
-    title: "Cycling Paths",
-    dataUrl: "/bikes",
+    title: CYCLE_LAYER_TTL,
+    dataUrl: CYCLE_LAYER_URL,
     geometryType: "polyline",
     fields: [
         { name: "ObjectID", alias: "ObjectID", type: "oid" },
@@ -229,9 +258,9 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
     ],
     renderer: new SimpleRenderer({
         symbol: new SimpleLineSymbol({
-            width: CYCLE_PATH_SIZE,
+            width: CYCLE_LAYER_SIZE,
             style: "solid",
-            color: CYCLE_PATH_COLOR,
+            color: CYCLE_LAYER_COLOR,
         }),
     }),
     popupTemplate: {

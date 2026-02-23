@@ -22,6 +22,8 @@ out skel qt;
 
 */
 
+// PARKS: // nwr["leisure"="park"](37.9,-91,39.5,-89);
+
 type GeoBikeData struct {
 	Features []GeoBikeFeature `json:"features"`
 }
