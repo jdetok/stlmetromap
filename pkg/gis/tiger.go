@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
+	"os"
 
 	"github.com/jdetok/stlmetromap/pkg/get"
+	"github.com/jdetok/stlmetromap/pkg/util"
 )
 
 const (
@@ -44,8 +47,47 @@ type TgrAttributes struct {
 	POP_SQMI   string
 }
 
-func (t *TGRData) Get() error {
-	return nil
+func (t *TGRData) Get(ctx context.Context, src string, isURL bool) error {
+	var err error
+	var byts []byte
+	if isURL {
+		resp, rErr := get.Get(get.NewGetRequest(ctx, src, true, 1, 3))
+		if rErr != nil {
+			return rErr
+		}
+		defer resp.Body.Close()
+		byts, err = io.ReadAll(resp.Body)
+
+	} else {
+		byts, err = os.ReadFile(src)
+	}
+	if err != nil {
+		return err
+	}
+	// no errors reading data, unmarshal
+
+	return json.Unmarshal(byts, t)
+}
+
+func NewTigerCounties(serverNum int, useWhere bool) *util.DataSource {
+	var where string
+	if useWhere {
+		where = TIGER_WHERE
+	} else {
+		where = "1=1"
+	}
+
+	return util.NewDataSourceFromURL(buildTigerURL(TIGER, where, serverNum), &TGRData{})
+}
+
+func buildTigerURL(base, where string, serverNum int) string {
+	return fmt.Sprintf("%s%d/query?%s", base, serverNum, url.Values{
+		"f":              {"json"},
+		"outFields":      {"*"},
+		"outSR":          {"4326"},
+		"where":          {where},
+		"returnGeometry": {"true"},
+	}.Encode())
 }
 
 func FetchTgrData(ctx context.Context, serverNum int, useWhere bool, useGeo bool) (*TGRData, error) {
@@ -58,14 +100,7 @@ func FetchTgrData(ctx context.Context, serverNum int, useWhere bool, useGeo bool
 
 	// urlVals := url.Values{}
 
-	url := fmt.Sprintf("%s%d/query?%s", TIGER, serverNum, url.Values{
-		"f":              {"json"},
-		"outFields":      {"*"},
-		"outSR":          {"4326"},
-		"where":          {where},
-		"returnGeometry": {"true"},
-	}.Encode())
-
+	url := buildTigerURL(TIGER, where, serverNum)
 	fmt.Println("querying:", url)
 
 	resp, err := get.Get(get.NewGetRequest(ctx, url, true, 1, 3))
