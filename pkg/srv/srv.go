@@ -62,7 +62,7 @@ func SetupServer(ctx context.Context, static *gtfs.Static, stops *gis.StopMarker
 	})
 	http.HandleFunc("/bikes", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(layers.Bikes)
+		json.NewEncoder(w).Encode(layers.Bikes.Data)
 	})
 	// http.HandleFunc("/rails", func(w http.ResponseWriter, r *http.Request) {
 	// 	w.Header().Set("Content-Type", "application/json")

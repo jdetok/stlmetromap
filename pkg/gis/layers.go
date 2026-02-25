@@ -13,7 +13,7 @@ type DataLayers struct {
 	Counties       *util.DataSource
 	Tracts         *util.DataSource
 	ACS            *util.DataSource
-	Bikes          *GeoBikeData
+	Bikes          *util.DataSource
 	TractsPoplDens *GeoTractFeatures
 }
 
@@ -31,7 +31,8 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 	counties := NewTigerGeoData(82, true)
 	tracts := NewTigerGeoData(8, true)
 	acs := util.NewDataSourceFromURL("acs", &ACSData{})
-	bikes := &GeoBikeData{}
+	bikes := util.NewDataSourceFromFile(CYCLE_FILE, &GeoBikeData{})
+	// bikes := &GeoBikeData{}
 
 	g.Go(func() error {
 		if err := counties.Data.Get(ctx, counties.URL, true); err != nil {
@@ -54,9 +55,9 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 		return nil
 	})
 	g.Go(func() error {
-		var err error
-		bikes, err = LoadBikePathFile(CYCLE_FILE)
-		if err != nil {
+		// var err error
+		// bikes, err = LoadBikePathFile(CYCLE_FILE)
+		if err := bikes.Data.Get(ctx, bikes.Fname, false); err != nil {
 			return fmt.Errorf("failed to fetch bikes: %w", err)
 		}
 		return nil

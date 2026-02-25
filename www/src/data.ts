@@ -59,11 +59,6 @@ const CYCLE_LAYER_URL = "/bikes";
 const CYCLE_LAYER_COLOR = [208, 148, 75, 0.7];
 const CYCLE_LAYER_SIZE = .8;
 
-// const LAYER_RAILS_TTL = "Railroads";
-// const LAYER_RAILS_URL = "/rails";
-// const LAYER_RAIL_COLOR = "pink";
-// const LAYER_RAIL_SIZE = 2;
-
 // Labels used in bus/metro stop popups
 const BUS = 'Bus';
 const ML = 'Light Rail';
@@ -110,6 +105,21 @@ const stopsToGraphics = (data: StopMarkers): Graphic[] => {
             typ: s.typ,
             routes: s.routes.map(r => `${r.name}-${r.nameLong}`).join(", "),
         }
+    }));
+};
+// build cycling lines graphics lines
+const cyclingToGraphics = (data: any): Graphic[] => {
+    // return data.features.filter((f: any) => f?.properties?.name).map((f: any, i: number) => new Graphic({
+    return data.features.map((f: any, i: number) => new Graphic({
+        geometry: new Polyline({
+            paths: [f.geometry.coordinates], // wrap once
+            spatialReference: { wkid: STLWKID },
+        }),
+        attributes: {
+            ObjectID: i + 1,
+            name: f.properties.name ?? 'Non-named Cycling Path',
+            surface: f.properties.surface ?? '',
+        },
     }));
 };
 
@@ -238,21 +248,6 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
             ]
         }]
     },
-};
-
-const cyclingToGraphics = (data: any): Graphic[] => {
-    // return data.features.filter((f: any) => f?.properties?.name).map((f: any, i: number) => new Graphic({
-    return data.features.map((f: any, i: number) => new Graphic({
-        geometry: new Polyline({
-            paths: [f.geometry.coordinates], // wrap once
-            spatialReference: { wkid: STLWKID },
-        }),
-        attributes: {
-            ObjectID: i + 1,
-            name: f.properties.name ?? 'Non-named Cycling Path',
-            surface: f.properties.surface ?? '',
-        },
-    }));
 };
 
 export const LAYER_CYCLING: FeatureLayerMeta = {

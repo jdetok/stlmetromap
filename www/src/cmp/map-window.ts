@@ -10,7 +10,6 @@ import { FeatureLayerMeta } from "../types.js";
 import {
     STLCOORDS, STLWKID, BASEMAP, LAYER_BUS_STOPS, LAYER_ML_STOPS, LAYER_CENSUS_COUNTIES, LAYER_CENSUS_TRACTS,
     LAYER_CYCLING,
-    // LAYER_RAILS
 } from "../data.js";
 
 export const TAG = 'map-window';
@@ -62,7 +61,6 @@ export class MapWindow extends HTMLElement {
         this.layers = [
             LAYER_CENSUS_COUNTIES,
             LAYER_CENSUS_TRACTS,
-            // LAYER_RAILS,
             LAYER_CYCLING,
             LAYER_BUS_STOPS,
             LAYER_ML_STOPS,
