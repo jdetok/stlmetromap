@@ -105,6 +105,7 @@ export class MapWindow extends HTMLElement {
             if (meta.dataUrl) {
                 const res = await fetch(meta.dataUrl);
                 const data = await res.json();
+                console.log(data);
 
                 // build graphics layer if specified
                 if (meta.toGraphics) {

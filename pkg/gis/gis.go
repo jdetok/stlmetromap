@@ -3,13 +3,14 @@ package gis
 import (
 	"context"
 	"fmt"
-	"maps"
 	"math"
 	"strconv"
 
 	"github.com/jdetok/stlmetromap/pkg/util"
 	"golang.org/x/sync/errgroup"
 )
+
+const CYCLE_FILE = "data/cycle_osm.geojson"
 
 // each layer must be available to http server at setup time to serve to frontend
 type Layers struct {
@@ -38,21 +39,7 @@ func BuildLayers(ctx context.Context) (*Layers, error) {
 	rails := &GeoData{}
 	poplDens := GeoIDPopl{}
 	bikes := &GeoBikeData{}
-
-	g.Go(func() error {
-		mo, err := FetchACSPopulation(ctx, "29", []string{"099", "071", "183", "189", "219", "510"})
-		if err != nil {
-			return fmt.Errorf("failed to fetch MO population: %w", err)
-		}
-		il, err := FetchACSPopulation(ctx, "17", []string{"005", "013", "027", "083", "117", "119", "133", "163"})
-		if err != nil {
-			return fmt.Errorf("failed to fetch IL population: %w", err)
-		}
-		// add all illinois to mo
-		maps.Copy(mo, il)
-		poplDens = mo
-		return nil
-	})
+	acs := &ACSData{}
 
 	g.Go(func() error {
 		var err error
@@ -81,6 +68,23 @@ func BuildLayers(ctx context.Context) (*Layers, error) {
 		return nil
 	})
 
+	g.Go(func() error {
+		var err error
+		acs, err = GetACSData(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get new acs data: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		var err error
+		bikes, err = LoadBikePathFile(CYCLE_FILE)
+		if err != nil {
+			return fmt.Errorf("failed to fetch bikes: %w", err)
+		}
+		return nil
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
@@ -89,28 +93,11 @@ func BuildLayers(ctx context.Context) (*Layers, error) {
 		Counties:       counties,
 		Tracts:         tracts,
 		PoplDens:       poplDens,
-		TractsPoplDens: JoinPopulation(tracts, poplDens),
+		TractsPoplDens: DemographicsForTracts(tracts, acs),
 		Bikes:          bikes,
 		Railroad:       rails,
+		ACS:            acs,
 	}, nil
-}
-
-type GeoPoplTract struct {
-	GeoID    string  `json:"geoid"`
-	Tract    string  `json:"tract"`
-	Area     string  `json:"area"`
-	Popl     float64 `json:"popl"`
-	PoplSqMi float64 `json:"poplsqmi"`
-}
-
-func NewGeoPoplTract(gId, tract, area string, popl float64) *GeoPoplTract {
-	return &GeoPoplTract{
-		GeoID:    gId,
-		Tract:    tract,
-		Area:     area,
-		Popl:     popl,
-		PoplSqMi: getPoplDensity(area, popl),
-	}
 }
 
 func getPoplDensity(area string, popl float64) float64 {
@@ -169,13 +156,16 @@ type Attr struct {
 	POP_SQMI   string
 }
 
-// join tracts with TIGER landarea data and ACS population data ot make population density
-func JoinPopulation(geo *GeoData, pop GeoIDPopl) *GeoTractFeatures {
+func DemographicsForTracts(geo *GeoData, acs *ACSData) *GeoTractFeatures {
 	feats := &GeoTractFeatures{}
 	for i := range geo.Features {
 		f := geo.Features[i]
-		popl := pop[f.Attributes.GEOID]
+		acsObj := acs.Data["1400000US"+f.Attributes.GEOID]
+		popl, _ := strconv.ParseFloat(acsObj["B01003_001E"], 64)
 		area := f.Attributes.AREALAND
+		// if i == 0 {
+		// 	fmt.Println(acsObj)
+		// }
 		feats.Features = append(feats.Features, GeoPoplFeature{
 			Geometry: f.Geometry,
 			Attributes: map[string]any{
@@ -184,6 +174,8 @@ func JoinPopulation(geo *GeoData, pop GeoIDPopl) *GeoTractFeatures {
 				"AREALAND": area,
 				"POPL":     popl,
 				"POPLSQMI": getPoplDensity(area, popl),
+				"INCOME":   acsObj["B06011_001E"],
+				"AGE":      acsObj["B01002_001E"],
 			},
 		})
 	}

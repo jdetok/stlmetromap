@@ -219,6 +219,8 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
         { name: "TRACT", alias: "Tract", type: "string" },
         { name: "POPL", alias: "Population", type: "double" },
         { name: "POPLSQMI", alias: "Persons/Square Mile", type: "double" },
+        { name: "INCOME", alias: "Median Income", type: "string" },
+        { name: "AGE", alias: "Median Age", type: "string" },
     ],
     renderer: new ClassBreaksRenderer({
         field: "POPLSQMI",
@@ -230,7 +232,9 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
             type: "fields",
             fieldInfos: [
                 { fieldName: "POPL", label: "Population: " },
-                { fieldName: "POPLSQMI", label: "Population/Mi^2: " },
+                { fieldName: "POPLSQMI", label: "Persons/Square Mile: " },
+                { fieldName: "INCOME", label: "Median Income Last 12 Months: " },
+                { fieldName: "AGE", label: "Median Age: " },
             ]
         }]
     },
