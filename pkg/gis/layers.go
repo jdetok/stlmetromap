@@ -3,6 +3,7 @@ package gis
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jdetok/stlmetromap/pkg/util"
 	"golang.org/x/sync/errgroup"
@@ -37,10 +38,18 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 	stops := util.NewDataSourceFromURL("stops", "stops", &StopMarkers{})
 
 	g.Go(func() error {
-		if err := stops.Data.Get(ctx, stops.URL, true); err != nil {
-			return fmt.Errorf("failed to fetch metro stops: %w", err)
+		var err error
+		attempts := 3
+		for i := range attempts {
+			if err = stops.Data.Get(ctx, stops.URL, true); err == nil {
+				return nil
+			}
+			if i < attempts-1 {
+				time.Sleep(2 * time.Second)
+			}
+
 		}
-		return nil
+		return fmt.Errorf("failed to fetch metro stops: %w", err)
 	})
 
 	g.Go(func() error {
@@ -87,7 +96,7 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 		}
 	}
 
-	tractsPoplDens := DemographicsForTracts(tgrData, acsData, stopMarkers.Stops)
+	tractsPoplDens := DemographicsForTracts(tgrData, acsData, stopMarkers)
 
 	// if err := StopsInTracts(tractsPoplDens.Features, stopMarkers.Stops); err != nil {
 	// 	return nil, err

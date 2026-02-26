@@ -246,6 +246,8 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
         { name: "INC_BELOW_POV", alias: "Persons Below Poverty", type: "double" },
         { name: "PCT_INC_BELOW_POV", alias: "% Persons Below Poverty", type: "string" },
         { name: "STOPS_IN_TRACT", alias: "Transit Stops in Tract", type: "double" },
+        { name: "BUS_STOPS_IN_TRACT", alias: "Bus Stops in Tract", type: "double" },
+        { name: "ML_STOPS_IN_TRACT", alias: "Light Rail Stops in Tract", type: "double" },
         
     ],
     renderer: new ClassBreaksRenderer({
@@ -268,6 +270,8 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
                 { fieldName: "HAS_COMP", label: "Persons with access to a computer:" },
                 { fieldName: "PCT_HAS_COMP", label: "% with access to a computer:" },
                 { fieldName: "STOPS_IN_TRACT", label: "Transit Stops in Tract" },
+                { fieldName: "BUS_STOPS_IN_TRACT", label: "Bus Stops in Tract" } ,
+                { fieldName: "ML_STOPS_IN_TRACT", label: "Light Rail Stops in Tract" } ,
             ]
         }]
     },

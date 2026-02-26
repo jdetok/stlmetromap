@@ -23,6 +23,7 @@ func (t *TractNode) Bounds() rtreego.Rect {
 	return t.Rect
 }
 
+// wrapper for an Rtree: convert a compatible struct to TractNode to make a slice of polygon features indexable
 type Idx struct {
 	tree *rtreego.Rtree
 }
@@ -31,9 +32,6 @@ func NewIdx(tracts []TractNode) (*Idx, error) {
 	tree := rtreego.NewTree(2, 25, 50)
 	for i := range tracts {
 		t := &tracts[i]
-		// if t.Rect == nil {
-		// 	return nil, fmt.Errorf("tract Rect is nil")
-		// }
 		tree.Insert(t)
 	}
 	return &Idx{tree: tree}, nil
@@ -146,7 +144,7 @@ func pointInRing(p Coordinates, ring [][]float64) bool {
 	inside := false
 	j := n - 1
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		xi := ring[i][0]
 		yi := ring[i][1]
 		xj := ring[j][0]
@@ -167,7 +165,7 @@ func isClockwise(ring [][]float64) bool {
 	if n < 3 {
 		return true
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		j := (i + 1) % n
 		xi := ring[i][0]
 		yi := ring[i][1]

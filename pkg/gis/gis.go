@@ -83,35 +83,41 @@ func StopsPerTract(stops []StopMarker) map[string]int {
 }
 
 // Combine geographic data from TIGER with census data from ACS
-func DemographicsForTracts(geo *TGRData, acs *ACSData, stops []StopMarker) *GeoTractFeatures {
+func DemographicsForTracts(geo *TGRData, acs *ACSData, stops *StopMarkers) *GeoTractFeatures {
 	feats := &GeoTractFeatures{}
 	for i := range geo.Features {
 		f := geo.Features[i]
 
-		stopsPerTract := StopsPerTract(stops)
+		stopsPerTract := StopsPerTract(stops.Stops)
+		busStopsPerTract := StopsPerTract(stops.BusStops)
+		mlStopsPerTract := StopsPerTract(stops.MlStops)
+
 		// ACS appends the US code= for the GEOID, TIGER does not
 		geoId := f.Attributes.GEOID
 
-		acsObj := acs.Data["1400000US"+geoId]
+		acsGeoId := "1400000US" + geoId
+		acsObj := acs.Data[acsGeoId]
 		popl, _ := strconv.ParseFloat(acsObj["B01003_001E"], 64)
 		area := f.Attributes.AREALAND
 		feats.Features = append(feats.Features, GeoFeature{
 			Geometry: f.Geometry,
 			Attributes: map[string]any{
-				"GEOID":             geoId,
-				"STOPS_IN_TRACT":    stopsPerTract[geoId],
-				"TRACT":             f.Attributes.TRACT,
-				"COUNTY":            f.Attributes.COUNTY,
-				"AREALAND":          area,
-				"POPL":              popl,
-				"POPLSQMI":          getPoplDensity(area, popl),
-				"INCOME":            acsObj["B06011_001E"],
-				"AGE":               acsObj["B01002_001E"],
-				"MGRENT":            acsObj["B25064_001E"],
-				"INC_BELOW_POV":     acsObj["B17001_002E"],
-				"HAS_COMP":          acsObj["B28008_002E"],
-				"PCT_HAS_COMP":      divideStringInts(acsObj["B28008_002E"], acsObj["B01003_001E"]),
-				"PCT_INC_BELOW_POV": divideStringInts(acsObj["B17001_002E"], acsObj["B01003_001E"]),
+				"GEOID":              geoId,
+				"STOPS_IN_TRACT":     stopsPerTract[geoId],
+				"BUS_STOPS_IN_TRACT": busStopsPerTract[geoId],
+				"ML_STOPS_IN_TRACT":  mlStopsPerTract[geoId],
+				"TRACT":              f.Attributes.TRACT,
+				"COUNTY":             f.Attributes.COUNTY,
+				"AREALAND":           area,
+				"POPL":               popl,
+				"POPLSQMI":           getPoplDensity(area, popl),
+				"INCOME":             acsObj["B06011_001E"],
+				"AGE":                acsObj["B01002_001E"],
+				"MGRENT":             acsObj["B25064_001E"],
+				"INC_BELOW_POV":      acsObj["B17001_002E"],
+				"HAS_COMP":           acsObj["B28008_002E"],
+				"PCT_HAS_COMP":       divideStringInts(acsObj["B28008_002E"], acsObj["B01003_001E"]),
+				"PCT_INC_BELOW_POV":  divideStringInts(acsObj["B17001_002E"], acsObj["B01003_001E"]),
 			},
 		})
 	}
