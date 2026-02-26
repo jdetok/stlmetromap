@@ -16,20 +16,90 @@ func init() {
 	util.RegisterAppData("bikes", func() util.AppData { return &GeoBikeData{} })
 }
 
+type GeoAttrs map[string]any
+
+type GeoFeature struct {
+	Geometry   Geo      `json:"geometry"`
+	Attributes GeoAttrs `json:"attributes"`
+}
+
+type GeoTractFeatures struct {
+	Features []GeoFeature `json:"features"`
+}
+
+type Geo struct {
+	Rings [][][]float64 `json:"rings"`
+	Paths [][][]float64 `json:"paths"`
+}
+
+func StopsInTracts(tracts []GeoFeature, stops []StopMarker) error {
+	idxTracts := []TractNode{}
+	for _, t := range tracts {
+		rect, err := ComputeRectFromRings(t.Geometry.Rings)
+		if err != nil {
+			continue
+		}
+		idxTracts = append(idxTracts, TractNode{
+			GEOID: t.Attributes["GEOID"].(string),
+			Rings: t.Geometry.Rings,
+			Rect:  rect,
+		})
+	}
+	idx, err := NewIdx(idxTracts)
+	if err != nil {
+		return err
+	}
+
+	for i := range stops {
+		lon := stops[i].Coords.Lo
+		lat := stops[i].Coords.La
+		geoid, ok := idx.PointInTract(lon, lat)
+		if ok {
+			stops[i].TractGEOID = geoid
+		}
+	}
+	return nil
+}
+
+func CountStopsInTract(geoId string, stops []StopMarker) int {
+	counter := 0
+	for _, s := range stops {
+		if s.TractGEOID == geoId {
+			counter++
+		}
+	}
+	return counter
+}
+
+func StopsPerTract(stops []StopMarker) map[string]int {
+	m := map[string]int{}
+	for _, s := range stops {
+		if s.TractGEOID == "" {
+			continue
+		}
+		m[s.TractGEOID]++
+	}
+	return m
+}
+
 // Combine geographic data from TIGER with census data from ACS
-func DemographicsForTracts(geo *TGRData, acs *ACSData) *GeoTractFeatures {
+func DemographicsForTracts(geo *TGRData, acs *ACSData, stops []StopMarker) *GeoTractFeatures {
 	feats := &GeoTractFeatures{}
 	for i := range geo.Features {
 		f := geo.Features[i]
 
+		stopsPerTract := StopsPerTract(stops)
 		// ACS appends the US code= for the GEOID, TIGER does not
-		acsObj := acs.Data["1400000US"+f.Attributes.GEOID]
+		geoId := f.Attributes.GEOID
+
+		acsObj := acs.Data["1400000US"+geoId]
 		popl, _ := strconv.ParseFloat(acsObj["B01003_001E"], 64)
 		area := f.Attributes.AREALAND
-		feats.Features = append(feats.Features, GeoPoplFeature{
+		feats.Features = append(feats.Features, GeoFeature{
 			Geometry: f.Geometry,
 			Attributes: map[string]any{
-				"GEOID":             f.Attributes.GEOID,
+				"GEOID":             geoId,
+				"STOPS_IN_TRACT":    stopsPerTract[geoId],
 				"TRACT":             f.Attributes.TRACT,
 				"COUNTY":            f.Attributes.COUNTY,
 				"AREALAND":          area,
@@ -42,6 +112,20 @@ func DemographicsForTracts(geo *TGRData, acs *ACSData) *GeoTractFeatures {
 				"HAS_COMP":          acsObj["B28008_002E"],
 				"PCT_HAS_COMP":      divideStringInts(acsObj["B28008_002E"], acsObj["B01003_001E"]),
 				"PCT_INC_BELOW_POV": divideStringInts(acsObj["B17001_002E"], acsObj["B01003_001E"]),
+			},
+		})
+	}
+	return feats
+}
+
+func GeoFeaturesFromTGR(geo *TGRData) []GeoFeature {
+	feats := make([]GeoFeature, 0, len(geo.Features))
+	for i := range geo.Features {
+		f := geo.Features[i]
+		feats = append(feats, GeoFeature{
+			Geometry: f.Geometry,
+			Attributes: GeoAttrs{
+				"GEOID": f.Attributes.GEOID,
 			},
 		})
 	}
@@ -63,20 +147,4 @@ func divideStringInts(s1, s2 string) float64 {
 		return 0
 	}
 	return math.Round(f1/f2*10000) / 100
-}
-
-type GeoAttrs map[string]any
-
-type GeoPoplFeature struct {
-	Geometry   Geo      `json:"geometry"`
-	Attributes GeoAttrs `json:"attributes"`
-}
-
-type GeoTractFeatures struct {
-	Features []GeoPoplFeature `json:"features"`
-}
-
-type Geo struct {
-	Rings [][][]float64 `json:"rings"`
-	Paths [][][]float64 `json:"paths"`
 }

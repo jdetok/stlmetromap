@@ -33,22 +33,18 @@ type MlStopMarkers struct {
 }
 
 type StopMarker struct {
-	ID       string      `json:"id"`
-	Name     string      `json:"name"`
-	StopType string      `json:"typ"`
-	Routes   []Route     `json:"routes"`
-	Coords   Coordiantes `json:"yx"`
+	ID         string      `json:"id"`
+	Name       string      `json:"name"`
+	StopType   string      `json:"typ"`
+	Routes     []Route     `json:"routes"`
+	Coords     Coordinates `json:"yx"`
+	TractGEOID string      `json:"tractGeoid,omitempty"`
 }
 
 type Route struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	NameLong string `json:"nameLong"`
-}
-
-type Coordiantes struct {
-	La float64 `json:"latitude"`
-	Lo float64 `json:"longitude"`
 }
 
 type Routes map[*gtfs.Stop]map[*gtfs.Route]struct{}
@@ -109,7 +105,7 @@ func (r Routes) BuildStops() *StopMarkers {
 		sm := StopMarker{
 			ID:   k.Id,
 			Name: k.Name,
-			Coords: Coordiantes{
+			Coords: Coordinates{
 				La: *k.Latitude,
 				Lo: *k.Longitude,
 			},

@@ -74,6 +74,25 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 		return nil, err
 	}
 
+	stopMarkers := stops.Data.(*StopMarkers)
+	tgrData := tracts.Data.(*TGRData)
+	acsData := acs.Data.(*ACSData)
+
+	tractGeoFeatures := GeoFeaturesFromTGR(tgrData)
+
+	stopGroups := [][]StopMarker{stopMarkers.Stops, stopMarkers.BusStops, stopMarkers.MlStops}
+	for i := range stopGroups {
+		if err := StopsInTracts(tractGeoFeatures, stopGroups[i]); err != nil {
+			return nil, err
+		}
+	}
+
+	tractsPoplDens := DemographicsForTracts(tgrData, acsData, stopMarkers.Stops)
+
+	// if err := StopsInTracts(tractsPoplDens.Features, stopMarkers.Stops); err != nil {
+	// 	return nil, err
+	// }
+
 	return &DataLayers{
 		Outfile:        fname,
 		Counties:       counties,
@@ -81,6 +100,6 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 		Bikes:          bikes,
 		ACS:            acs,
 		Metro:          stops,
-		TractsPoplDens: DemographicsForTracts(tracts.Data.(*TGRData), acs.Data.(*ACSData)),
+		TractsPoplDens: tractsPoplDens,
 	}, nil
 }

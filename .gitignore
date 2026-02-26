@@ -7,3 +7,4 @@ package-lock.json
 www/js/**/*.js*
 www/js/**/*.css*
 data/*json
+*.pdf

@@ -75,6 +75,7 @@ const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "typ", alias: "Service Type", type: "string" },
     { name: "type", alias: "Stop Type", type: "string" },
     { name: "routes", alias: "Routes Served", type: "string" },
+    { name: "tractGeoid", alias: "Tract GEOID", type: "string" },
 ];
 
 // create choropleth levels for the array of min/max/color
@@ -104,6 +105,7 @@ const stopsToGraphics = (data: StopMarkers): Graphic[] => {
             type: routeTypes[s.typ],
             typ: s.typ,
             routes: s.routes.map(r => `${r.name}-${r.nameLong}`).join(", "),
+            tractGeoid: s.tractGeoid,
         }
     }));
 };
@@ -137,7 +139,10 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
         content: [
             {
                 type: "fields",
-                fieldInfos: [ { fieldName: "routes", label: "Routes Served:" } ],
+                fieldInfos: [
+                    { fieldName: "routes", label: "Routes Served:" },
+                    { fieldName: "tractGeoid", label: "Tract GeoID:" },
+                ],
             }
         ]
     },
@@ -184,7 +189,10 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
         content: [
             {
                 type: "fields",
-                fieldInfos: [ { fieldName: "routes", label: "Routes Served:" } ],
+                fieldInfos: [
+                    { fieldName: "routes", label: "Routes Served:" },
+                    { fieldName: "tractGeoid", label: "Tract GeoID:" },
+                ]
             }
         ]
     },
@@ -237,6 +245,7 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
         { name: "MGRENT", alias: "Median Gross Rent", type: "double" },
         { name: "INC_BELOW_POV", alias: "Persons Below Poverty", type: "double" },
         { name: "PCT_INC_BELOW_POV", alias: "% Persons Below Poverty", type: "string" },
+        { name: "STOPS_IN_TRACT", alias: "Transit Stops in Tract", type: "double" },
         
     ],
     renderer: new ClassBreaksRenderer({
@@ -258,6 +267,7 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
                 { fieldName: "PCT_INC_BELOW_POV", label: "% Persons Below Poverty:" },
                 { fieldName: "HAS_COMP", label: "Persons with access to a computer:" },
                 { fieldName: "PCT_HAS_COMP", label: "% with access to a computer:" },
+                { fieldName: "STOPS_IN_TRACT", label: "Transit Stops in Tract" },
             ]
         }]
     },
