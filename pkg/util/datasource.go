@@ -52,12 +52,14 @@ func (d *DataSource) ReadDataSource(ctx context.Context) error {
 	return nil
 }
 
+// have to register the kinds to determine the type assertion fn
 var appDataRegistry = map[string]func() AppData{}
 
 func RegisterAppData(kind string, ctor func() AppData) {
 	appDataRegistry[kind] = ctor
 }
 
+// must overwrite json marshal/unmarshal to allow the metro stops struct to be read from the file
 func (d *DataSource) MarshalJSON() ([]byte, error) {
 	type Alias DataSource
 	var raw json.RawMessage
