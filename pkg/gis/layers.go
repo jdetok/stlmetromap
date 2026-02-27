@@ -27,6 +27,38 @@ func (l *DataLayers) DataFromJSONFile() error {
 	return util.FillStructFromJSONFile(l, l.Outfile)
 }
 
+type BuildMode struct {
+	Get         bool
+	Save        bool
+	PersistFile string
+}
+
+func BuildLayers(ctx context.Context, b BuildMode) (*DataLayers, error) {
+	var err error
+	layers := &DataLayers{Outfile: b.PersistFile}
+
+	if b.Get || (!b.Get && !util.FileExists(b.PersistFile)) {
+		layers, err = GetDataLayers(ctx, b.PersistFile)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		if !util.FileExists(b.PersistFile) {
+			return nil, err
+		}
+		if err := layers.DataFromJSONFile(); err != nil {
+			return nil, err
+		}
+	}
+
+	if b.Save {
+		if err := layers.DataToJSONFile(); err != nil {
+			return nil, err
+		}
+	}
+	return layers, nil
+}
+
 // Builds, aggregates, and joins all data to be served as data layers
 func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 

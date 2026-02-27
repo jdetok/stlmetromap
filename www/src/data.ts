@@ -1,4 +1,4 @@
-import { RouteType, cplethEls } from './types.js'
+import { RouteType } from './types.js'
 
 export const BASEMAP = 'dark-gray';
 export const STLWKID = 4326;

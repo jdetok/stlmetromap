@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/jdetok/stlmetromap/pkg/gis"
 	"github.com/jdetok/stlmetromap/pkg/util"
@@ -18,61 +17,68 @@ const (
 	CYCLE_FILE = "data/cycle_osm.geojson"
 )
 
-func SetupServer(ctx context.Context) error {
+func BuildLayers(ctx context.Context, dataFile string) (*gis.DataLayers, error) {
 	var err error
 	layers := &gis.DataLayers{Outfile: DATA_FILE}
 
 	if GET_DATA || (!GET_DATA && !util.FileExists(DATA_FILE)) {
 		layers, err = gis.GetDataLayers(ctx, DATA_FILE)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		if !util.FileExists(DATA_FILE) {
-			return err
+			return nil, err
 		}
 		if err := layers.DataFromJSONFile(); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if SAVE_DATA {
 		if err := layers.DataToJSONFile(); err != nil {
-			return err
+			return nil, err
 		}
 	}
+	return layers, nil
+}
 
-	http.HandleFunc("/counties", func(w http.ResponseWriter, r *http.Request) {
+func NewMux(layers *gis.DataLayers) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/counties", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(layers.CountiesPoplDens)
 	})
-	http.HandleFunc("/tracts", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/tracts", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(layers.TractsPoplDens)
 	})
 
-	http.HandleFunc("/stops", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/stops", func(w http.ResponseWriter, r *http.Request) {
 		HandleMetroStops(w, r, &gis.StopMarkers{Stops: layers.Metro.Data.(*gis.StopMarkers).Stops})
 	})
-	http.HandleFunc("/stops/bus", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/stops/bus", func(w http.ResponseWriter, r *http.Request) {
 		HandleMetroStops(w, r, &gis.StopMarkers{Stops: layers.Metro.Data.(*gis.StopMarkers).BusStops})
 	})
-	http.HandleFunc("/stops/ml", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/stops/ml", func(w http.ResponseWriter, r *http.Request) {
 		HandleMetroStops(w, r, &gis.StopMarkers{Stops: layers.Metro.Data.(*gis.StopMarkers).MlStops})
 	})
-	http.HandleFunc("/bikes", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/bikes", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(layers.Bikes.Data)
 	})
-	http.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "www/about.html")
 	})
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("www/js"))))
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("www/css"))))
-	http.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("www"))))
+	mux.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("www/js"))))
+	mux.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("www/css"))))
+	mux.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("www"))))
+	return mux
+}
 
-	fmt.Printf("listening at %v...\n", time.Now())
-	return http.ListenAndServe(":3333", nil)
+func Serve(addr string, handler http.Handler) error {
+	fmt.Printf("listening at %v...\n", addr)
+	return http.ListenAndServe(addr, handler)
 }
 
 func HandleMetroStops(w http.ResponseWriter, r *http.Request, stops *gis.StopMarkers) {
