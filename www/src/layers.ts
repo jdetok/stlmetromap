@@ -9,44 +9,38 @@ import Graphic from "@arcgis/core/Graphic";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
 import { FeatureLayerMeta, StopMarkers, StopMarker, cplethEls } from "./types.js";
 import {
-    STLWKID,
-    routeTypes,
-    POPLDENS_ALPHA,
-    BUS_LAYER_TTL,
-    BUS_LAYER_URL,
-    BUS_STOP_A_COLOR,
-    BUS_STOP_NA_COLOR,
-    BUS_STOP_SIZE,
-    MLB_STOP_COLOR,
-    MLC_STOP_COLOR,
-    MLR_STOP_COLOR,
-    ML_LAYER_TTL,
-    ML_LAYER_URL,
-    ML_STOP_SIZE,
-    STOP_FIELDS,
-    TRACTS_LAYER_TTL,
-    TRACTS_LAYER_URL,
-    CYCLE_LAYER_ASPHALT_COLOR,
-    CYCLE_LAYER_GRAVEL_COLOR,
-    CYCLE_LAYER_OTHER_COLOR,
-    CYCLE_LAYER_PAVED_COLOR,
-    CYCLE_LAYER_SIZE,
-    CYCLE_LAYER_TTL,
-    CYCLE_LAYER_URL,
-    COUNTIES_INNER_COLOR,
-    COUNTIES_LAYER_TTL,
-    COUNTIES_LAYER_URL,
-    COUNTIES_OUTLINE_COLOR,
-    COUNTIES_OUTLINE_SIZE,
-    POPLDENS_CHOROPLETH_LEVELS,
-    COUNTIES_FIELDINFOS,
-    COUNTIES_FIELDS,
-    TRACTS_FIELDINFOS,
-    TRACTS_FIELDS,
-    CYCLE_LAYER_CONCRETE_COLOR,
-    CYCLE_LAYER_UNPAVED_COLOR,
-    CYCLING_FIELDS,
+    STLWKID, routeTypes, TRACTS_LAYER_URL, TRACTS_LAYER_TTL, TRACTS_FIELDS, TRACTS_FIELDINFOS,
+    COUNTIES_LAYER_URL, COUNTIES_LAYER_TTL, COUNTIES_FIELDS, COUNTIES_FIELDINFOS,
+    ML_LAYER_URL, ML_LAYER_TTL, STOP_FIELDS, BUS_LAYER_TTL, BUS_LAYER_URL,
+    CYCLE_LAYER_URL, CYCLE_LAYER_TTL, CYCLING_FIELDS
 } from "./data.js";
+
+const POPLDENS_ALPHA = 0.15;
+const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
+    [0, 2500, [94, 150, 98]],
+    [2500, 5000, [17, 200, 152]],
+    [5000, 7500, [0, 210, 255]],
+    [7500, 10000, [44, 60, 255]],
+    [10000, 99999, [50, 1, 63]],
+];
+const COUNTIES_OUTLINE_COLOR = [250, 250, 250, 0.5];
+const COUNTIES_OUTLINE_SIZE = 1.5;
+const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
+
+const BUS_STOP_A_COLOR = 'mediumseagreen';
+const BUS_STOP_NA_COLOR = [180, 110, 200, 0.7];
+const BUS_STOP_SIZE = 4;
+
+const ML_STOP_SIZE = 10;
+const MLB_STOP_COLOR = 'blue';
+const MLR_STOP_COLOR = 'red';
+const MLC_STOP_COLOR = 'purple';
+
+const CYCLE_LAYER_GRAVEL_COLOR = [180, 80, 170, 0.7];
+const CYCLE_LAYER_ASPHALT_COLOR = [208, 148, 75, 0.7];
+const CYCLE_LAYER_OTHER_COLOR = [75, 108, 208, 0.7];
+const CYCLE_LAYER_UNPAVED_COLOR = [158, 145, 125, 0.7];
+const CYCLE_LAYER_SIZE = .8;
 
 // create choropleth levels for the array of min/max/color
 const newChoroplethLevel = (c: cplethEls) => {
@@ -83,24 +77,6 @@ const stopsToGraphics = (data: StopMarkers): Graphic[] => {
                     routes: s.routes.map((r) => `${r.name}-${r.nameLong}`).join(", "),
                     tractGeoid: s.tractGeoid,
                     whlChr: s.whlChr,
-                },
-            }),
-    );
-};
-// build cycling lines graphics lines
-const cyclingToGraphics = (data: any): Graphic[] => {
-    // return data.features.filter((f: any) => f?.properties?.name).map((f: any, i: number) => new Graphic({
-    return data.features.map(
-        (f: any, i: number) =>
-            new Graphic({
-                geometry: new Polyline({
-                    paths: [f.geometry.coordinates], // wrap once
-                    spatialReference: { wkid: STLWKID },
-                }),
-                attributes: {
-                    ObjectID: i + 1,
-                    name: f.properties.name,
-                    surface: f.properties.surface ?? "",
                 },
             }),
     );
@@ -248,6 +224,7 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
     },
 };
 
+
 export const LAYER_CYCLING: FeatureLayerMeta = {
     title: CYCLE_LAYER_TTL,
     dataUrl: CYCLE_LAYER_URL,
@@ -278,7 +255,7 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
         }, {
             classes: [{
                 label: "Gravel Path",
-                values: ["gravel", "fine_gravel"] as __esri.UniqueValueProperties[],
+                values: ["gravel", "fine_gravel", "crushed_limestone"] as __esri.UniqueValueProperties[],
                 symbol: new SimpleLineSymbol({
                     color: CYCLE_LAYER_GRAVEL_COLOR,
                     width: CYCLE_LAYER_SIZE,
@@ -295,5 +272,20 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
             },
         ],
     },
-    toGraphics: cyclingToGraphics,
+    // toGraphics: cyclingToGraphics,
+    toGraphics: (data: any): Graphic[] => {
+        return data.features.map((f: any, i: number): Graphic =>
+            new Graphic({
+                geometry: new Polyline({
+                    paths: [f.geometry.coordinates], // wrap once
+                    spatialReference: { wkid: STLWKID },
+                }),
+                attributes: {
+                    ObjectID: i + 1,
+                    name: f.properties.name,
+                    surface: f.properties.surface ?? "",
+                },
+            }),
+        );
+    }
 };

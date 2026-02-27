@@ -10,41 +10,23 @@ export const STLCOORDS = {
 };
 
 // TRACTCS LAYER
+
 export const TRACTS_LAYER_TTL = "Census Tract Population Density";
 export const TRACTS_LAYER_URL = "/tracts";
-export const POPLDENS_ALPHA = 0.15;
-export const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
-    [0, 2500, [94, 150, 98]],
-    [2500, 5000, [17, 200, 152]],
-    [5000, 7500, [0, 210, 255]],
-    [7500, 10000, [44, 60, 255]],
-    [10000, 99999, [50, 1, 63]],
-];
+
 export const COUNTIES_LAYER_TTL = "St. Louis MSA Counties";
 export const COUNTIES_LAYER_URL = "/counties";
-export const COUNTIES_OUTLINE_COLOR = [250, 250, 250, 0.5];
-export const COUNTIES_OUTLINE_SIZE = 1.5;
-export const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
-export const BUS_LAYER_TTL = "MetroBus Stops";
-export const BUS_LAYER_URL = "/stops/bus";
-export const BUS_STOP_A_COLOR = 'mediumseagreen';
-export const BUS_STOP_NA_COLOR = [180, 110, 200, 0.7];
-export const BUS_STOP_SIZE = 4;
+
+
 export const ML_LAYER_TTL = "MetroLink Stops";
 export const ML_LAYER_URL = "/stops/ml";
-export const ML_STOP_SIZE = 10;
-export const MLB_STOP_COLOR = 'blue';
-export const MLR_STOP_COLOR = 'red';
-export const MLC_STOP_COLOR = 'purple';
+
+export const BUS_LAYER_TTL = "MetrBus Stops";
+export const BUS_LAYER_URL = "/stops/bus";
+
 export const CYCLE_LAYER_TTL = "Bicycle/Walking Paths";
 export const CYCLE_LAYER_URL = "/bikes";
-export const CYCLE_LAYER_GRAVEL_COLOR = [82, 41, 56, 0.7];
-export const CYCLE_LAYER_PAVED_COLOR = [208, 75, 75, 0.7];
-export const CYCLE_LAYER_ASPHALT_COLOR = [208, 148, 75, 0.7];
-export const CYCLE_LAYER_CONCRETE_COLOR = [204, 198, 234, 0.7];
-export const CYCLE_LAYER_OTHER_COLOR = [75, 108, 208, 0.7];
-export const CYCLE_LAYER_UNPAVED_COLOR = [158, 145, 125, 0.7];
-export const CYCLE_LAYER_SIZE = .8;
+
 export const BUS = 'Bus';
 export const ML = 'Light Rail';
 export const routeTypes: Record<RouteType, string> = {
