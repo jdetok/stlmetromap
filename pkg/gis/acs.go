@@ -76,7 +76,8 @@ func (d *ACSData) Get(ctx context.Context, src string, isURL bool) error {
 	data := ACSObj{}
 	urls := buildACSUrls()
 	for _, url := range []string{urls.Mo, urls.Il} {
-		fmt.Println(url)
+		// fmt.Println(url)
+		// fmt.Printf("getting data from %s\n", url)
 		resp, err := get.Get(get.NewGetRequest(ctx, url, true, 1, 3))
 		if err != nil {
 			return err
@@ -106,7 +107,7 @@ func GetACSData(ctx context.Context) (*ACSData, error) {
 	data := ACSObj{}
 	urls := buildACSUrls()
 	for _, url := range []string{urls.Mo, urls.Il} {
-		fmt.Println(url)
+		// fmt.Println(url)
 		resp, err := get.Get(get.NewGetRequest(ctx, url, true, 1, 3))
 		if err != nil {
 			return nil, err

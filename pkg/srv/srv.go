@@ -2,7 +2,6 @@ package srv
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/jdetok/stlmetromap/pkg/gis"
@@ -49,7 +48,6 @@ func NewMux(layers *gis.DataLayers) *http.ServeMux {
 }
 
 func Serve(addr string, handler http.Handler) error {
-	fmt.Printf("listening at %v...\n", addr)
 	return http.ListenAndServe(addr, handler)
 }
 

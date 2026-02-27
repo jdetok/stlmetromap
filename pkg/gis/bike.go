@@ -34,8 +34,6 @@ func (d *GeoBikeData) Get(ctx context.Context, src string, isURL bool) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("reading %d bytes from %s\n", len(data), src)
 	return json.Unmarshal(data, d)
 }
 

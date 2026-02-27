@@ -21,7 +21,6 @@ func WriteStructToJSONFile[T any](data T, fname string) error {
 	if err := os.WriteFile(fname, js, 0644); err != nil {
 		return fmt.Errorf("write file error: %v", err)
 	}
-	fmt.Println("saved data struct to", fname)
 	return nil
 }
 
@@ -31,7 +30,6 @@ func FillStructFromJSONFile[T any](data *T, fname string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read file at %s: %v", fname, err)
 	}
-	fmt.Println("reading data from", fname)
 	if err := json.Unmarshal(js, data); err != nil {
 		return fmt.Errorf("failed to unmarshal data from %s: %v", fname, err)
 	}

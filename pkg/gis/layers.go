@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jdetok/stlmetromap/pkg/util"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -33,12 +34,12 @@ type BuildMode struct {
 	PersistFile string
 }
 
-func BuildLayers(ctx context.Context, b BuildMode) (*DataLayers, error) {
+func BuildLayers(ctx context.Context, b BuildMode, lg *zap.SugaredLogger) (*DataLayers, error) {
 	var err error
 	layers := &DataLayers{Outfile: b.PersistFile}
 
 	if b.Get || (!b.Get && !util.FileExists(b.PersistFile)) {
-		layers, err = GetDataLayers(ctx, b.PersistFile)
+		layers, err = GetDataLayers(ctx, b.PersistFile, lg)
 		if err != nil {
 			return nil, err
 		}
@@ -46,6 +47,7 @@ func BuildLayers(ctx context.Context, b BuildMode) (*DataLayers, error) {
 		if !util.FileExists(b.PersistFile) {
 			return nil, err
 		}
+		lg.Infof("attempting to fill DataLayers struct from persisted data in %s", layers.Outfile)
 		if err := layers.DataFromJSONFile(); err != nil {
 			return nil, err
 		}
@@ -55,15 +57,14 @@ func BuildLayers(ctx context.Context, b BuildMode) (*DataLayers, error) {
 		if err := layers.DataToJSONFile(); err != nil {
 			return nil, err
 		}
+		lg.Infof("DataLayers struct stored as JSON at %s", layers.Outfile)
 	}
 	return layers, nil
 }
 
 // Builds, aggregates, and joins all data to be served as data layers
-func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
-
+func GetDataLayers(ctx context.Context, fname string, lg *zap.SugaredLogger) (*DataLayers, error) {
 	g, ctx := errgroup.WithContext(ctx)
-
 	counties := NewTigerGeoData(82, true)
 	tracts := NewTigerGeoData(8, true)
 	acs := util.NewDataSourceFromURL("acs", "acs", &ACSData{})
@@ -74,6 +75,7 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 		var err error
 		attempts := 3
 		for i := range attempts {
+			lg.Infof("getting metro stops data: attempt %d/%d", i+1, attempts)
 			if err = stops.Data.Get(ctx, stops.URL, true); err == nil {
 				return nil
 			}
@@ -86,6 +88,7 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 	})
 
 	g.Go(func() error {
+		lg.Info("getting geo data fro US counties")
 		if err := counties.Data.Get(ctx, counties.URL, true); err != nil {
 			return fmt.Errorf("failed to fetch counties: %w", err)
 		}
@@ -93,6 +96,7 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 	})
 
 	g.Go(func() error {
+		lg.Info("getting geo data fro US census tracts")
 		if err := tracts.Data.Get(ctx, tracts.URL, true); err != nil {
 			return fmt.Errorf("failed to fetch tracts: %w", err)
 		}
@@ -100,12 +104,14 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 	})
 
 	g.Go(func() error {
+		lg.Info("getting ACS census data")
 		if err := acs.Data.Get(ctx, acs.URL, true); err != nil {
 			return fmt.Errorf("failed to get new acs data: %w", err)
 		}
 		return nil
 	})
 	g.Go(func() error {
+		lg.Infof("getting cycling path data")
 		if err := bikes.Data.Get(ctx, bikes.Fname, false); err != nil {
 			return fmt.Errorf("failed to fetch bikes: %w", err)
 		}
@@ -115,6 +121,8 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
+
+	lg.Info("finished getting data, transforming data into final structs")
 
 	stopMarkers := stops.Data.(*StopMarkers)
 	tgrTracts := tracts.Data.(*TGRData)

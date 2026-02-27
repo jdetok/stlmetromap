@@ -3,6 +3,7 @@ module github.com/jdetok/stlmetromap
 go 1.25.1
 
 require (
+	github.com/dhconnelly/rtreego v1.2.0
 	github.com/jamespfennell/gtfs v0.1.24
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/sync v0.19.0
@@ -14,7 +15,6 @@ require (
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/bep/godartsass/v2 v2.5.0 // indirect
 	github.com/bep/golibsass v1.2.0 // indirect
-	github.com/dhconnelly/rtreego v1.2.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
@@ -26,6 +26,8 @@ require (
 	github.com/spf13/afero v1.14.0 // indirect
 	github.com/spf13/cast v1.9.2 // indirect
 	github.com/tdewolff/parse/v2 v2.8.3 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap v1.27.1 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
