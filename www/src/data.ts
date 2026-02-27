@@ -199,13 +199,56 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
     toGraphics: stopsToGraphics,
 }
 
+const TRACTS_FIELDS = [
+    { name: "GEOID", alias: "GEOID", type: "string" },
+    { name: "TRACT", alias: "Tract", type: "string" },
+    { name: "POPL", alias: "Population", type: "double" },
+    { name: "POPLSQMI", alias: "Persons/Square Mile", type: "double" },
+    { name: "INCOME", alias: "Median Income", type: "double" },
+    { name: "AGE", alias: "Median Age", type: "double" },
+    { name: "HAS_COMP", alias: "Persons with access to a computer:", type: "double" },
+    { name: "PCT_HAS_COMP", alias: "% with access to a computer:", type: "double" },
+    { name: "MGRENT", alias: "Median Gross Rent", type: "double" },
+    { name: "INC_BELOW_POV", alias: "Persons Below Poverty", type: "double" },
+    { name: "PCT_INC_BELOW_POV", alias: "% Persons Below Poverty", type: "string" },
+    { name: "STOPS_IN_TRACT", alias: "Transit Stops in Area", type: "double" },
+    { name: "BUS_STOPS_IN_TRACT", alias: "Bus Stops in Area", type: "double" },
+    { name: "ML_STOPS_IN_TRACT", alias: "Light Rail Stops in Area", type: "double" },
+];
+const TRACTS_FIELDINFOS = [
+    { fieldName: "POPL", label: "Population:" },
+    { fieldName: "POPLSQMI", label: "Persons/Square Mile:" },
+    { fieldName: "AGE", label: "Median Age:" },
+    { fieldName: "INCOME", label: "Median Income Last 12 Months:" },
+    { fieldName: "MGRENT", label: "Median Gross Rent:" },
+    { fieldName: "INC_BELOW_POV", label: "Persons Below Poverty Level:" },
+    { fieldName: "PCT_INC_BELOW_POV", label: "% Persons Below Poverty:" },
+    { fieldName: "HAS_COMP", label: "Persons with access to a computer:" },
+    { fieldName: "PCT_HAS_COMP", label: "% with access to a computer:" },
+    { fieldName: "STOPS_IN_TRACT", label: "Transit Stops in Area" },
+    { fieldName: "BUS_STOPS_IN_TRACT", label: "Bus Stops in Tract" },
+    { fieldName: "ML_STOPS_IN_TRACT", label: "Light Rail Stops in Tract" },
+];
+
+const COUNTIES_FIELDS = [
+    { name: "NAME", alias: "Name", type: "string" },
+    { name: "COUNTY", alias: "County", type: "string" },
+    { name: "STOPS_IN_TRACT", alias: "Transit Stops in Area", type: "double" },
+    { name: "BUS_STOPS_IN_TRACT", alias: "Bus Stops in Area", type: "double" },
+    { name: "ML_STOPS_IN_TRACT", alias: "Light Rail Stops in Area", type: "double" },
+];
+const COUNTIES_FIELDINFOS = [
+    { fieldName: "COUNTY", label: "County:" },
+    { fieldName: "STOPS_IN_TRACT", label: "Transit Stops in County" },
+    { fieldName: "BUS_STOPS_IN_TRACT", label: "Bus Stops in County" },
+    { fieldName: "ML_STOPS_IN_TRACT", label: "Light Rail Stops in County" },
+];
+
 export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
     title: COUNTIES_LAYER_TTL,
     dataUrl: COUNTIES_LAYER_URL, 
     geometryType: "polygon",
-    fields: [
-        { name: "NAME", alias: "Name", type: "string" },
-    ],
+    fields: COUNTIES_FIELDS as __esri.FieldProperties[],
     renderer: new SimpleRenderer({
         symbol: new SimpleFillSymbol({
             color: COUNTIES_INNER_COLOR,
@@ -220,36 +263,17 @@ export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
         title: "{NAME}",
         content: [{
             type: "fields",
-            fieldInfos: [
-                { fieldName: "STATE", label: "State: " },
-                { fieldName: "NAME", label: "County: " },
-            ]
+            fieldInfos: COUNTIES_FIELDINFOS,
         }],
     },
 };
+
 
 export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
     title: TRACTS_LAYER_TTL,
     dataUrl: TRACTS_LAYER_URL,
     geometryType: "polygon",
-    fields: [
-        { name: "COUNTY", alias: "County", type: "string" },
-        { name: "GEOID", alias: "GEOID", type: "string" },
-        { name: "TRACT", alias: "Tract", type: "string" },
-        { name: "POPL", alias: "Population", type: "double" },
-        { name: "POPLSQMI", alias: "Persons/Square Mile", type: "double" },
-        { name: "INCOME", alias: "Median Income", type: "double" },
-        { name: "AGE", alias: "Median Age", type: "double" },
-        { name: "HAS_COMP", alias: "Persons with access to a computer:", type: "double" },
-        { name: "PCT_HAS_COMP", alias: "% with access to a computer:", type: "double" },
-        { name: "MGRENT", alias: "Median Gross Rent", type: "double" },
-        { name: "INC_BELOW_POV", alias: "Persons Below Poverty", type: "double" },
-        { name: "PCT_INC_BELOW_POV", alias: "% Persons Below Poverty", type: "string" },
-        { name: "STOPS_IN_TRACT", alias: "Transit Stops in Tract", type: "double" },
-        { name: "BUS_STOPS_IN_TRACT", alias: "Bus Stops in Tract", type: "double" },
-        { name: "ML_STOPS_IN_TRACT", alias: "Light Rail Stops in Tract", type: "double" },
-        
-    ],
+    fields: TRACTS_FIELDS as __esri.FieldProperties[],
     renderer: new ClassBreaksRenderer({
         field: "POPLSQMI",
         classBreakInfos: makeChoroplethLevels(POPLDENS_CHOROPLETH_LEVELS),
@@ -258,21 +282,7 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
         title: "Census Tract {TRACT}",
         content: [{
             type: "fields",
-            fieldInfos: [
-                { fieldName: "COUNTY", label: "County:" },
-                { fieldName: "POPL", label: "Population:" },
-                { fieldName: "POPLSQMI", label: "Persons/Square Mile:" },
-                { fieldName: "AGE", label: "Median Age:" },
-                { fieldName: "INCOME", label: "Median Income Last 12 Months:" },
-                { fieldName: "MGRENT", label: "Median Gross Rent:" },
-                { fieldName: "INC_BELOW_POV", label: "Persons Below Poverty Level:" },
-                { fieldName: "PCT_INC_BELOW_POV", label: "% Persons Below Poverty:" },
-                { fieldName: "HAS_COMP", label: "Persons with access to a computer:" },
-                { fieldName: "PCT_HAS_COMP", label: "% with access to a computer:" },
-                { fieldName: "STOPS_IN_TRACT", label: "Transit Stops in Tract" },
-                { fieldName: "BUS_STOPS_IN_TRACT", label: "Bus Stops in Tract" } ,
-                { fieldName: "ML_STOPS_IN_TRACT", label: "Light Rail Stops in Tract" } ,
-            ]
+            fieldInfos: TRACTS_FIELDINFOS,
         }]
     },
 };

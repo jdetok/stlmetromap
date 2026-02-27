@@ -44,7 +44,7 @@ func SetupServer(ctx context.Context) error {
 
 	http.HandleFunc("/counties", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(layers.Counties.Data)
+		json.NewEncoder(w).Encode(layers.CountiesPoplDens)
 	})
 	http.HandleFunc("/tracts", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

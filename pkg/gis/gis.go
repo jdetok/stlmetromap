@@ -106,6 +106,7 @@ func DemographicsForTracts(geo *TGRData, acs *ACSData, stops *StopMarkers) *GeoT
 				"STOPS_IN_TRACT":     stopsPerTract[geoId],
 				"BUS_STOPS_IN_TRACT": busStopsPerTract[geoId],
 				"ML_STOPS_IN_TRACT":  mlStopsPerTract[geoId],
+				"NAME":               f.Attributes.NAME,
 				"TRACT":              f.Attributes.TRACT,
 				"COUNTY":             f.Attributes.COUNTY,
 				"AREALAND":           area,

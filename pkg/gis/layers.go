@@ -10,13 +10,14 @@ import (
 )
 
 type DataLayers struct {
-	Outfile        string
-	Counties       *util.DataSource
-	Tracts         *util.DataSource
-	ACS            *util.DataSource
-	Bikes          *util.DataSource
-	Metro          *util.DataSource
-	TractsPoplDens *GeoTractFeatures
+	Outfile          string
+	Counties         *util.DataSource
+	Tracts           *util.DataSource
+	ACS              *util.DataSource
+	Bikes            *util.DataSource
+	Metro            *util.DataSource
+	TractsPoplDens   *GeoTractFeatures
+	CountiesPoplDens *GeoTractFeatures
 }
 
 func (l *DataLayers) DataToJSONFile() error {
@@ -84,31 +85,43 @@ func GetDataLayers(ctx context.Context, fname string) (*DataLayers, error) {
 	}
 
 	stopMarkers := stops.Data.(*StopMarkers)
-	tgrData := tracts.Data.(*TGRData)
+	tgrTracts := tracts.Data.(*TGRData)
+	tgrCounties := counties.Data.(*TGRData)
 	acsData := acs.Data.(*ACSData)
 
-	tractGeoFeatures := GeoFeaturesFromTGR(tgrData)
-
+	tractGeoFeatures := GeoFeaturesFromTGR(tgrTracts)
+	countyGeoFeatures := GeoFeaturesFromTGR(tgrCounties)
 	stopGroups := [][]StopMarker{stopMarkers.Stops, stopMarkers.BusStops, stopMarkers.MlStops}
+
+	var tractsPoplDens *GeoTractFeatures
+	var countiesPoplDens *GeoTractFeatures
+
 	for i := range stopGroups {
 		if err := StopsInTracts(tractGeoFeatures, stopGroups[i]); err != nil {
 			return nil, err
 		}
 	}
+	tractsPoplDens = DemographicsForTracts(tgrTracts, acsData, stopMarkers)
 
-	tractsPoplDens := DemographicsForTracts(tgrData, acsData, stopMarkers)
+	for i := range stopGroups {
+		if err := StopsInTracts(countyGeoFeatures, stopGroups[i]); err != nil {
+			return nil, err
+		}
+	}
+	countiesPoplDens = DemographicsForTracts(tgrCounties, acsData, stopMarkers)
 
 	// if err := StopsInTracts(tractsPoplDens.Features, stopMarkers.Stops); err != nil {
 	// 	return nil, err
 	// }
 
 	return &DataLayers{
-		Outfile:        fname,
-		Counties:       counties,
-		Tracts:         tracts,
-		Bikes:          bikes,
-		ACS:            acs,
-		Metro:          stops,
-		TractsPoplDens: tractsPoplDens,
+		Outfile:          fname,
+		Counties:         counties,
+		Tracts:           tracts,
+		Bikes:            bikes,
+		ACS:              acs,
+		Metro:            stops,
+		TractsPoplDens:   tractsPoplDens,
+		CountiesPoplDens: countiesPoplDens,
 	}, nil
 }
