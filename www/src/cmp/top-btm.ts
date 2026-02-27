@@ -66,12 +66,15 @@ const STYLE = `
 :host {
     display: block;
     width: 100%;
+    margin: 0 auto;
+    margin-top: .5rem;
 }
 div {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
     width: 100%;
     align-items: center;
+    margin: 0 auto;
 }
 
 a, p {

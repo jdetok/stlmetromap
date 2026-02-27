@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	GET_DATA   = true
-	SAVE_DATA  = true
+	GET_DATA   = false
+	SAVE_DATA  = false
 	DATA_FILE  = "data/persist.json"
 	CYCLE_FILE = "data/cycle_osm.geojson"
 )

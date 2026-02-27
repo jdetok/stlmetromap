@@ -36,6 +36,7 @@ type StopMarker struct {
 	ID         string      `json:"id"`
 	Name       string      `json:"name"`
 	StopType   string      `json:"typ"`
+	WhlChr     string      `json:"whlChr"`
 	Routes     []Route     `json:"routes"`
 	Coords     Coordinates `json:"yx"`
 	TractGEOID string      `json:"tractGeoid,omitempty"`
@@ -103,8 +104,9 @@ func (r Routes) BuildStops() *StopMarkers {
 	mlStops := []StopMarker{}
 	for k, v := range r {
 		sm := StopMarker{
-			ID:   k.Id,
-			Name: k.Name,
+			ID:     k.Id,
+			Name:   k.Name,
+			WhlChr: k.WheelchairBoarding.String(),
 			Coords: Coordinates{
 				La: *k.Latitude,
 				Lo: *k.Longitude,

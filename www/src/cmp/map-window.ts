@@ -33,6 +33,8 @@ export class MapWindow extends HTMLElement {
     private view: __esri.MapView;
     private map: __esri.Map;
     private coords: mapCoords;
+    private legend: Expand;
+    private legendResizeObserver?: ResizeObserver;
     private layers: FeatureLayerMeta[];
     public constructor() {
         super();
@@ -66,6 +68,8 @@ export class MapWindow extends HTMLElement {
             LAYER_ML_STOPS,
         ];
 
+        this.legend = this.addLegend();
+
         this.view.when(async () => { // ADD LAYERS TO MAP VIEW
             for (let i = 0; i < this.layers.length; i++) {
                 this.map.add(await this.makeFeatureLayer(this.layers[i]), i);
@@ -73,10 +77,23 @@ export class MapWindow extends HTMLElement {
 
             // add UI buttons/popups
             this.view.ui.add(this.addLayerList(), 'bottom-left');
-            this.view.ui.add(this.addLegend(), 'bottom-right')
+            this.view.ui.add(this.legend, 'bottom-right')
+
+            this.watchSizeForLegendCollapse();
+
         }, (e: Error) => console.error("failed to build or display map:", e))
 
         root.append(this.addStyling(), this.div);
+    }
+    disconnectedCallback(): void {
+        this.legendResizeObserver?.disconnect();
+        this.legendResizeObserver = undefined;
+
+        // Optional but recommended for ArcGIS
+        if (this.view) {
+            this.view.container = null as any;
+            this.view.destroy();
+        }
     }
     private addStyling(): HTMLStyleElement {
         return Object.assign(document.createElement('style'), { textContent: STYLE });
@@ -97,6 +114,18 @@ export class MapWindow extends HTMLElement {
             expanded: true,
             mode: 'floating',
         });
+    }
+    private watchSizeForLegendCollapse(): void {
+        const apply = () => {
+            // "xsmall" | "small" | "medium" | "large" | "xlarge"
+            const bp = this.view.heightBreakpoint;
+            if (bp === "xsmall" || bp === "small") {
+                this.legend.expanded = false;
+            }
+        };
+
+        apply();
+        this.view.watch("heightBreakpoint", apply);
     }
     private async makeFeatureLayer(meta: FeatureLayerMeta): Promise<FeatureLayer> {
         try {

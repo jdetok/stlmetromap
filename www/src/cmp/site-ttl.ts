@@ -23,10 +23,12 @@ const STYLE = `
 :host {
     display: block;
     width: 100%;
+    margin-top: .5rem;
 }
 h1 {
     margin: 0 auto;
     text-align: center;
+    font-size: 1.8rem;
 }
 `;
 

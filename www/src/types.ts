@@ -20,6 +20,7 @@ export type StopMarker = {
     routes: Route[],
     yx: Coordinates,
     tractGeoid?: string,
+    whlChr?: string,
 }
 export type RouteType = 'bus' | 'mlr' | 'mlb' | 'mlc';
 

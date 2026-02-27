@@ -42,7 +42,8 @@ const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
 // BUS STOPS LAYER
 const BUS_LAYER_TTL = "MetroBus Stops";
 const BUS_LAYER_URL = "/stops/bus";
-const BUS_STOP_COLOR = 'mediumseagreen';
+const BUS_STOP_A_COLOR = 'mediumseagreen';
+const BUS_STOP_NA_COLOR = [180, 110, 200, 0.7];
 const BUS_STOP_SIZE = 4;
 
 // METRO STOP LAYER
@@ -76,6 +77,7 @@ const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "type", alias: "Stop Type", type: "string" },
     { name: "routes", alias: "Routes Served", type: "string" },
     { name: "tractGeoid", alias: "Tract GEOID", type: "string" },
+    { name: "whlChr", alias: "Wheelchair Accessible", type: "string" },
 ];
 
 // create choropleth levels for the array of min/max/color
@@ -106,6 +108,7 @@ const stopsToGraphics = (data: StopMarkers): Graphic[] => {
             typ: s.typ,
             routes: s.routes.map(r => `${r.name}-${r.nameLong}`).join(", "),
             tractGeoid: s.tractGeoid,
+            whlChr: s.whlChr,
         }
     }));
 };
@@ -131,8 +134,25 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
     dataUrl: BUS_LAYER_URL,
     geometryType: "point",
     fields: STOP_FIELDS,
-    renderer: new SimpleRenderer({
-        symbol: new SimpleMarkerSymbol({ style: 'circle', color: BUS_STOP_COLOR, size: BUS_STOP_SIZE }),
+    renderer: new UniqueValueRenderer({
+        field: "whlChr",
+        uniqueValueInfos: [{
+            value: "POSSIBLE",
+            symbol: new SimpleMarkerSymbol({
+                style: 'circle',
+                color: BUS_STOP_A_COLOR,
+                size: BUS_STOP_SIZE
+            }),
+            label: "Wheelchair Accessible",
+        }, {
+            value: "NOT_POSSIBLE",
+            symbol: new SimpleMarkerSymbol({
+                style: 'circle',
+                color: BUS_STOP_NA_COLOR,
+                size: BUS_STOP_SIZE
+            }),
+            label: "Not Wheelchair Accessible",
+        }],
     }),
     popupTemplate: {
         title: "{type} Stop: {name}",
