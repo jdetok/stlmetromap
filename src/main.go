@@ -19,7 +19,7 @@ func main() {
 	defer zapLog.Sync()
 
 	a := &app{
-		addr: ":3333",
+		addr: ":9999",
 		lg:   zapLog,
 	}
 
