@@ -1,7 +1,7 @@
 # Define global scope variables
 
 ## Overal objective
-- The project aims to create an interactive map to visualize transit coverage/access in the St. Louis Metropolitan Area. Users can explore relationships between transit access and various dependent variables including but not limited to population density, socioeconomic factors, access to food, and access to education. 
+- The project aims to create an interactive map to visualize multi modal transit coverage/access in the St. Louis Metropolitan Area. Users can explore relationships between transit access and various dependent variables including but not limited to population density, socioeconomic factors, access to food, and access to education. 
 
 ## Geographic scope
 Coordinates used for data queries throughout the project
