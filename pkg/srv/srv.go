@@ -45,6 +45,9 @@ func NewMux(layers *gis.DataLayers) *http.ServeMux {
 	mux.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "www/about.html")
 	})
+	mux.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("www/js"))))
+	mux.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("www/css"))))
+	mux.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("www"))))
 	return mux
 }
 
