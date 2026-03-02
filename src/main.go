@@ -39,6 +39,18 @@ func main() {
 	a.db = pool
 
 	a.lg.Info("postgis connection successful, building data layers...")
+
+	if err := pgis.CreateTableNotExists(ctx, a.db, &pgis.TableConf{
+		Table:      "test1",
+		Schema:     "test",
+		Headers:    []string{"col1", "col2", "col3"},
+		Indexes:    map[string]string{"": "col1"},
+		GeoIndexes: map[string]string{"": "geom"},
+		GeomType:   "Point",
+	}, a.lg); err != nil {
+		a.lg.Error(err)
+	}
+
 	layers, err := gis.BuildLayers(ctx, gis.BuildMode{
 		Get:         true,
 		Save:        true,
