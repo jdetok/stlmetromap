@@ -109,25 +109,25 @@ and way && ST_Transform(ST_MakeEnvelope(-99.11,31.77,-75.54,45.87, 4326), 3857)
 	`
 	TRN_STOPS = `
 select a.stop_id, c.stop_name, string_agg(distinct d.route_short_name, ', ') as route_ids,
-	string_agg(distinct d.route_long_name, ', ') as route_names, 
+	string_agg(distinct d.route_long_name, ', ') as route_names, c.wheelchair_boarding as wheelchair,
 	ST_AsGeoJSON(c.stop_loc) as geom 
 from public.stop_times a
 inner join public.trips b on b.trip_id = a.trip_id
 inner join public.stops c on c.stop_id = a.stop_id
 inner join public.routes d on d.route_id = b.route_id
 where d.route_type = '2'
-group by a.stop_id, c.stop_name, c.stop_loc
+group by a.stop_id, c.stop_name, c.stop_loc, c.wheelchair_boarding
 	`
 	BUS_STOPS = `
 select a.stop_id, c.stop_name, string_agg(distinct d.route_short_name, ', ') as route_ids,
-	string_agg(distinct d.route_long_name, ', ') as route_names, 
+	string_agg(distinct d.route_long_name, ', ') as route_names, c.wheelchair_boarding as wheelchair,
 	ST_AsGeoJSON(c.stop_loc) as geom 
 from public.stop_times a
 inner join public.trips b on b.trip_id = a.trip_id
 inner join public.stops c on c.stop_id = a.stop_id
 inner join public.routes d on d.route_id = b.route_id
 where d.route_type = '3'
-group by a.stop_id, c.stop_name, c.stop_loc
+group by a.stop_id, c.stop_name, c.stop_loc, c.wheelchair_boarding
 	`
 	CYCLING_PATHS = `
 select osm_id,
