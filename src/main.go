@@ -39,6 +39,7 @@ func main() {
 	a.db = pool
 
 	a.lg.Info("postgis connection successful, building data layers...")
+
 	layers, err := gis.BuildLayers(ctx, gis.BuildMode{
 		Get:         true,
 		Save:        true,
@@ -51,16 +52,6 @@ func main() {
 
 	a.lg.Infof("finished buildling DataLayers, starting HTTP server at %s...", a.addr)
 
-	if err := gis.UpsertStops(ctx, a.db, a.layers.Metro.Data.(*gis.StopMarkers)); err != nil {
-		a.lg.Errorf("upsert failed: %v", err)
-	}
-
-	if err := gis.UpsertTracts(ctx, a.db, a.layers.TractsPoplDens); err != nil {
-		a.lg.Errorf("upsert failed: %v", err)
-	}
-	if err := gis.UpsertCounties(ctx, a.db, a.layers.CountiesPoplDens); err != nil {
-		a.lg.Errorf("upsert failed: %v", err)
-	}
 	mux := srv.NewMux(a.layers)
 	if err := srv.Serve(a.addr, mux); err != nil {
 		a.lg.Fatal(err)

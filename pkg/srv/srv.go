@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/jdetok/stlmetromap/pkg/gis"
-	"github.com/jdetok/stlmetromap/pkg/osm"
 )
 
 const (
@@ -22,28 +21,19 @@ func NewMux(layers *gis.DataLayers) *http.ServeMux {
 	})
 
 	mux.HandleFunc("/counties", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(layers.CountiesPoplDens)
+		layers.Counties.WriteJSONResp(w, r)
 	})
 	mux.HandleFunc("/tracts", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(layers.TractsPoplDens)
+		layers.Tracts.WriteJSONResp(w, r)
 	})
-
-	mux.HandleFunc("/stops", func(w http.ResponseWriter, r *http.Request) {
-		HandleMetroStops(w, r, &gis.StopMarkers{Stops: layers.Metro.Data.(*gis.StopMarkers).Stops})
+	mux.HandleFunc("/bus", func(w http.ResponseWriter, r *http.Request) {
+		layers.BusStops.WriteJSONResp(w, r)
 	})
-	mux.HandleFunc("/stops/bus", func(w http.ResponseWriter, r *http.Request) {
-		HandleMetroStops(w, r, &gis.StopMarkers{Stops: layers.Metro.Data.(*gis.StopMarkers).BusStops})
-	})
-	mux.HandleFunc("/osm/bus", func(w http.ResponseWriter, r *http.Request) {
-		layers.BusStopsOSM.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/stops/ml", func(w http.ResponseWriter, r *http.Request) {
-		HandleMetroStops(w, r, &gis.StopMarkers{Stops: layers.Metro.Data.(*gis.StopMarkers).MlStops})
+	mux.HandleFunc("/rail", func(w http.ResponseWriter, r *http.Request) {
+		layers.TrnStops.WriteJSONResp(w, r)
 	})
 	mux.HandleFunc("/bikes", func(w http.ResponseWriter, r *http.Request) {
-		layers.CyclePathsOSM.WriteJSONResp(w, r)
+		layers.CyclePaths.WriteJSONResp(w, r)
 	})
 	mux.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "www/about.html")
@@ -58,16 +48,7 @@ func Serve(addr string, handler http.Handler) error {
 	return http.ListenAndServe(addr, handler)
 }
 
-func HandleMetroStops(w http.ResponseWriter, r *http.Request, stops *gis.StopMarkers) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	if err := json.NewEncoder(w).Encode(stops); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func WriteJSONResp(w http.ResponseWriter, r *http.Request, features *osm.FeatureColl) {
+func WriteJSONResp(w http.ResponseWriter, r *http.Request, features *gis.FeatureColl) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err := json.NewEncoder(w).Encode(features); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

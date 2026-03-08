@@ -1,9 +1,8 @@
-FROM --platform=linux/amd64 postgis/postgis:18-3.6
+FROM postgres:18
 
-RUN mkdir /data
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    osm2pgsql ca-certificates \
+        postgis postgresql-18-postgis-3 osmium-tool osm2pgsql ca-certificates curl unzip gdal-bin \
     && rm -rf /var/lib/apt/lists/*
 
 HEALTHCHECK --interval=5s --timeout=5s --start-period=5s --retries=10 \

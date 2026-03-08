@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# gtfs: Fetch and load GTFS data from STL Metro into Postgres
+# utilizes node cli tool gtfs-via-postgres https://github.com/public-transport/gtfs-via-postgres
+# Written 03/07/2026
+
+export PGHOST="${POSTGRES_HOST}"
+export PGPORT="${POSTGRES_PORT}"
+export PGUSER="${POSTGRES_USER}"
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+export PGDATABASE="${POSTGRES_DB}"
+
+URL="https://www.metrostlouis.org/Transit/google_transit.zip"
+DIR="gtfs"
+FILE="/${DIR}/feed.zip"
+
+mkdir -p "/${DIR}"
+
+curl -L --fail --retry 10 --retry-delay 2 -o $FILE $URL
+
+unzip -o "${FILE}" -d "${DIR}"
+
+npm install -g gtfs-via-postgres
+npm exec -- gtfs-to-sql --require-dependencies -- /${DIR}/*.txt | sponge | psql -b

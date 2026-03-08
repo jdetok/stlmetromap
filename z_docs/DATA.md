@@ -1,5 +1,8 @@
 # Data schema examples
 
+## * NOTE ON ACS POPULATION RACE DATA:
+- field "B02001_008E": "Two+ Race Population" counts ALL mixed race population, do not add 009 and 010 to it
+
 ## census data (ACS)
 ```json
 [

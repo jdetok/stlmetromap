@@ -5,23 +5,65 @@ Interactive Map of multi-modal transportation options in the St. Louis Metropoli
 - High level technical details can be found in the [stack](/z_docs/STACK.md) document
 
 ## Latest working example: 
-<img src="z_docs/img/working.png" alt="screenshot of the project homepage" style="max-height:60vh;">
+<img src="z_docs/img/working.png" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
+
+## REPO CONTENTS
+- ### Dockerfile, compose.yaml
+    - root Dockerfile builds Go API service
+    - compose builds all persistent services, one-off services also can be run to import data
+- ### BACKEND DIRECTORIES
+    - /src
+        - Go main package
+    - /pkg
+        - Other Go packages
+- ### FRONTEND DIRECTORY: /www
+    - STATIC HTML
+    - /src
+        - TypeScript source directory
+    - /js
+        - JavaScript artifacts, transpiled/bundled
+    - /css
+        - Global style sheets 
+- ### DATABASE DIRECTORY: /db
+    - Dockerfile
+        - builds Postgres image
+    - gtfs.Dockerfile
+        - builds node image to import GTFS data into db
+    - osm.Dockerfile
+        - builds image to load OSM data into db
+    - /dump
+        - Postgres dumps
+    - /initdb
+        - sql/shell scripts run on database creation
+- ### SCRIPTS DIRECTORY: /scr
+    - Contains various bash scripts primarily for importing external data into or backing up the database
+
 
 ## HOW TO RUN LOCALLY
-The two main components are a Go backend and a Typescript frontend. The app can be run fully locally with a 1.25+ install of Go, or from the docker compose file. 
+The project can be built/run locally with [Docker](https://www.docker.com/products/docker-desktop/). The [docker compose file](./compose.yaml) builds the Go api, Postgres DB, and transpiles the TypeScript to JavaScript files that are served by the nginx container. Follow the steps below to run locally
 - #### First, clone the repo and enter the stl-transit directory:
     `git clone https://github.com/jdetok/stl-transit`<br>
     `cd stl-transit`
-    - #### From compose.yaml (recommended):
-        1. ensure [docker](https://www.docker.com/products/docker-desktop/) is installed 
-        1. build and run the [docker compose file](./compose.yaml):<br>
-        `docker compose up --build`
-        1. app should be running at http://localhost:3333
-    - #### Fully local (no docker):
-        1. ensure local versions of Go (1.26+) and npm (11.9.0+) are installed
-        1. from project root directory, run the following commands to install all dependencies 
-        <br> `go mod download`<br>`npm i`
-        1. transprile and bundle frontend:<br>`npm run dev`
-        1. run Go backend: <br>`go run ./src`
-        1. app should be running at http://localhost:9999
-* NOTICE: the app is accessible from the browser on different ports depending on how it is run - 3333 for docker and 9999 for fully local
+- #### From compose.yaml:
+    1. Ensure docker is installed - if you're on Mac/Windows, be sure to install docker desktop
+    1. build the database:<br> 
+        `docker compose up --build postgis`<br>
+        - if building the database from scratch, the scripts in /db/initdb will be run
+    1. import ACS, TIGER, GTFS, and OSM data
+        - The easiest way to do this is to run the scripts in /scr within the running postgis container
+            - /scr in the repo is mounted to /scr in the container, so the scripts can be run within the container
+        1. Once the postgis service is running and healthy, create an interactive terminal for the running container
+            <br>`docker exec -it pgis bash`<br>
+            * <b>ALL COMMANDS WILL BE RUN IN THIS TERMINAL UNTIL OTHERWISE NOTED</b>
+        1. Import county/census tract polygon data from TIGER shapefiles
+            <br>`./scr/tgr`<br>
+        1. Import per-census tract data from the 2024 ACS 5 Year dataset
+            <br>`./scr/acs`<br>
+        1. Import GTFS data from STL Metro
+            <br>`./scr/gtfs`<br>
+        1. Import Open Street Map data
+            <br>`./scr/osm`<br>
+        1. Finally, close the interactive terminal into the container with Ctrl+D. All commands going forward are run on the host computer
+    1. build and run the Go API and nginx proxy containers:<br>
+        `docker compose up --build api proxy`
+    1. app should be running at http://localhost:3333

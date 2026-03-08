@@ -5,7 +5,9 @@
         "moduleResolution": "Bundler",
         "strict": true,
         "skipLibCheck": true,
-        "noImplicitAny": false
+        "noImplicitAny": false,
+        "rootDir": "./www/src",
+        "outDir": "./www/js"
     },
     "include": ["www/src/**/*"]
 }

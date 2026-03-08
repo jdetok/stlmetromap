@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# acs: Restore MO/IL subset of the ACS 2024 5yr dataset
+# full dataset dump: https://backup.censusreporter.org/census-reporter-extracts/acs2024_5yr_backup.sql.gz
+# Written 03/07/2026
+
+export PGHOST="${POSTGRES_HOST}"
+export PGPORT="${POSTGRES_PORT}"
+export PGUSER="${POSTGRES_USER}"
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+export PGDATABASE="${POSTGRES_DB}"
+
+SCHEMA="acs"
+DIR="dump"
+DUMPF="acs_out.dump"
+
+set -euo pipefail
+
+mkdir -p /$DIR && cd /$DIR
+
+if [ ! -f "$DUMPF" ]; then
+    echo "can't find expected dump file at $DIR/$DUMPF"
+    exit 1
+fi
+
+psql -c "drop schema if exists $SCHEMA cascade;"
+
+pg_restore -d "${PGDATABASE}" "${DUMPF}"
+
+echo "restoration complete in db ${PGDATABASE} schema ${SCHEMA}"

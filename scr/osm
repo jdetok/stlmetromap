@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+# osm: Fetch and load MO/IL .pbf extract files into Postgres
+# Data provided by Open Street Map
+# osmium utilized to combine several .pbf files: https://osmcode.org/osmium-tool/
+# osm2pgsql utilized to load .pbf file: https://osm2pgsql.org/
+# Written 03/07/2026
+
+# env 
+export PGHOST="${POSTGRES_HOST}"
+export PGPORT="${POSTGRES_PORT}"
+export PGUSER="${POSTGRES_USER}"
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+export PGDATABASE="${POSTGRES_DB}"
+
+# def
+BASE="https://download.geofabrik.de/north-america/us/"
+CORES=4
+RAM=8096
+MODE=create
+TMP=/tmp/osm
+MERGEF="${TMP}/merged.osm.pbf"
+REGIONS=("missouri" "illinois")
+
+declare -A RGNMAP
+
+make_regions_pbf_map() {
+    for rgn in "${REGIONS[@]}"; do
+        local file="${rgn}-latest.osm.pbf"
+        RGNMAP[$rgn]="${file}"
+    done
+}
+
+get_regions_data() {
+    for rgn in "${!RGNMAP[@]}"; do
+        local file="${RGNMAP[$rgn]}"
+        local url="${BASE}${file}"
+        local path="${TMP}/${file}"
+        if [[ -f "${path}" ]] && osmium "$path" &>/dev/null; then
+            echo "file exists at ${file}, continuing..."
+        else 
+            [[ -f "$path" ]] && echo "removing corrupt file $path..."
+            rm -f "$path"
+            echo "curling ${url}..."
+            curl -L --fail --retry 10 --retry-delay 2 \
+                --retry-all-errors "${url}" -o "$path" &
+        fi
+    done
+    wait
+    echo "all .pbf downloads complete"
+}
+
+check_db() {
+    psql -c "select 'connected' as db_conn"
+}
+
+# ENTRY
+SECONDS=0
+set -euo pipefail
+trap 'echo "interrupted, killing jobs..."; kill $(jobs -p) 2>/dev/null; exit 1' INT TERM
+check_db
+
+mkdir -p "${TMP}"
+
+make_regions_pbf_map
+
+get_regions_data
+
+echo "using osium to combine ${#RGNMAP[@]} .pbf files..."
+osmium merge "${RGNMAP[@]/#/${TMP}/}" -o "${MERGEF}" --overwrite
+
+echo "starting osm2pgsql import - this will take several hours"
+osm2pgsql -v -r pbf --"${MODE}" \
+    --slim --hstore \
+    --cache "${RAM}" --number-processes "${CORES}" \
+    "${MERGEF}"
+
+echo "osm2pgsql complete, cleaning up .pbf files in ${TMP}"
+rm -rf /tmp/osm/*.pbf
+
+echo "script complete after $(( $SECONDS / 60 )) min and $(( $SECONDS % 60 )) seconds"

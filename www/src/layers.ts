@@ -7,15 +7,26 @@ import Point from "@arcgis/core/geometry/Point";
 import Polyline from "@arcgis/core/geometry/Polyline";
 import Graphic from "@arcgis/core/Graphic";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
-import { FeatureLayerMeta, StopMarkers, StopMarker, cplethEls } from "./types.js";
+import Renderer from "@arcgis/core/renderers/Renderer";
 import {
-    STLWKID, routeTypes, TRACTS_LAYER_URL, TRACTS_LAYER_TTL, TRACTS_FIELDS, TRACTS_FIELDINFOS,
+    STLWKID, TRACTS_LAYER_URL, TRACTS_LAYER_TTL, TRACTS_FIELDS, TRACTS_FIELDINFOS,
     COUNTIES_LAYER_URL, COUNTIES_LAYER_TTL, COUNTIES_FIELDS, COUNTIES_FIELDINFOS,
-    ML_LAYER_URL, ML_LAYER_TTL, STOP_FIELDS, BUS_LAYER_TTL, BUS_LAYER_URL,
+    ML_LAYER_URL, ML_LAYER_TTL, BUS_LAYER_TTL, BUS_LAYER_URL,
     CYCLE_LAYER_URL, CYCLE_LAYER_TTL, CYCLING_FIELDS,
-    BUS_STOP_FIELDINFOS, BUS_STOP_FIELDS
+    STOP_FIELDINFOS, STOP_FIELDS
 } from "./data.js";
-
+import Polygon from "@arcgis/core/geometry/Polygon.js";
+export type FeatureLayerMeta = {
+    title: string;
+    source?: Graphic[];
+    dataUrl?: string;
+    renderer: Renderer;
+    popupTemplate?: __esri.PopupTemplateProperties;
+    fields?: __esri.FieldProperties[];
+    geometryType?: 'point' | 'polygon' | 'polyline';
+    toGraphics?: (data: any) => Graphic[];
+    toPolygons?: (data: any) => Graphic[];
+}
 const POPLDENS_ALPHA = 0.15;
 const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
     [0, 2500, [94, 150, 98]],
@@ -44,6 +55,9 @@ const CYCLE_LAYER_OTHER_COLOR = [75, 108, 208, 0.7];
 const CYCLE_LAYER_UNPAVED_COLOR = [158, 145, 125, 0.7];
 const CYCLE_LAYER_SIZE = .8;
 
+// choropleth levels, pass min val, max val, rgb val
+type cplethEls = [number, number, number[]];
+
 // create choropleth levels for the array of min/max/color
 const newChoroplethLevel = (c: cplethEls) => {
     return {
@@ -60,28 +74,30 @@ const makeChoroplethLevels = (levels: cplethEls[]): __esri.ClassBreakInfoPropert
     return lvls;
 };
 
-// create and return an array of graphics from passed bus/metro stop locations
-const stopsToGraphics = (data: StopMarkers): Graphic[] => {
-    return data.stops.map(
-        (s: StopMarker, i: number) =>
-            new Graphic({
-                geometry: new Point({
-                    latitude: s.yx.latitude,
-                    longitude: s.yx.longitude,
-                    spatialReference: { wkid: STLWKID },
-                }),
-                attributes: {
-                    ObjectID: i + 1,
-                    id: s.id,
-                    name: s.name,
-                    type: routeTypes[s.typ],
-                    typ: s.typ,
-                    routes: s.routes.map((r) => `${r.name}-${r.nameLong}`).join(", "),
-                    tractGeoid: s.tractGeoid,
-                    whlChr: s.whlChr,
-                },
+const toPolygon = (data: any): Graphic[] => {
+    return data.features.map((f: any ) => { 
+        return new Graphic({
+            geometry: new Polygon({
+                rings: (f.geometry.type === "MultiPolygon") ? f.geometry.coordinates.flat(1) : f.geometry.coordinates,
+                spatialReference: { wkid: STLWKID },
             }),
-    );
+            attributes: f.properties,
+        })
+    })
+}
+
+// create and return an array of graphics from passed bus/metro stop locations
+const stopsToGraphics = (data: any): Graphic[] => {
+    return data.features.map((f: any, i: number) => {
+        return new Graphic({
+            geometry: new Point({
+                longitude: f.geometry.coordinates[0],
+                latitude: f.geometry.coordinates[1],
+                spatialReference: { wkid: STLWKID },
+            }),
+            attributes: f.properties,
+        })
+    })
 };
 
 // LAYERS DEFINED HERE: TO ADD NEW LAYER, CREATE A CONFIG HERE AND ADD IT TO THE ARRAY IN map-window.ts
@@ -89,9 +105,9 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
     title: BUS_LAYER_TTL,
     dataUrl: BUS_LAYER_URL,
     geometryType: "point",
-    fields: BUS_STOP_FIELDS,
+    fields: STOP_FIELDS,
     renderer: new UniqueValueRenderer({
-        field: "network",
+        field: "wheelchair",
         defaultLabel: "NA",
         defaultSymbol: new SimpleMarkerSymbol({
             style: "circle",
@@ -100,67 +116,35 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
         }),
         uniqueValueInfos: [
             {
-                value: "MetroBus",
+                value: "accessible",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
                     color: BUS_STOP_Y_COLOR,
                     size: BUS_STOP_SIZE,
                 }),
-                // label: "Wheelchair Accessible",
+                label: "Wheelchair Accessible",
             },
             {
-                value: "Greyhound",
+                value: "not_accessible",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
                     color: BUS_STOP_NO_COLOR,
-                    size: BUS_STOP_SIZE + 2,
+                    size: BUS_STOP_SIZE,
                 }),
-                // label: "Not Wheelchair Accessible",
-            },
-            {
-                value: "Madison County Transit",
-                symbol: new SimpleMarkerSymbol({
-                    style: "circle",
-                    color: 'pink',
-                    size: BUS_STOP_SIZE + 2,
-                }),
-                // label: "Not Wheelchair Accessible",
+                label: "Not Wheelchair Accessible",
             },
         ],
     }),
-    
     popupTemplate: {
-        title: "{operator} Bus Stop: {name}",
+        title: `MetroBus ({route_ids}) Stop: {stop_name}`,
         content: [
             {
                 type: "fields",
-                fieldInfos: BUS_STOP_FIELDINFOS
+                fieldInfos: STOP_FIELDINFOS
             },
         ],
     },
-    toGraphics: (data: any): Graphic[] => {
-        return data.features.map((f: any, i: number) => {
-            return new Graphic({
-                geometry: new Point({
-                    longitude: f.geometry.coordinates[0],
-                    latitude: f.geometry.coordinates[1],
-                    spatialReference: { wkid: STLWKID },
-                }),
-                attributes: {
-                    ObjectID: i + 1,
-                    osm_id: f.properties.osm_id,
-                    name: f.properties.name ?? f.properties.operator ?? f.properties.network ?? '',
-                    operator: f.properties.operator ?? f.properties.network ?? '',
-                    shelter: f.properties.shelter,
-                    bench: f.properties.bench,
-                    kerb: f.properties.kerb,
-                    wheelchair: f.properties.wheelchair,
-                    network: f.properties.network,
-                }
-            })
-        })
-    }
-    // toGraphics: stopsToGraphics,
+    toGraphics: stopsToGraphics,
 };
 
 export const LAYER_ML_STOPS: FeatureLayerMeta = {
@@ -169,10 +153,10 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
     geometryType: "point",
     fields: STOP_FIELDS,
     renderer: new UniqueValueRenderer({
-        field: "typ",
+        field: "route_ids",
         uniqueValueInfos: [
             {
-                value: "mlr",
+                value: "MLR",
                 label: "Red Line",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
@@ -181,7 +165,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
                 }),
             },
             {
-                value: "mlb",
+                value: "MLB",
                 label: "Blue Line",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
@@ -190,7 +174,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
                 }),
             },
             {
-                value: "mlc",
+                value: "MLB, MLR",
                 label: "Blue/Red Lines",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
@@ -201,14 +185,11 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
         ],
     }),
     popupTemplate: {
-        title: "{type} Stop: {name}",
+        title: `Light Rail Stop: {stop_name}`,
         content: [
             {
                 type: "fields",
-                fieldInfos: [
-                    { fieldName: "routes", label: "Routes Served:" },
-                    { fieldName: "tractGeoid", label: "Tract GeoID:" },
-                ],
+                fieldInfos: STOP_FIELDINFOS
             },
         ],
     },
@@ -231,7 +212,7 @@ export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
         }),
     }),
     popupTemplate: {
-        title: "{NAME}",
+        title: "{county_name}",
         content: [
             {
                 type: "fields",
@@ -239,6 +220,7 @@ export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
             },
         ],
     },
+    toPolygons: toPolygon,
 };
 
 export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
@@ -247,11 +229,11 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
     geometryType: "polygon",
     fields: TRACTS_FIELDS as __esri.FieldProperties[],
     renderer: new ClassBreaksRenderer({
-        field: "POPLSQMI",
+        field: "popl_dens",
         classBreakInfos: makeChoroplethLevels(POPLDENS_CHOROPLETH_LEVELS),
     }),
     popupTemplate: {
-        title: "Census Tract {TRACT}",
+        title: "{tract_name}",
         content: [
             {
                 type: "fields",
@@ -259,6 +241,7 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
             },
         ],
     },
+    toPolygons: toPolygon,
 };
 
 

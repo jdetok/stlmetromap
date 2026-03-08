@@ -11,3 +11,4 @@ db/**/*json
 *.pdf
 **/postgis/
 **/pbf/
+**/*.dump

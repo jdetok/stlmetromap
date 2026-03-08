@@ -1,4 +1,39 @@
 @startuml arch
-title Architecture
+title High Level Architecture
 
+<style>
+    diagram {
+        Margin 3
+        Padding 12
+    }
+</style>
+
+participant "External Internet" as ext
+participant "Data Fetch Containers" as fetch
+participant "Source PostGIS DB" as bdb
+participant "Project PostGIS DB" as pdb
+participant "Go API" as go
+participant "TypeScript Frontend" as ts
+
+== Step 1: Build Source Database ==
+fetch <-> ext : fetch osm exports from\nhttps://download.geofabrik.de/
+fetch -> bdb : osm2pgsql imports\n.pbf files into postgres
+fetch <-> ext : get acs pg dump from\nhttps://backup.censusreporter.org/\ncensus-reporter-extracts/
+fetch -> bdb : schema restored\nfrom dump file
+fetch <-> ext : fetch tiger shapefiles
+fetch -> bdb : ogr2ogr imports shapefiles\ninto postgres
+== Step 2: Build Project Database ==
+bdb -> bdb : build db dump\nwith data needed\nfor project
+bdb -> pdb : restore dump\nin project db\ncontainer
+== Step 3: Go Backend Runtime ==
+go <-> ext : fetch GTFS data from metro transit
+go -> go : process GTFS data
+go -> pdb : insert metro data
+go <-> pdb : query for app data
+go -> go : build app data from db
+go -> go : expose built app data\nas REST endpoints
+go -> go : listen for HTTP requests
+== Step 4: TypeScript Frontend Runtime ==
+ts <-> go : call REST endpoints\nfor GIS data
+ts -> ts : build ESRI\nFeature Layers\nfrom GIS data
 @enduml

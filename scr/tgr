@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+# tgr: Fetch and load MO/IL TIGER shapefiles into Postgres
+# ogr2ogr utilized to load shapefiles: https://gdal.org/en/stable/programs/ogr2ogr.html
+# Written 03/07/2026
+
+export PGHOST="${POSTGRES_HOST}"
+export PGPORT="${POSTGRES_PORT}"
+export PGUSER="${POSTGRES_USER}"
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+export PGDATABASE="${POSTGRES_DB}"
+
+VERBOSE=0
+SCHEMA="tgr"
+DIR="tgr"
+
+# two digit state codes used by tiger, acs, etc
+STATES=(29 17)
+
+# map for building dynamic url string for tiger fetch
+declare -A FETCHMAP
+FETCHMAP["tl_2024_us_state"]="STATE"
+FETCHMAP["tl_2024_us_county"]="COUNTY"
+
+# funcs
+# accepts args as an array of two-digit nums for each state, adds a keyval to map
+map_state_tracts() {
+    local states=("$@")
+    for num in "${states[@]}"; do
+        FETCHMAP["tl_2024_${num}_tract"]="TRACT"
+    done
+}
+
+# parse flags, only -v for verbose so far
+parse_flags() {
+    OPTIND=1
+    while getopts "v" flag; do
+        case "${flag}" in
+            v) VERBOSE=1 ;;
+            *) echo "invalid option: -${OPTARG}" >&2; exit 1 ;;
+        esac
+    done
+}
+
+# ENTRY POINT
+set -euo pipefail
+
+parse_flags "$@"
+
+map_state_tracts "${STATES[@]}"
+
+if (( $VERBOSE )); then
+    for key in "${!FETCHMAP[@]}"; do
+        echo "${key}: ${FETCHMAP[$key]}"
+    done
+fi
+
+# apk add --no-cache curl unzip postgresql-client
+
+mkdir -p /$DIR/zips /$DIR/unzip
+cd /$DIR/zips
+
+for key in "${!FETCHMAP[@]}"; do
+    file="${key}.zip"
+    url="https://www2.census.gov/geo/tiger/TIGER2024/${FETCHMAP[$key]}/$file"
+    if [[ ! -f "$file" ]]; then
+        echo "attempting to get $file"
+        curl -L --fail --retry 10 --retry-delay 2 -o $file $url &
+    else
+        echo "file $file already exists, continuing..."
+    fi        
+done
+wait
+
+echo "shapefile downloads complete"
+
+rm -rf /$DIR/unzip/*
+if [[ $(ls *.zip 2>/dev/null | wc -l) -eq 0 ]]; then
+    echo "ERROR: no .zip files found in /$DIR/zips"
+    exit 1
+fi
+
+for z in *.zip; do
+    echo "Unzipping $z"
+    unzip -q -o "$z" -d /$DIR/unzip
+done
+
+echo "Shapefiles:"
+ls -lah /$DIR/unzip/*.shp
+
+echo "Creating db schema $SCHEMA:"
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE \
+    -c "create schema if not exists $SCHEMA;"
+
+PG="PG:host=$PGHOST port=$PGPORT dbname=$PGDATABASE user=$PGUSER password=$PGPASSWORD active_schema=$SCHEMA"
+for key in "${!FETCHMAP[@]}"; do
+    ogr2ogr -f PostgreSQL "${PG}" /"${DIR}"/unzip/"${key}".shp  \
+        -nln "${FETCHMAP[$key],,}"  -nlt PROMOTE_TO_MULTI \
+        -lco GEOMETRY_NAME=geom -lco FID=gid -append
+done
+
+echo "ogr2ogr finished loading shapefiles into database '${PGDATABASE}' schema '${SCHEMA}'"
+echo "cleaning up $(find /$DIR/unzip -maxdepth 1 -type f | wc -l) unzipped files in /$DIR/unzip/"
+rm -rf /$DIR/unzip/*
+
+echo "finished fetching and loading tiger data"
