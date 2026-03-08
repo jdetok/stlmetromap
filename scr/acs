@@ -12,7 +12,7 @@ export PGDATABASE="${POSTGRES_DB}"
 # def
 SCHEMA="acs"
 DIR="dump"
-DUMPF="acs.dump"
+DUMPF="acs_out.dump"
 
 # cmd
 set -euo pipefail

@@ -53,7 +53,7 @@ if (( $VERBOSE )); then
     done
 fi
 
-apk add --no-cache curl unzip postgresql-client
+# apk add --no-cache curl unzip postgresql-client
 
 mkdir -p /$DIR/zips /$DIR/unzip
 cd /$DIR/zips
@@ -73,7 +73,7 @@ wait
 echo "shapefile downloads complete"
 
 rm -rf /$DIR/unzip/*
-if [[ ! -e *.zip ]]; then
+if [[ $(ls *.zip 2>/dev/null | wc -l) -eq 0 ]]; then
     echo "ERROR: no .zip files found in /$DIR/zips"
     exit 1
 fi

@@ -8,7 +8,7 @@ export PGPASSWORD="${POSTGRES_PASSWORD}"
 export PGDATABASE="${POSTGRES_DB}"
 
 # def
-BASE="https://download.geofabrik.de/north-america/"
+BASE="https://download.geofabrik.de/north-america/us/"
 CORES=4
 RAM=8096
 MODE=create
@@ -29,12 +29,15 @@ get_regions_data() {
     for rgn in "${!RGNMAP[@]}"; do
         local file="${RGNMAP[$rgn]}"
         local url="${BASE}${file}"
-        if [[ ! -f "${TMP}/${file}" ]]; then
+        local path="${TMP}/${file}"
+        if [[ -f "${path}" ]] && osmium "$path" &>/dev/null; then
+            echo "file exists at ${file}, continuing..."
+        else 
+            [[ -f "$path" ]] && echo "removing corrupt file $path..."
+            rm -f "$path"
             echo "curling ${url}..."
             curl -L --fail --retry 10 --retry-delay 2 \
-                --retry-all-errors "${url}" -o "${TMP}/${file}" &
-        else 
-            echo "file exists at ${file}, continuing..."
+                --retry-all-errors "${url}" -o "$path" &
         fi
     done
     wait
@@ -58,7 +61,7 @@ make_regions_pbf_map
 get_regions_data
 
 echo "using osium to combine ${#RGNMAP[@]} .pbf files..."
-osmium merge "${RGNMAP[@]/#/${TMP}/}" -o "${MERGEF}"
+osmium merge "${RGNMAP[@]/#/${TMP}/}" -o "${MERGEF}" --overwrite
 
 echo "starting osm2pgsql import - this will take several hours"
 osm2pgsql -v -r pbf --"${MODE}" \
