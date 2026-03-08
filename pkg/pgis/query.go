@@ -95,7 +95,13 @@ join acs.b25064_moe f on f.geoid = a.geoid
 join acs.b28008_moe g on g.geoid = a.geoid
 join tgr.tract t on t.geoid = substring(a.geoid, 8)
 join tgr.county x on x.geoid = substring(t.geoid, 1, 5)
-left join stopcnt z on z.geoid = t.geoid	
+left join stopcnt z on z.geoid = t.geoid
+where ST_Intersects(ST_Transform(t.geom, 4326), ST_MakeEnvelope(-180, -90, 180, 41, 4326))
+and (
+	(a.geoid like '14000US17%' and t.countyfp in ('163', '119', '133', '117', '083', '013', '027', '005'))
+	or (a.geoid like '14000US29%' and t.countyfp in ('189', '510', '183', '099', '071', '219'))
+	or round(a.b01001001::numeric * 2589988.0 / nullif(t.aland, 0), 2) >= 1000
+)
 `
 	GROCERY_STORES = `
 select

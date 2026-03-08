@@ -6,9 +6,9 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import LayerList from "@arcgis/core/widgets/LayerList";
 import Expand from "@arcgis/core/widgets/Expand";
 import Legend from "@arcgis/core/widgets/Legend";
-import { FeatureLayerMeta } from "../types.js";
 import { STLCOORDS, STLWKID, BASEMAP } from "../data.js";
 import {
+    FeatureLayerMeta,
     LAYER_BUS_STOPS,
     LAYER_ML_STOPS,
     LAYER_CENSUS_COUNTIES,
@@ -153,6 +153,8 @@ export class MapWindow extends HTMLElement {
                 // build graphics layer if specified
                 if (meta.toGraphics) {
                     meta.source = meta.toGraphics(data);
+                } else if (meta.toPolygons) {
+                    meta.source = meta.toPolygons(data);
                 } else {
                     if (!data?.features?.length) {
                         throw new Error(`layer "${meta.title}" expected data.features[]`);

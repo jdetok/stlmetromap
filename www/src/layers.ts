@@ -7,15 +7,26 @@ import Point from "@arcgis/core/geometry/Point";
 import Polyline from "@arcgis/core/geometry/Polyline";
 import Graphic from "@arcgis/core/Graphic";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
-import { FeatureLayerMeta, StopMarkers, StopMarker, cplethEls } from "./types.js";
+import Renderer from "@arcgis/core/renderers/Renderer";
 import {
-    STLWKID, routeTypes, TRACTS_LAYER_URL, TRACTS_LAYER_TTL, TRACTS_FIELDS, TRACTS_FIELDINFOS,
+    STLWKID, TRACTS_LAYER_URL, TRACTS_LAYER_TTL, TRACTS_FIELDS, TRACTS_FIELDINFOS,
     COUNTIES_LAYER_URL, COUNTIES_LAYER_TTL, COUNTIES_FIELDS, COUNTIES_FIELDINFOS,
     ML_LAYER_URL, ML_LAYER_TTL, BUS_LAYER_TTL, BUS_LAYER_URL,
     CYCLE_LAYER_URL, CYCLE_LAYER_TTL, CYCLING_FIELDS,
     STOP_FIELDINFOS, STOP_FIELDS
 } from "./data.js";
-
+import Polygon from "@arcgis/core/geometry/Polygon.js";
+export type FeatureLayerMeta = {
+    title: string;
+    source?: Graphic[];
+    dataUrl?: string;
+    renderer: Renderer;
+    popupTemplate?: __esri.PopupTemplateProperties;
+    fields?: __esri.FieldProperties[];
+    geometryType?: 'point' | 'polygon' | 'polyline';
+    toGraphics?: (data: any) => Graphic[];
+    toPolygons?: (data: any) => Graphic[];
+}
 const POPLDENS_ALPHA = 0.15;
 const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
     [0, 2500, [94, 150, 98]],
@@ -44,6 +55,9 @@ const CYCLE_LAYER_OTHER_COLOR = [75, 108, 208, 0.7];
 const CYCLE_LAYER_UNPAVED_COLOR = [158, 145, 125, 0.7];
 const CYCLE_LAYER_SIZE = .8;
 
+// choropleth levels, pass min val, max val, rgb val
+type cplethEls = [number, number, number[]];
+
 // create choropleth levels for the array of min/max/color
 const newChoroplethLevel = (c: cplethEls) => {
     return {
@@ -60,25 +74,30 @@ const makeChoroplethLevels = (levels: cplethEls[]): __esri.ClassBreakInfoPropert
     return lvls;
 };
 
+const toPolygon = (data: any): Graphic[] => {
+    return data.features.map((f: any ) => { 
+        return new Graphic({
+            geometry: new Polygon({
+                rings: (f.geometry.type === "MultiPolygon") ? f.geometry.coordinates.flat(1) : f.geometry.coordinates,
+                spatialReference: { wkid: STLWKID },
+            }),
+            attributes: f.properties,
+        })
+    })
+}
+
 // create and return an array of graphics from passed bus/metro stop locations
 const stopsToGraphics = (data: any): Graphic[] => {
     return data.features.map((f: any, i: number) => {
-            return new Graphic({
-                geometry: new Point({
-                    longitude: f.geometry.coordinates[0],
-                    latitude: f.geometry.coordinates[1],
-                    spatialReference: { wkid: STLWKID },
-                }),
-                attributes: {
-                    ObjectID: i + 1,
-                    stop_id: f.properties.stop_id,
-                    stop_name: f.properties.stop_name,
-                    route_ids: f.properties.route_ids,
-                    route_names: f.properties.route_names,
-                    wheelchair: f.properties.wheelchair ?? 'NA',
-                }
-            })
+        return new Graphic({
+            geometry: new Point({
+                longitude: f.geometry.coordinates[0],
+                latitude: f.geometry.coordinates[1],
+                spatialReference: { wkid: STLWKID },
+            }),
+            attributes: f.properties,
         })
+    })
 };
 
 // LAYERS DEFINED HERE: TO ADD NEW LAYER, CREATE A CONFIG HERE AND ADD IT TO THE ARRAY IN map-window.ts
@@ -201,6 +220,7 @@ export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
             },
         ],
     },
+    toPolygons: toPolygon,
 };
 
 export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
@@ -221,6 +241,7 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
             },
         ],
     },
+    toPolygons: toPolygon,
 };
 
 
