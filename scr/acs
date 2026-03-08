@@ -1,20 +1,19 @@
 #!/usr/bin/env bash
 
-# restore database dump of acs schema 
+# acs: Restore MO/IL subset of the ACS 2024 5yr dataset
+# full dataset dump: https://backup.censusreporter.org/census-reporter-extracts/acs2024_5yr_backup.sql.gz
+# Written 03/07/2026
 
-# env
 export PGHOST="${POSTGRES_HOST}"
 export PGPORT="${POSTGRES_PORT}"
 export PGUSER="${POSTGRES_USER}"
 export PGPASSWORD="${POSTGRES_PASSWORD}"
 export PGDATABASE="${POSTGRES_DB}"
 
-# def
 SCHEMA="acs"
 DIR="dump"
 DUMPF="acs_out.dump"
 
-# cmd
 set -euo pipefail
 
 mkdir -p /$DIR && cd /$DIR

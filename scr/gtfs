@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# gtfs: Fetch and load GTFS data from STL Metro into Postgres
+# utilizes node cli tool gtfs-via-postgres https://github.com/public-transport/gtfs-via-postgres
+# Written 03/07/2026
+
 export PGHOST="${POSTGRES_HOST}"
 export PGPORT="${POSTGRES_PORT}"
 export PGUSER="${POSTGRES_USER}"
@@ -18,5 +22,3 @@ unzip -o "${FILE}" -d "${DIR}"
 
 npm install -g gtfs-via-postgres
 npm exec -- gtfs-to-sql --require-dependencies -- /${DIR}/*.txt | sponge | psql -b
-
-# node /usr/local/lib/node_modules/gtfs-via-postgres/bin/gtfs-via-postgres.js --database-url $DATABASE_URL < $FILE

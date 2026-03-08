@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# dmp: Create a database dump in the /dump directory (mounted to local ./db/dump)
+# Written 03/07/2026
+
+export PGHOST="${POSTGRES_HOST}"
+export PGPORT="${POSTGRES_PORT}"
+export PGUSER="${POSTGRES_USER}"
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+export PGDATABASE="${POSTGRES_DB}"
+
+DIR=dump
+DB=$PGDATABASE
+DUMPF="/${DIR}/${DB}_$(date +%y%m%d_%H%M%S).dump"
+
+SECONDS=0
+
+echo "creating database dump of ${DB}..."
+pg_dump -d $DB -Fc -f "${DUMPF}"
+
+echo "complete after $(( $SECONDS / 60 ))m:$(( $SECONDS % 60 ))s, ${DUMPF}" created

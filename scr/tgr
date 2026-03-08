@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
-# env
+# tgr: Fetch and load MO/IL TIGER shapefiles into Postgres
+# ogr2ogr utilized to load shapefiles: https://gdal.org/en/stable/programs/ogr2ogr.html
+# Written 03/07/2026
+
 export PGHOST="${POSTGRES_HOST}"
 export PGPORT="${POSTGRES_PORT}"
 export PGUSER="${POSTGRES_USER}"
 export PGPASSWORD="${POSTGRES_PASSWORD}"
 export PGDATABASE="${POSTGRES_DB}"
 
-# def
 VERBOSE=0
 SCHEMA="tgr"
 DIR="tgr"
