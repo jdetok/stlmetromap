@@ -6,7 +6,7 @@ Interactive Map of multi-modal transportation options in the St. Louis Metropoli
 
 ## PRIMARY DATA SOURCES
 - ### Metro Transit
-    - [Static GTFS Data](https://www.metrostlouis.org/Transit/google_transit.zip)
+    - [Static GTFS Data](https://www.metrostlouis.org/developer-resources/)
 - ### US Census Bureau 
     - [2024 American Community Survey (ACS) 5-Year Data](https://www.census.gov/data/developers/data-sets/acs-5year.html)
     - [2024 TIGER Shapefiles](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html)
