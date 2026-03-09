@@ -364,7 +364,7 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
 
 const GROCERY_LAYER_TTL = "Grocery Stores";
 const GROCERY_LAYER_URL = "/grocery";
-const GROCERY_INNER_COLOR = 'blue';
+const GROCERY_INNER_COLOR = [0, 0, 255, 0.3];
 const GROCERY_OUTLINE_SIZE = .5;
 
 export const LAYER_GROCERY: FeatureLayerMeta = {
@@ -397,7 +397,7 @@ export const LAYER_GROCERY: FeatureLayerMeta = {
 
 const PARKS_LAYER_TTL = "Parks";
 const PARKS_LAYER_URL = "/parks";
-const PARKS_COLOR = [20, 255, 115, 0.45];
+const PARKS_COLOR = [20, 255, 115, 0.35];
 const PARKS_OUTLINE_SIZE = .5;
 
 export const LAYER_PARKS: FeatureLayerMeta = {
@@ -430,7 +430,7 @@ export const LAYER_PARKS: FeatureLayerMeta = {
 
 const FUN_LAYER_TTL = "Entertainment";
 const FUN_LAYER_URL = "/fun";
-const FUN_COLOR = [255, 153, 255, 0.56];
+const FUN_COLOR = [255, 153, 255, 0.25];
 const FUN_OUTLINE_SIZE = .5;
 
 export const LAYER_FUN: FeatureLayerMeta = {
@@ -463,7 +463,7 @@ export const LAYER_FUN: FeatureLayerMeta = {
 
 const SOCIAL_LAYER_TTL = "Social Facilities";
 const SOCIAL_LAYER_URL = "/social";
-const SOCIAL_COLOR = [184, 217, 255, 0.5];
+const SOCIAL_COLOR = [184, 217, 255, 0.35];
 const SOCIAL_OUTLINE_SIZE = .5;
 
 export const LAYER_SOCIAL: FeatureLayerMeta = {
@@ -496,7 +496,7 @@ export const LAYER_SOCIAL: FeatureLayerMeta = {
 
 const SCHOOL_LAYER_TTL = "Schools";
 const SCHOOL_LAYER_URL = "/school";
-const SCHOOL_COLOR = [242, 238, 122, 0.6];
+const SCHOOL_COLOR = [242, 238, 122, 0.3];
 const SCHOOL_OUTLINE_SIZE = .5;
 
 export const LAYER_SCHOOL: FeatureLayerMeta = {

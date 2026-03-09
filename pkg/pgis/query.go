@@ -114,6 +114,24 @@ inner join public.routes d on d.route_id = b.route_id
 where d.route_type = '2'
 group by a.stop_id, c.stop_name, c.stop_loc, c.wheelchair_boarding
 	`
+	AMTRAK = `
+select p.osm_id, p.name, p.operator,
+    ST_AsGeoJSON(ST_Transform(p.way, 4326)) as geom
+from public.planet_osm_point p
+where p.public_transport is not null
+and p.railway is not null
+and p.operator = 'Amtrak'
+and p.way && ST_Transform(
+    ST_MakeEnvelope(-91.11, 31.77, -75.54, 39.87, 4326),
+    3857
+)
+and not exists (
+    select 1 from public.planet_osm_point p2
+    where p2.osm_id < p.osm_id
+    and p2.operator = 'Amtrak'
+    and ST_DWithin(p.way, p2.way, 200)
+)
+	`
 	BUS_STOPS = `
 select a.stop_id, c.stop_name, string_agg(distinct d.route_short_name, ', ') as route_ids,
 	string_agg(distinct d.route_long_name, ', ') as route_names, c.wheelchair_boarding as wheelchair,
@@ -135,6 +153,10 @@ select osm_id,
 	ST_AsGeoJSON(ST_Transform(way, 4326)) AS geom
 from public.planet_osm_line
 where highway='cycleway'
+and way && ST_Transform(
+    ST_MakeEnvelope(-92.5, 37, -89.5, 40, 4326),
+    3857
+)	
 `
 	GROCERY = `
 select
@@ -181,38 +203,14 @@ and way && ST_Transform(
     3857
 )	
 	`
-	METRO_AND_OSM_STOPS = `
-with metro as (
-	select a.name as county, b.name, 'Metro Transit' as network, b.wheelchair, b.geom
-	from gis.counties a
-	join gis.metro b on ST_Contains(a.geom, b.geom)
-), osm as (
-	select coalesce(name, '') as name,  
-		case
-			when tags->'network' like '%Greyhound%' then 'Greyhound'
-			when tags->'network' like '%SCAT%' then operator
-			when tags->'network' is null and operator is not null then operator
-			else coalesce(tags->'network', '')
-		end as network,
-		case 
-			when tags->'wheelchair' = 'yes' then 'POSSIBLE'
-			when tags->'wheelchair' = 'no' then 'NOT_POSSIBLE'
-			else 'NA'
-		end as wheelchair,
-		ST_Transform(way, 4326) as geom
-	from public.planet_osm_point
-	where public_transport is not null
-	and (railway is null or operator = 'Amtrak')
-	and (
-		operator in ('Amtrak', 'Madison County Transit', 'St. Charles Area Transit')
-		or tags->'network' like '%Greyhound%')
-	and (tags->'bus' = 'yes' or operator = 'Amtrak')
-	and way && ST_Transform(ST_MakeEnvelope(-99, 31, -75.5, 46.2, 4326),3857)
+	SOCIAL = `
+select osm_id, name, amenity, brand, operator,
+	ST_AsGeoJSON(ST_Transform(way, 4326)) as geom
+from public.planet_osm_polygon
+where amenity in ('social_facility', 'social_facility', 'social_center', 'social_centre')
+and way && ST_Transform(
+    ST_MakeEnvelope(-92.5, 37, -89.5, 40, 4326),
+    3857
 )
-select m.name, m.county, m.network, m.wheelchair, m.geom
-from metro m
-union all
-select o.name, null, o.network, o.wheelchair, o.geom
-from osm o	
 `
 )

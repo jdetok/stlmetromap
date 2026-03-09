@@ -57,12 +57,9 @@ export const TRACTS_FIELDS = [
 ];
 
 export const TRACTS_FIELDINFOS = [
-    { fieldName: "ObjectID", label: "ObjectID" },
-    { fieldName: "geoid", label: "geoid" },
     { fieldName: "tract", label: "Tract" },
-    { fieldName: "tract_name", label: "Tract Name" },
-    { fieldName: "countyfp", label: "County FP" },
     { fieldName: "county_name", label: "County" },
+    { fieldName: "countyfp", label: "County FP" },
     { fieldName: "popl", label: "Population" },
     { fieldName: "popl_dens", label: "Population Density" },
     { fieldName: "med_age", label: "Median Age" },
@@ -73,8 +70,6 @@ export const TRACTS_FIELDINFOS = [
 ];
 
 export const COUNTIES_FIELDS = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "geoid", alias: "geoid", type: "string" },
     { name: "countyfp", alias: "County FP", type: "string" },
     { name: "county_name", alias: "County", type: "string" },
     { name: "popl", alias: "Population", type: "integer" },

@@ -8,10 +8,9 @@ import (
 )
 
 const (
-	GET_DATA   = false
-	SAVE_DATA  = false
-	DATA_FILE  = "data/persist.json"
-	CYCLE_FILE = "data/cycle_osm.geojson"
+	GET_DATA  = false
+	SAVE_DATA = false
+	DATA_FILE = "data/persist.json"
 )
 
 func NewMux(layers *gis.DataLayers) *http.ServeMux {
@@ -26,11 +25,14 @@ func NewMux(layers *gis.DataLayers) *http.ServeMux {
 	mux.HandleFunc("/tracts", func(w http.ResponseWriter, r *http.Request) {
 		layers.Tracts.WriteJSONResp(w, r)
 	})
-	mux.HandleFunc("/bus", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/metrobus", func(w http.ResponseWriter, r *http.Request) {
 		layers.BusStops.WriteJSONResp(w, r)
 	})
-	mux.HandleFunc("/rail", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/metrolink", func(w http.ResponseWriter, r *http.Request) {
 		layers.TrnStops.WriteJSONResp(w, r)
+	})
+	mux.HandleFunc("/amtrak", func(w http.ResponseWriter, r *http.Request) {
+		layers.Amtrak.WriteJSONResp(w, r)
 	})
 	mux.HandleFunc("/bikes", func(w http.ResponseWriter, r *http.Request) {
 		layers.CyclePaths.WriteJSONResp(w, r)
@@ -40,6 +42,9 @@ func NewMux(layers *gis.DataLayers) *http.ServeMux {
 	})
 	mux.HandleFunc("/school", func(w http.ResponseWriter, r *http.Request) {
 		layers.Schools.WriteJSONResp(w, r)
+	})
+	mux.HandleFunc("/social", func(w http.ResponseWriter, r *http.Request) {
+		layers.Social.WriteJSONResp(w, r)
 	})
 	mux.HandleFunc("/parks", func(w http.ResponseWriter, r *http.Request) {
 		layers.Parks.WriteJSONResp(w, r)

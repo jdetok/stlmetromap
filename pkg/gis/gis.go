@@ -43,8 +43,10 @@ type DataLayers struct {
 	CyclePaths *FeatureColl
 	BusStops   *FeatureColl
 	TrnStops   *FeatureColl
+	Amtrak     *FeatureColl
 	Grocery    *FeatureColl
 	Schools    *FeatureColl
+	Social     *FeatureColl
 	Parks      *FeatureColl
 	Fun        *FeatureColl
 }
@@ -100,8 +102,10 @@ func GetDataLayers(ctx context.Context, fname string, db *pgxpool.Pool, lg *zap.
 	cyclPths := &FeatureColl{}
 	busStops := &FeatureColl{}
 	trnStops := &FeatureColl{}
+	amtrak := &FeatureColl{}
 	grocery := &FeatureColl{}
 	schools := &FeatureColl{}
+	social := &FeatureColl{}
 	parks := &FeatureColl{}
 	fun := &FeatureColl{}
 
@@ -176,7 +180,20 @@ func GetDataLayers(ctx context.Context, fname string, db *pgxpool.Pool, lg *zap.
 		}
 		return nil
 	})
-
+	g.Go(func() error {
+		lg.Infof("getting amtrak from db")
+		if err := amtrak.QueryDB(ctx, db, pgis.AMTRAK, "geom", []any{}); err != nil {
+			return fmt.Errorf("failed to fetch amtrak: %w", err)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		lg.Infof("getting social from db")
+		if err := social.QueryDB(ctx, db, pgis.SOCIAL, "geom", []any{}); err != nil {
+			return fmt.Errorf("failed to fetch social: %w", err)
+		}
+		return nil
+	})
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
@@ -189,9 +206,11 @@ func GetDataLayers(ctx context.Context, fname string, db *pgxpool.Pool, lg *zap.
 		Tracts:     tracts,
 		BusStops:   busStops,
 		TrnStops:   trnStops,
+		Amtrak:     amtrak,
 		CyclePaths: cyclPths,
 		Grocery:    grocery,
 		Schools:    schools,
+		Social:     social,
 		Parks:      parks,
 		Fun:        fun,
 	}, nil
