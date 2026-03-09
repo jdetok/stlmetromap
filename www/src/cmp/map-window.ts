@@ -1,5 +1,6 @@
 import "@arcgis/map-components/dist/components/arcgis-basemap-gallery";
 import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/dist/components/arcgis-zoom";
 import "@arcgis/map-components/dist/components/arcgis-layer-list";
 import "@arcgis/map-components/dist/components/arcgis-legend";
 import "@arcgis/map-components/dist/components/arcgis-expand";
@@ -80,14 +81,14 @@ export class MapWindow extends HTMLElement {
         } as __esri.Extent
 
         this.arcgisMap.addEventListener("arcgisViewReadyChange", async () => {
+            const view = this.arcgisMap.view as __esri.MapView;
+            this.arcgisMap.appendChild(this.buildZoom());
+            (this.layerListPanel.querySelector("arcgis-layer-list") as any).view = view;
+            (this.legendPanel.querySelector("arcgis-legend") as any).view = view;
+            (this.basemapPanel.querySelector("arcgis-basemap-gallery") as any).view = view;
+            (this.printPanel.querySelector("arcgis-print") as any).view = view;
             for (let i = 0; i < this.layers.length; i++) {
                 try {
-                    const view = this.arcgisMap.view as __esri.MapView;
-                    (this.layerListPanel.querySelector("arcgis-layer-list") as any).view = view;
-                    (this.legendPanel.querySelector("arcgis-legend") as any).view = view;
-                    (this.basemapPanel.querySelector("arcgis-basemap-gallery") as any).view = view;
-                    (this.printPanel.querySelector("arcgis-print") as any).view = view;
-
                     const layer = await this.makeFeatureLayer(this.layers[i]);
                     this.arcgisMap.map?.add(layer, i);
                 } catch (e) {
@@ -95,12 +96,11 @@ export class MapWindow extends HTMLElement {
                 }
             }
         }, { once: true });
-
         return this.arcgisMap;
     }
     private buildActionBar(): HTMLElement {
         const actionBar = document.createElement("calcite-action-bar") as any;
-        actionBar.layout = "vertical";
+        actionBar.layout = "horizontal";
 
         const actions = [
             { id: "legend", icon: "legend", text: "Legend" },
@@ -184,6 +184,9 @@ export class MapWindow extends HTMLElement {
         this.basemapPanel = panel;
         return panel;
     }
+    private buildZoom(): HTMLElement {
+        return document.createElement("arcgis-zoom");
+    }
     private addStyling(): HTMLStyleElement {
         return Object.assign(document.createElement("style"), { textContent: STYLE });
     }
@@ -232,32 +235,35 @@ const STYLE = `
     width: 100%;
     min-height: 0;
     height: 100%;
-    --popup-bg: rgba(125, 140, 151, 0.82);
+    --popup-bg: rgba(125, 140, 151, 0.42);
     --calcite-color-brand: var(--popup-bg);
     --calcite-color-background: var(--popup-bg);
     --calcite-color-foreground-1: var(--popup-bg);
     overflow: hidden;
     position: relative;
-    --calcite-spacing-sm: 0.25rem;   /* tightest — affects internal item padding */
-    --calcite-spacing-md: 0.5rem;    /* medium spacing */
-    --calcite-spacing-lg: 0.75rem;   /* larger gaps between sections */
+    --calcite-spacing-sm: 0.25rem;
+    --calcite-spacing-md: 0.5rem;
+    --calcite-spacing-lg: 0.75rem;
 }
 
 calcite-action-bar {
     position: absolute;
     bottom: 1.8rem;
-    right: .2rem;
+    right: 5px;
     z-index: 10;
 }
 calcite-panel {
     position: absolute;
-    bottom: 1.8rem;
-    right: .2rem;
+    right: 5px;
+    bottom: 70px;
     z-index: 10;
     width: fit-content;
     height: fit-content;
     max-height: 48%;
     max-width: 98%;
+}
+calcite-panel > * {
+    background0color: rgba(125, 140, 151, 0.1);
 }
 arcgis-map {
     --calcite-block-padding: 0.25rem;
@@ -266,5 +272,17 @@ arcgis-map {
     display: block;
     width: 100%;
     height: 100%;
+    z-index: 1;
+}
+arcgis-zoom {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 10;
+}
+
+arcgis-legend {
+    color: black;
+    font-weight: bold;
 }
 `;

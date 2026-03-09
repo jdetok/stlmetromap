@@ -115,16 +115,12 @@ where d.route_type = '2'
 group by a.stop_id, c.stop_name, c.stop_loc, c.wheelchair_boarding
 	`
 	AMTRAK = `
-select p.osm_id, p.name, p.operator,
+select p.osm_id, p.name, p.operator, way,
     ST_AsGeoJSON(ST_Transform(p.way, 4326)) as geom
 from public.planet_osm_point p
 where p.public_transport is not null
 and p.railway is not null
 and p.operator = 'Amtrak'
-and p.way && ST_Transform(
-    ST_MakeEnvelope(-91.11, 31.77, -75.54, 39.87, 4326),
-    3857
-)
 and not exists (
     select 1 from public.planet_osm_point p2
     where p2.osm_id < p.osm_id
@@ -133,8 +129,9 @@ and not exists (
 )
 	`
 	BUS_STOPS = `
-select a.stop_id, c.stop_name, string_agg(distinct d.route_short_name, ', ') as route_ids,
-	string_agg(distinct d.route_long_name, ', ') as route_names, c.wheelchair_boarding as wheelchair,
+select a.stop_id, c.stop_name, c.wheelchair_boarding as wheelchair,
+	string_agg(distinct d.route_short_name, ', ') as route_ids,
+	string_agg(distinct(d.route_short_name || '-' || d.route_long_name), ', ') as route_names,
 	ST_AsGeoJSON(c.stop_loc) as geom 
 from public.stop_times a
 inner join public.trips b on b.trip_id = a.trip_id

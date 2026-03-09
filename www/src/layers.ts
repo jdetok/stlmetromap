@@ -16,7 +16,7 @@ import {
     STOP_FIELDINFOS, STOP_FIELDS, GROCERY_FIELDS, GROCERY_FIELDINFOS,
     PARKS_FIELDS, PARKS_FIELDINFOS, FUN_FIELDS, FUN_FIELDINFOS,
     SCHOOL_FIELDS, SCHOOL_FIELDINFOS, AMTRAK_FIELDS, AMTRAK_FIELDINFOS,
-    SOCIAL_FIELDS, SOCIAL_FIELDINFOS
+    SOCIAL_FIELDS, SOCIAL_FIELDINFOS, OSM_FIELDINFOS
 } from "./data.js";
 import Polygon from "@arcgis/core/geometry/Polygon.js";
 export type FeatureLayerMeta = {
@@ -51,6 +51,8 @@ const ML_STOP_SIZE = 10;
 const MLB_STOP_COLOR = [0, 0, 255, 0.5];
 const MLR_STOP_COLOR = [255, 0, 0, 0.5];
 const MLC_STOP_COLOR = [127, 0, 255, 0.5];
+
+const RAIL_INNER_COLOR = [0, 0, 0, 0.6];
 
 const CYCLE_LAYER_GRAVEL_COLOR = [180, 80, 170, 0.7];
 const CYCLE_LAYER_ASPHALT_COLOR = [208, 148, 75, 0.7];
@@ -163,7 +165,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
                 label: "Red Line",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
-                    color: MLR_STOP_COLOR,
+                    color: RAIL_INNER_COLOR,
                     size: ML_STOP_SIZE,
                     outline: new SimpleLineSymbol({
                         color: 'red',
@@ -177,7 +179,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
                 label: "Blue Line",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
-                    color: MLB_STOP_COLOR,
+                    color: RAIL_INNER_COLOR,
                     size: ML_STOP_SIZE,
                     outline: new SimpleLineSymbol({
                         color: 'blue',
@@ -191,7 +193,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
                 label: "Blue/Red Lines",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
-                    color: MLC_STOP_COLOR,
+                    color: RAIL_INNER_COLOR,
                     size: ML_STOP_SIZE,
                     outline: new SimpleLineSymbol({
                         color: 'purple',
@@ -216,7 +218,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
 
 const AMTRAK_LAYER_TTL = "Amtrak";
 const AMTRAK_LAYER_URL = "/amtrak";
-const AMTRAK_COLOR = [77, 64, 117, 0.25];
+const AMTRAK_COLOR = [245, 245, 245, 0.6];
 const AMTRAK_SIZE = 18;
 export const LAYER_AMTRAK: FeatureLayerMeta = {
     title: AMTRAK_LAYER_TTL,
@@ -226,10 +228,10 @@ export const LAYER_AMTRAK: FeatureLayerMeta = {
     renderer: new SimpleRenderer({
         symbol: new SimpleMarkerSymbol({
             style: "circle",
-            color: AMTRAK_COLOR,
+            color: RAIL_INNER_COLOR,
             size: AMTRAK_SIZE,
             outline: new SimpleLineSymbol({
-                color: 'black',
+                color: AMTRAK_COLOR,
                 width: 1,
                 style: "solid",
             }),
@@ -386,7 +388,7 @@ export const LAYER_GROCERY: FeatureLayerMeta = {
         content: [
             {
                 type: "fields",
-                fieldInfos: GROCERY_FIELDINFOS,
+                fieldInfos: OSM_FIELDINFOS,
             },
         ],
     },
@@ -419,7 +421,7 @@ export const LAYER_PARKS: FeatureLayerMeta = {
         content: [
             {
                 type: "fields",
-                fieldInfos: PARKS_FIELDINFOS,
+                fieldInfos: OSM_FIELDINFOS,
             },
         ],
     },
@@ -452,7 +454,7 @@ export const LAYER_FUN: FeatureLayerMeta = {
         content: [
             {
                 type: "fields",
-                fieldInfos: FUN_FIELDINFOS,
+                fieldInfos: OSM_FIELDINFOS,
             },
         ],
     },
@@ -485,7 +487,7 @@ export const LAYER_SOCIAL: FeatureLayerMeta = {
         content: [
             {
                 type: "fields",
-                fieldInfos: SOCIAL_FIELDINFOS,
+                fieldInfos: OSM_FIELDINFOS,
             },
         ],
     },
@@ -518,7 +520,7 @@ export const LAYER_SCHOOL: FeatureLayerMeta = {
         content: [
             {
                 type: "fields",
-                fieldInfos: SCHOOL_FIELDINFOS,
+                fieldInfos: OSM_FIELDINFOS,
             },
         ],
     },

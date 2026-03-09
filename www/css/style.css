@@ -20,7 +20,7 @@ body {
 
 body > * {
     min-width: 0;
-    max-width: 98%; /* allows to resize smaller */
+    max-width: 98%;
     min-height: 0;
 }
 
@@ -30,6 +30,4 @@ map-window {
     height: 100%;
     border: 8px solid black;
     border-radius: 2rem;
-    /* overflow: hidden; */
 }
-

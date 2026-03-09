@@ -32,12 +32,9 @@ export const STOP_FIELDS: __esri.FieldProperties[] = [
 ];
 
 export const STOP_FIELDINFOS = [
-    { fieldName: "ObjectID", label: "ObjectID" },
-    { fieldName: "stop_id", label: "ID" },
     { fieldName: "stop_name", label: "Name" },
     { fieldName: "wheelchair", label: "Wheelchair Accessible" },
     { fieldName: "route_names", label: "Route Names" },
-    { fieldName: "route_ids", label: "Route Nums" },
 ];
 
 export const TRACTS_FIELDS = [
@@ -110,7 +107,6 @@ export const GROCERY_FIELDS = [
 ];
 
 export const GROCERY_FIELDINFOS = [
-    { fieldName: "ObjectID", label: "ObjectID" },
     { fieldName: "name", label: "Name" },
     { fieldName: "operator", label: "Operator" },
     { fieldName: "brand", label: "Brand" },
@@ -123,7 +119,6 @@ export const PARKS_FIELDS = [
 ];
 
 export const PARKS_FIELDINFOS = [
-    { fieldName: "ObjectID", label: "ObjectID" },
     { fieldName: "name", label: "Name" },
     { fieldName: "operator", label: "Operator" },
 ];
@@ -137,13 +132,17 @@ export const FUN_FIELDS = [
 ];
 
 export const FUN_FIELDINFOS = [
-    { fieldName: "ObjectID", label: "ObjectID" },
     { fieldName: "name", label: "Name" },
     { fieldName: "amenity", label: "Amenity" },
     { fieldName: "operator", label: "Operator" },
     { fieldName: "brand", label: "Brand" },
 ];
-
+export const OSM_FIELDINFOS = [
+    { fieldName: "name", label: "Name" },
+    { fieldName: "amenity", label: "Amenity" },
+    { fieldName: "operator", label: "Operator" },
+    { fieldName: "brand", label: "Brand" },
+];
 export const SCHOOL_FIELDS = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },
     { name: "name", alias: "Name", type: "string" },
@@ -152,7 +151,6 @@ export const SCHOOL_FIELDS = [
 ];
 
 export const SCHOOL_FIELDINFOS = [
-    { fieldName: "ObjectID", label: "ObjectID" },
     { fieldName: "name", label: "Name" },
     { fieldName: "amenity", label: "Amenity" },
     { fieldName: "operator", label: "Operator" },
@@ -165,7 +163,6 @@ export const AMTRAK_FIELDS: __esri.FieldProperties[] = [
 ];
 
 export const AMTRAK_FIELDINFOS = [
-    { fieldName: "ObjectID", label: "ObjectID" },
     { fieldName: "name", label: "Name" },
     { fieldName: "operator", label: "Operator" },
 ];
@@ -180,7 +177,6 @@ export const SOCIAL_FIELDS = [
 ];
 
 export const SOCIAL_FIELDINFOS = [
-    { fieldName: "ObjectID", label: "ObjectID" },
     { fieldName: "name", label: "Name" },
     { fieldName: "amenity", label: "Amenity" },
     { fieldName: "operator", label: "Operator" },
