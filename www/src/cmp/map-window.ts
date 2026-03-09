@@ -1,3 +1,4 @@
+import "@arcgis/map-components/dist/components/arcgis-basemap-gallery";
 import "@arcgis/map-components/dist/components/arcgis-map";
 import "@arcgis/map-components/dist/components/arcgis-layer-list";
 import "@arcgis/map-components/dist/components/arcgis-legend";
@@ -5,6 +6,7 @@ import "@arcgis/map-components/dist/components/arcgis-expand";
 import "@esri/calcite-components/dist/components/calcite-action-bar";
 import "@esri/calcite-components/dist/components/calcite-action";
 import "@esri/calcite-components/dist/components/calcite-panel";
+import "@arcgis/map-components/dist/components/arcgis-print";
 import Graphic from "@arcgis/core/Graphic";
 import Polygon from "@arcgis/core/geometry/Polygon";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
@@ -31,6 +33,8 @@ export class MapWindow extends HTMLElement {
     private layers: FeatureLayerMeta[];
     private layerListPanel!: HTMLElement;
     private legendPanel!: HTMLElement;
+    private basemapPanel!: HTMLElement;
+    private printPanel!: HTMLElement;
     public constructor() {
         super();
 
@@ -55,6 +59,8 @@ export class MapWindow extends HTMLElement {
             this.buildMap(),
             this.buildLayerListPanel(),
             this.buildLegendPanel(),
+            this.buildPrintPanel(),
+            this.buildBasemapPanel(),
             this.buildActionBar(),
         );
     }
@@ -79,6 +85,9 @@ export class MapWindow extends HTMLElement {
                     const view = this.arcgisMap.view as __esri.MapView;
                     (this.layerListPanel.querySelector("arcgis-layer-list") as any).view = view;
                     (this.legendPanel.querySelector("arcgis-legend") as any).view = view;
+                    (this.basemapPanel.querySelector("arcgis-basemap-gallery") as any).view = view;
+                    (this.printPanel.querySelector("arcgis-print") as any).view = view;
+
                     const layer = await this.makeFeatureLayer(this.layers[i]);
                     this.arcgisMap.map?.add(layer, i);
                 } catch (e) {
@@ -94,8 +103,10 @@ export class MapWindow extends HTMLElement {
         actionBar.layout = "vertical";
 
         const actions = [
-            { id: "layers", icon: "layers", text: "Layers" },
             { id: "legend", icon: "legend", text: "Legend" },
+            { id: "layers", icon: "layers", text: "Layers" },
+            { id: "basemaps", icon: "basemap", text: "Basemaps" },
+            { id: "print", icon: "print", text: "Export" },
         ];
 
         for (const a of actions) {
@@ -114,6 +125,8 @@ export class MapWindow extends HTMLElement {
         const panels: Record<string, HTMLElement> = {
             layers: this.layerListPanel,
             legend: this.legendPanel,
+            basemaps: this.basemapPanel,
+            print: this.printPanel,
         };
 
         // toggle active action
@@ -137,7 +150,17 @@ export class MapWindow extends HTMLElement {
         this.layerListPanel = panel;
         return panel;
     }
+    private buildPrintPanel(): HTMLElement {
+        const panel = document.createElement("calcite-panel") as any;
+        panel.heading = "Export";
+        panel.hidden = true;
 
+        const print = document.createElement("arcgis-print") as any;
+        panel.appendChild(print);
+
+        this.printPanel = panel;
+        return panel;
+    }
     private buildLegendPanel(): HTMLElement {
         const panel = document.createElement("calcite-panel") as any;
         panel.heading = "Legend";
@@ -150,7 +173,17 @@ export class MapWindow extends HTMLElement {
         this.legendPanel = panel;
         return panel;
     }
-    
+    private buildBasemapPanel(): HTMLElement {
+        const panel = document.createElement("calcite-panel") as any;
+        panel.heading = "Basemaps";
+        panel.hidden = true;
+
+        const gallery = document.createElement("arcgis-basemap-gallery") as any;
+        panel.appendChild(gallery);
+
+        this.basemapPanel = panel;
+        return panel;
+    }
     private addStyling(): HTMLStyleElement {
         return Object.assign(document.createElement("style"), { textContent: STYLE });
     }
@@ -205,6 +238,9 @@ const STYLE = `
     --calcite-color-foreground-1: var(--popup-bg);
     overflow: hidden;
     position: relative;
+    --calcite-spacing-sm: 0.25rem;   /* tightest — affects internal item padding */
+    --calcite-spacing-md: 0.5rem;    /* medium spacing */
+    --calcite-spacing-lg: 0.75rem;   /* larger gaps between sections */
 }
 
 calcite-action-bar {
@@ -213,7 +249,6 @@ calcite-action-bar {
     right: .2rem;
     z-index: 10;
 }
-
 calcite-panel {
     position: absolute;
     bottom: 1.8rem;
@@ -225,6 +260,8 @@ calcite-panel {
     max-width: 98%;
 }
 arcgis-map {
+    --calcite-block-padding: 0.25rem;
+    --calcite-list-item-spacing: 0.25rem; 
     border-radius: 1rem;
     display: block;
     width: 100%;
