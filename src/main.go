@@ -40,11 +40,7 @@ func main() {
 
 	a.lg.Info("postgis connection successful, building data layers...")
 
-	layers, err := gis.BuildLayers(ctx, gis.BuildMode{
-		Get:         true,
-		Save:        true,
-		PersistFile: "data/persist.json",
-	}, a.db, a.lg)
+	layers, err := gis.BuildLayers(ctx, a.db, a.lg)
 	if err != nil {
 		a.lg.Fatal(err)
 	}

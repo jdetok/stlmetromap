@@ -7,12 +7,6 @@ import (
 	"github.com/jdetok/stlmetromap/pkg/gis"
 )
 
-const (
-	GET_DATA  = false
-	SAVE_DATA = false
-	DATA_FILE = "data/persist.json"
-)
-
 func NewMux(layers *gis.DataLayers) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

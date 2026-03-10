@@ -18,21 +18,21 @@ with mbus as (
 	select 1610 as meters, 'm' as unit, '1mi' as str
 ), gstores as (
     select 
-    	osm_id, 'grocery' as type, 
+    	osm_id::int8 as osm_id, 'grocery' as type, 
     	coalesce(coalesce(coalesce(name, operator), brand), 'NA') as name,
     	coalesce(coalesce(operator, brand), 'NA') as operator, ST_Transform(way, 4326) as way 
     from public.planet_osm_polygon
     where shop in ('greengrocer', 'grocery', 'supermarket', 'deli', 'farm', 'butcher', 'seafood', 'bakery', 'convenience')
 ), parks as (
 	select 
-    	osm_id, 'park' as type, 
+    	osm_id::int8 as osm_id, 'park' as type, 
     	coalesce(coalesce(coalesce(name, operator), brand), 'NA') as name,
     	coalesce(coalesce(operator, brand), 'NA') as operator, ST_Transform(way, 4326) as way
     from public.planet_osm_polygon
     where leisure in ('park')
 ), school as (
 	select 
-		osm_id, 'school' as type,
+		osm_id::int8 as osm_id, 'school' as type,
 		coalesce(coalesce(coalesce(name, operator), brand), 'NA') as name,
     	coalesce(coalesce(operator, brand), 'NA') as operator, ST_Transform(way, 4326) as way
 	from public.planet_osm_polygon
@@ -40,21 +40,21 @@ with mbus as (
 ), uni as (
 	select 
 	
-		osm_id, 'university' as type,
+		osm_id::int8 as osm_id, 'university' as type,
 		coalesce(coalesce(coalesce(name, operator), brand), 'NA') as name,
     	coalesce(coalesce(operator, brand), 'NA') as operator, ST_Transform(way, 4326) as way
 	from public.planet_osm_polygon
 	where amenity in ('college', 'university')
 ), social as (
 	select 
-		osm_id, 'social_facility' as type,
+		osm_id::int8 as osm_id, 'social_facility' as type,
 		coalesce(coalesce(coalesce(name, operator), brand), 'NA') as name,
     	coalesce(coalesce(operator, brand), 'NA') as operator, ST_Transform(way, 4326) as way
 	from public.planet_osm_polygon
 	where amenity in ('social_facility', 'social_facility', 'social_center', 'social_centre')
 ), fun as (
 	select 
-		osm_id, 'entertainment' as type,
+		osm_id::int8 as osm_id, 'entertainment' as type,
 		coalesce(coalesce(coalesce(name, operator), brand), 'NA') as name,
     	coalesce(coalesce(operator, brand), 'NA') as operator, ST_Transform(way, 4326) as way
 	from public.planet_osm_polygon
@@ -118,5 +118,6 @@ with mbus as (
 	where a.way && ST_MakeEnvelope(-91, 38, -89.5, 39.2, 4326)	
 	group by a.osm_id, a.type, a.name, a.operator, a.way
 )
-insert into api.places
-select distinct on (osm_id) osm_id::int8, type, name, operator, bus_near, rail_near, way, ST_AsGeoJSON(way) as geom from polygons;
+insert into api.places (osm_id, type, name, operator, bus_near, rail_near, way, geom)
+select distinct on (osm_id) osm_id, type, name, operator, bus_near, rail_near, way, ST_AsGeoJSON(way) as geom from polygons;
+select * from api.places;
