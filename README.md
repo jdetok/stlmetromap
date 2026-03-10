@@ -2,7 +2,7 @@
 Interactive Map of multi-modal transportation options in the St. Louis Metropolitan Statistical Area. Powered by the ESRI ArcGIS Maps SDK for JavaScript. Users can explore relationships between transit access and various dependent variables. For more details, see the [scope](/z_docs/SCOPE.md) document
 
 ## Latest working example: 
-<img src="z_docs/img/working.png" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
+<img src="z_docs/img/out1.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
 
 ## PRIMARY DATA SOURCES
 - ### Metro Transit

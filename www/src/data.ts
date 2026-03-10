@@ -22,6 +22,22 @@ export const BUS_LAYER_URL = "/metrobus";
 export const CYCLE_LAYER_TTL = "Bicycle/Walking Paths";
 export const CYCLE_LAYER_URL = "/bikes";
 
+export const PLACE_FIELDS: __esri.FieldProperties[] = [
+    { name: "ObjectID", alias: "ObjectID", type: "oid" },
+    { name: "name", alias: "Name", type: "string" },
+    { name: "type", alias: "Type", type: "string" },
+    { name: "operator", alias: "Operator", type: "string" },
+    { name: "bus_near", alias: "Bus Routes within 1/2Mi.", type: "string" },
+    { name: "rail_near", alias: "Rail Routes within 1Mi.", type: "string" },
+];
+
+export const PLACE_FIELDINFOS = [
+    { fieldName: "name", label: "Name" },
+    { fieldName: "operator", label: "Operator" },
+    { fieldName: "bus_near", label: "Bus Routes within 1/2Mi." },
+    { fieldName: "rail_near", label: "Rail Routes within 1Mi." },
+];
+
 export const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },
     { name: "stop_id", alias: "ID", type: "string" },
@@ -58,7 +74,7 @@ export const TRACTS_FIELDINFOS = [
     { fieldName: "county_name", label: "County" },
     { fieldName: "countyfp", label: "County FP" },
     { fieldName: "popl", label: "Population" },
-    { fieldName: "popl_dens", label: "Population Density" },
+    { fieldName: "popl_dens", label: "Persons/Sq.Mi." },
     { fieldName: "med_age", label: "Median Age" },
     { fieldName: "med_inc", label: "Median Income" },
     { fieldName: "popl_pov", label: "Population in Poverty" },
@@ -99,63 +115,6 @@ export const CYCLING_FIELDS = [
     { name: "surface", alias: "Surface", type: "string" },
 ];
 
-export const GROCERY_FIELDS = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "name", alias: "Name", type: "string" },
-    { name: "operator", alias: "Operator", type: "string" },
-    { name: "brand", alias: "Brand", type: "string" },
-];
-
-export const GROCERY_FIELDINFOS = [
-    { fieldName: "name", label: "Name" },
-    { fieldName: "operator", label: "Operator" },
-    { fieldName: "brand", label: "Brand" },
-];
-
-export const PARKS_FIELDS = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "name", alias: "Name", type: "string" },
-    { name: "operator", alias: "Operator", type: "string" },
-];
-
-export const PARKS_FIELDINFOS = [
-    { fieldName: "name", label: "Name" },
-    { fieldName: "operator", label: "Operator" },
-];
-
-export const FUN_FIELDS = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "name", alias: "Name", type: "string" },
-    { name: "amenity", alias: "Amenity", type: "string" },
-    { name: "operator", alias: "Operator", type: "string" },
-    { name: "brand", alias: "Brand", type: "string" },
-];
-
-export const FUN_FIELDINFOS = [
-    { fieldName: "name", label: "Name" },
-    { fieldName: "amenity", label: "Amenity" },
-    { fieldName: "operator", label: "Operator" },
-    { fieldName: "brand", label: "Brand" },
-];
-export const OSM_FIELDINFOS = [
-    { fieldName: "name", label: "Name" },
-    { fieldName: "amenity", label: "Amenity" },
-    { fieldName: "operator", label: "Operator" },
-    { fieldName: "brand", label: "Brand" },
-];
-export const SCHOOL_FIELDS = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "name", alias: "Name", type: "string" },
-    { name: "amenity", alias: "Amenity", type: "string" },
-    { name: "operator", alias: "Operator", type: "string" },
-];
-
-export const SCHOOL_FIELDINFOS = [
-    { fieldName: "name", label: "Name" },
-    { fieldName: "amenity", label: "Amenity" },
-    { fieldName: "operator", label: "Operator" },
-];
-
 export const AMTRAK_FIELDS: __esri.FieldProperties[] = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },
     { name: "name", alias: "Name", type: "string" },
@@ -175,10 +134,3 @@ export const SOCIAL_FIELDS = [
     { name: "operator", alias: "Operator", type: "string" },
     { name: "brand", alias: "Brand", type: "string" },
 ];
-
-export const SOCIAL_FIELDINFOS = [
-    { fieldName: "name", label: "Name" },
-    { fieldName: "amenity", label: "Amenity" },
-    { fieldName: "operator", label: "Operator" },
-    { fieldName: "brand", label: "Brand" },
-]

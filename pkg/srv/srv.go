@@ -37,20 +37,8 @@ func NewMux(layers *gis.DataLayers) *http.ServeMux {
 	mux.HandleFunc("/bikes", func(w http.ResponseWriter, r *http.Request) {
 		layers.CyclePaths.WriteJSONResp(w, r)
 	})
-	mux.HandleFunc("/grocery", func(w http.ResponseWriter, r *http.Request) {
-		layers.Grocery.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/school", func(w http.ResponseWriter, r *http.Request) {
-		layers.Schools.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/social", func(w http.ResponseWriter, r *http.Request) {
-		layers.Social.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/parks", func(w http.ResponseWriter, r *http.Request) {
-		layers.Parks.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/fun", func(w http.ResponseWriter, r *http.Request) {
-		layers.Fun.WriteJSONResp(w, r)
+	mux.HandleFunc("/places", func(w http.ResponseWriter, r *http.Request) {
+		layers.Places.WriteJSONResp(w, r)
 	})
 	mux.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "www/about.html")

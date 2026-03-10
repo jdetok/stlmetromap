@@ -142,7 +142,7 @@ group by a.stop_id, c.stop_name, c.stop_loc, c.wheelchair_boarding
 	`
 	CYCLING_PATHS = `
 select osm_id,
-	coalesce(name, '') as name,
+	coalesce(name, 'Cycle/Foot Path') as name,
 	coalesce(surface, '') as surface,
 	coalesce(bicycle, '') as bicycle,
 	coalesce(foot, '') as foot,
@@ -155,59 +155,5 @@ and way && ST_Transform(
     3857
 )	
 `
-	GROCERY = `
-select
-	osm_id, name, brand, operator, shop,
-	ST_AsGeoJSON(ST_Transform(way, 4326)) as geom
-from public.planet_osm_polygon
-where shop in ('greengrocer', 'grocery', 'supermarket', 'deli', 'farm', 'butcher', 'seafood', 'bakery', 'convenience')
-and way && ST_Transform(
-    ST_MakeEnvelope(-91, 38, -89.5, 40, 4326),
-    3857
-)
-	`
-	PARKS = `
-select osm_id, name, operator, leisure,
-ST_AsGeoJSON(ST_Transform(way, 4326)) as geom
-from public.planet_osm_polygon
-where leisure = 'park'
-and way && ST_Transform(
-    ST_MakeEnvelope(-92.5, 37, -89.5, 40, 4326),
-    3857
-)	
-	`
-	FUN = `
-select osm_id, name, amenity, brand, operator, leisure,
-	ST_AsGeoJSON(ST_Transform(way, 4326)) as geom
-from public.planet_osm_polygon
-where amenity in ('theatre', 'stadium', 'stage', 
- 	'ampitheatre', 'stripclub', 'banquet_hall', 'batting_cage',
- 	'bicycle_rental', 'biergarten', 'casino', 'cinema', 'clubhouse',
- 	'driving_range', 'dojo', 'events_venue', 'hookah_lounge', 'nightclub',
- 	'planetarium', 'pub', 'bar', 'arts_centre')
-and way && ST_Transform(
-    ST_MakeEnvelope(-92.5, 37, -89.5, 40, 4326),
-    3857
-)	
-	`
-	SCHOOLS = `
-select osm_id, name, amenity, operator,
-	ST_AsGeoJSON(ST_Transform(way, 4326)) as geom
-from public.planet_osm_polygon
-where amenity in ('school', 'college', 'university', 'kindergarten')
-and way && ST_Transform(
-    ST_MakeEnvelope(-92.5, 37, -89.5, 40, 4326),
-    3857
-)	
-	`
-	SOCIAL = `
-select osm_id, name, amenity, brand, operator,
-	ST_AsGeoJSON(ST_Transform(way, 4326)) as geom
-from public.planet_osm_polygon
-where amenity in ('social_facility', 'social_facility', 'social_center', 'social_centre')
-and way && ST_Transform(
-    ST_MakeEnvelope(-92.5, 37, -89.5, 40, 4326),
-    3857
-)
-`
+	PLACES = `select osm_id, type, name, operator, bus_near, rail_near, geom from api.places`
 )

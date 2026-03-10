@@ -19,12 +19,8 @@ import {
     LAYER_CENSUS_COUNTIES,
     LAYER_CENSUS_TRACTS,
     LAYER_CYCLING,
-    LAYER_GROCERY,
-    LAYER_PARKS, 
-    LAYER_FUN,
-    LAYER_SCHOOL,
     LAYER_AMTRAK,
-    LAYER_SOCIAL
+    LAYER_PLACES
 } from "../layers.js";
 
 export const TAG = "map-window";
@@ -45,11 +41,7 @@ export class MapWindow extends HTMLElement {
         this.layers = [
             LAYER_CENSUS_COUNTIES,
             LAYER_CENSUS_TRACTS,
-            LAYER_GROCERY,
-            LAYER_SOCIAL,
-            LAYER_SCHOOL,
-            LAYER_PARKS,
-            LAYER_FUN,
+            LAYER_PLACES,
             LAYER_CYCLING,
             LAYER_AMTRAK,
             LAYER_BUS_STOPS,
@@ -259,7 +251,7 @@ calcite-panel {
     z-index: 10;
     width: fit-content;
     height: fit-content;
-    max-height: 48%;
+    max-height: 55%;
     max-width: 98%;
 }
 calcite-panel > * {

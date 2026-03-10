@@ -44,11 +44,7 @@ type DataLayers struct {
 	BusStops   *FeatureColl
 	TrnStops   *FeatureColl
 	Amtrak     *FeatureColl
-	Grocery    *FeatureColl
-	Schools    *FeatureColl
-	Social     *FeatureColl
-	Parks      *FeatureColl
-	Fun        *FeatureColl
+	Places     *FeatureColl
 }
 
 func (l *DataLayers) DataToJSONFile() error {
@@ -103,11 +99,7 @@ func GetDataLayers(ctx context.Context, fname string, db *pgxpool.Pool, lg *zap.
 	busStops := &FeatureColl{}
 	trnStops := &FeatureColl{}
 	amtrak := &FeatureColl{}
-	grocery := &FeatureColl{}
-	schools := &FeatureColl{}
-	social := &FeatureColl{}
-	parks := &FeatureColl{}
-	fun := &FeatureColl{}
+	places := &FeatureColl{}
 
 	g.Go(func() error {
 		lg.Infof("getting counties from db")
@@ -148,38 +140,6 @@ func GetDataLayers(ctx context.Context, fname string, db *pgxpool.Pool, lg *zap.
 		}
 		return nil
 	})
-
-	g.Go(func() error {
-		lg.Infof("getting grocery stores from db")
-		if err := grocery.QueryDB(ctx, db, pgis.GROCERY, "geom", []any{}); err != nil {
-			return fmt.Errorf("failed to fetch grocery stores: %w", err)
-		}
-		return nil
-	})
-
-	g.Go(func() error {
-		lg.Infof("getting parks from db")
-		if err := parks.QueryDB(ctx, db, pgis.PARKS, "geom", []any{}); err != nil {
-			return fmt.Errorf("failed to fetch parks: %w", err)
-		}
-		return nil
-	})
-
-	g.Go(func() error {
-		lg.Infof("getting fun from db")
-		if err := fun.QueryDB(ctx, db, pgis.FUN, "geom", []any{}); err != nil {
-			return fmt.Errorf("failed to fetch fun: %w", err)
-		}
-		return nil
-	})
-
-	g.Go(func() error {
-		lg.Infof("getting schools from db")
-		if err := schools.QueryDB(ctx, db, pgis.SCHOOLS, "geom", []any{}); err != nil {
-			return fmt.Errorf("failed to fetch schools: %w", err)
-		}
-		return nil
-	})
 	g.Go(func() error {
 		lg.Infof("getting amtrak from db")
 		if err := amtrak.QueryDB(ctx, db, pgis.AMTRAK, "geom", []any{}); err != nil {
@@ -188,9 +148,9 @@ func GetDataLayers(ctx context.Context, fname string, db *pgxpool.Pool, lg *zap.
 		return nil
 	})
 	g.Go(func() error {
-		lg.Infof("getting social from db")
-		if err := social.QueryDB(ctx, db, pgis.SOCIAL, "geom", []any{}); err != nil {
-			return fmt.Errorf("failed to fetch social: %w", err)
+		lg.Infof("getting places from db")
+		if err := places.QueryDB(ctx, db, pgis.PLACES, "geom", []any{}); err != nil {
+			return fmt.Errorf("failed to fetch places: %w", err)
 		}
 		return nil
 	})
@@ -208,11 +168,7 @@ func GetDataLayers(ctx context.Context, fname string, db *pgxpool.Pool, lg *zap.
 		TrnStops:   trnStops,
 		Amtrak:     amtrak,
 		CyclePaths: cyclPths,
-		Grocery:    grocery,
-		Schools:    schools,
-		Social:     social,
-		Parks:      parks,
-		Fun:        fun,
+		Places:     places,
 	}, nil
 }
 
