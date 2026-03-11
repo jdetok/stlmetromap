@@ -70,16 +70,14 @@ export const TRACTS_FIELDS = [
 ];
 
 export const TRACTS_FIELDINFOS = [
-    { fieldName: "tract", label: "Tract" },
     { fieldName: "county_name", label: "County" },
-    { fieldName: "countyfp", label: "County FP" },
     { fieldName: "popl", label: "Population" },
     { fieldName: "popl_dens", label: "Persons/Sq.Mi." },
+    { fieldName: "stops_in_tract", label: "Transit Stops in Tract" },
     { fieldName: "med_age", label: "Median Age" },
     { fieldName: "med_inc", label: "Median Income" },
     { fieldName: "popl_pov", label: "Population in Poverty" },
     { fieldName: "popl_pov_pct", label: "Percent in Poverty" },
-    { fieldName: "stops_in_tract", label: "Transit Stops in Tract" },
 ];
 
 export const COUNTIES_FIELDS = [

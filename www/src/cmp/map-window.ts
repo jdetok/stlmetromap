@@ -1,6 +1,7 @@
 import "@arcgis/map-components/dist/components/arcgis-basemap-gallery";
 import "@arcgis/map-components/dist/components/arcgis-map";
 import "@arcgis/map-components/dist/components/arcgis-zoom";
+import "@arcgis/map-components/dist/components/arcgis-search";
 import "@arcgis/map-components/dist/components/arcgis-layer-list";
 import "@arcgis/map-components/dist/components/arcgis-legend";
 import "@arcgis/map-components/dist/components/arcgis-expand";
@@ -8,6 +9,10 @@ import "@esri/calcite-components/dist/components/calcite-action-bar";
 import "@esri/calcite-components/dist/components/calcite-action";
 import "@esri/calcite-components/dist/components/calcite-panel";
 import "@arcgis/map-components/dist/components/arcgis-print";
+import "@esri/calcite-components/dist/components/calcite-select";
+import "@esri/calcite-components/dist/components/calcite-option";
+import FeatureEffect from "@arcgis/core/layers/support/FeatureEffect";
+import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
 import Graphic from "@arcgis/core/Graphic";
 import Polygon from "@arcgis/core/geometry/Polygon";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
@@ -28,7 +33,9 @@ export const TAG = "map-window";
 export class MapWindow extends HTMLElement {
     private arcgisMap!: HTMLArcgisMapElement;
     private layers: FeatureLayerMeta[];
+    private busStopsLayer!: FeatureLayer;
     private layerListPanel!: HTMLElement;
+    private routePanel!: HTMLElement;
     private legendPanel!: HTMLElement;
     private basemapPanel!: HTMLElement;
     private printPanel!: HTMLElement;
@@ -54,7 +61,9 @@ export class MapWindow extends HTMLElement {
             this.buildLegendPanel(),
             this.buildPrintPanel(),
             this.buildBasemapPanel(),
+            this.buildRoutePanel(),
             this.buildActionBar(),
+            this.buildFilterBar(),
         );
     }
     disconnectedCallback(): void {
@@ -75,6 +84,7 @@ export class MapWindow extends HTMLElement {
         this.arcgisMap.addEventListener("arcgisViewReadyChange", async () => {
             const view = this.arcgisMap.view as __esri.MapView;
             this.arcgisMap.appendChild(this.buildZoom());
+            this.arcgisMap.appendChild(this.buildSearch());
             (this.layerListPanel.querySelector("arcgis-layer-list") as any).view = view;
             (this.legendPanel.querySelector("arcgis-legend") as any).view = view;
             (this.basemapPanel.querySelector("arcgis-basemap-gallery") as any).view = view;
@@ -82,11 +92,16 @@ export class MapWindow extends HTMLElement {
             for (let i = 0; i < this.layers.length; i++) {
                 try {
                     const layer = await this.makeFeatureLayer(this.layers[i]);
+                    if (this.layers[i] === LAYER_BUS_STOPS) {
+                        this.busStopsLayer = layer;
+                    }
                     this.arcgisMap.map?.add(layer, i);
                 } catch (e) {
                     console.error(e);
                 }
             }
+            await this.populateRouteSelect();
+
         }, { once: true });
         return this.arcgisMap;
     }
@@ -100,27 +115,44 @@ export class MapWindow extends HTMLElement {
             { id: "basemaps", icon: "basemap", text: "Basemaps" },
             { id: "print", icon: "print", text: "Export" },
         ];
-
         for (const a of actions) {
             const action = document.createElement("calcite-action") as any;
             action.dataset.actionId = a.id;
             action.icon = a.icon;
             action.text = a.text;
-            action.addEventListener("click", () => this.togglePanel(a.id, actionBar));
+            action.addEventListener("click", () => this.togglePanel(a.id, actionBar, {
+                layers: this.layerListPanel,
+                legend: this.legendPanel,
+                basemaps: this.basemapPanel,
+                print: this.printPanel,
+            }));
             actionBar.appendChild(action);
         }
+        return actionBar;
+    }
+    private buildFilterBar(): HTMLElement {
+        const actionBar = document.createElement("calcite-action-bar") as any;
+        actionBar.id = "filterbar";
+        actionBar.layout = "horizontal";
 
+        const actions = [
+            { id: "routes", icon: "filter", text: "Filter Bus Routes" },
+        ];
+        // const panels: Record<string, HTMLElement> = ;
+        for (const a of actions) {
+            const action = document.createElement("calcite-action") as any;
+            action.dataset.actionId = a.id;
+            action.icon = a.icon;
+            action.text = a.text;
+            action.addEventListener("click", () => this.togglePanel(a.id, actionBar, {
+                routes: this.routePanel,
+            }));
+            actionBar.appendChild(action);
+        }
         return actionBar;
     }
 
-    private togglePanel(id: string, actionBar: any): void {
-        const panels: Record<string, HTMLElement> = {
-            layers: this.layerListPanel,
-            legend: this.legendPanel,
-            basemaps: this.basemapPanel,
-            print: this.printPanel,
-        };
-
+    private togglePanel(id: string, actionBar: any, panels: Record<string, HTMLElement>): void {
         // toggle active action
         actionBar.querySelectorAll("calcite-action").forEach((a: any) => {
             a.active = a.dataset.actionId === id ? !a.active : false;
@@ -178,6 +210,75 @@ export class MapWindow extends HTMLElement {
     }
     private buildZoom(): HTMLElement {
         return document.createElement("arcgis-zoom");
+    }
+    private buildSearch(): HTMLElement {
+        const search = document.createElement("arcgis-search");
+        search.view = this.arcgisMap.view;
+        return search;
+    }
+    private buildRoutePanel(): HTMLElement {
+        const panel = document.createElement("calcite-panel");
+        panel.classList.add("filter");
+        panel.heading = "Filter by Route";
+        panel.hidden = true;
+
+        const select = document.createElement("calcite-select") as any;
+        select.label = "Route";
+        select.id = "route-select";
+
+        select.addEventListener("calciteSelectChange", () => {
+            this.filterByRoute(select.value);
+        });
+
+        panel.appendChild(select);
+        this.routePanel = panel;
+        return panel;
+    }
+
+    private async populateRouteSelect(): Promise<void> {
+        const result = await this.busStopsLayer.queryFeatures({
+            where: "1=1",
+            outFields: ["route_names"],
+            returnGeometry: false,
+            orderByFields: ["route_names"],
+        });
+
+        const routeNames: string[] = [...new Set(
+            result.features
+                .flatMap(f => (f.attributes.route_names as string).split(","))
+                .map(r => r.trim())
+        )].sort();
+
+        const select = this.routePanel.querySelector("calcite-select") as any;
+
+        const allOption = document.createElement("calcite-option") as any;
+        allOption.value = "";
+        allOption.label = "All routes";
+        select.appendChild(allOption);
+
+        for (const name of routeNames) {
+            const option = document.createElement("calcite-option") as any;
+            option.value = name;
+            option.label = name;
+            select.appendChild(option);
+        }
+    }
+    private async filterByRoute(routeName: string): Promise<void> {
+        const layerView = await this.arcgisMap.view.whenLayerView(this.busStopsLayer) as __esri.FeatureLayerView;
+
+        if (!routeName) {
+            // clear filter
+            layerView.featureEffect = null;
+            return;
+        }
+
+        layerView.featureEffect = new FeatureEffect({
+            filter: new FeatureFilter({
+                where: `route_names like '%${routeName}%'`
+            }),
+            includedEffect: "bloom(2, 1px, 0.3) drop-shadow(2px 2px 4px black) brightness(2)",
+            excludedEffect: "opacity(60%) brightness(1)"
+        });
     }
     private addStyling(): HTMLStyleElement {
         return Object.assign(document.createElement("style"), { textContent: STYLE });
@@ -238,6 +339,12 @@ const STYLE = `
     --calcite-spacing-lg: 0.75rem;
 }
 
+#filterbar {
+    left: 5px;
+    width: min-content;
+}
+
+
 calcite-action-bar {
     position: absolute;
     bottom: 1.8rem;
@@ -253,6 +360,10 @@ calcite-panel {
     height: fit-content;
     max-height: 55%;
     max-width: 98%;
+}
+calcite-panel.filter {
+    left: 5px;
+    right: unset;  /* override the global right */
 }
 calcite-panel > * {
     background0color: rgba(125, 140, 151, 0.1);
@@ -276,5 +387,11 @@ arcgis-zoom {
 arcgis-legend {
     color: black;
     font-weight: bold;
+}
+arcgis-search {
+    position: absolute;
+    top: 15px;
+    left: 60px;
+    z-index: 10;
 }
 `;
