@@ -69,7 +69,6 @@ export class MapWindow extends HTMLElement {
     disconnectedCallback(): void {
         this.arcgisMap?.remove();
     }
-    
     private buildMap(): HTMLArcgisMapElement {
         this.arcgisMap = document.createElement("arcgis-map") as HTMLArcgisMapElement;
         this.arcgisMap.basemap = BASEMAP;

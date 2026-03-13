@@ -168,4 +168,4 @@ left join stopcnt z on z.countyfp = x.countyfp and z.statefp = x.statefp
 where x.statefp in ('29', '17')
 `, IsGeom: true}
 
-var QROUTES = &Query{Q: `select * from public.routes`, IsGeom: false}
+var QROUTES = &Query{Q: `select * from api.routes where route_type = '3'`, IsGeom: false}
