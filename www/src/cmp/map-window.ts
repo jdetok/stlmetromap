@@ -35,10 +35,12 @@ export class MapWindow extends HTMLElement {
     private layers: FeatureLayerMeta[];
     private busStopsLayer!: FeatureLayer;
     private layerListPanel!: HTMLElement;
+    private routeInfoPanel!: HTMLElement;
     private routePanel!: HTMLElement;
     private legendPanel!: HTMLElement;
     private basemapPanel!: HTMLElement;
     private printPanel!: HTMLElement;
+    private routesData: any[] = [];
     public constructor() {
         super();
 
@@ -61,9 +63,11 @@ export class MapWindow extends HTMLElement {
             this.buildLegendPanel(),
             this.buildPrintPanel(),
             this.buildBasemapPanel(),
-            this.buildRoutePanel(),
+            // this.buildRoutePanel(),
             this.buildActionBar(),
-            this.buildFilterBar(),
+            // this.buildFilterBar(),
+            this.buildRoutesFilter(),
+            this.buildRouteInfoPanel(),
         );
     }
     disconnectedCallback(): void {
@@ -129,6 +133,25 @@ export class MapWindow extends HTMLElement {
         }
         return actionBar;
     }
+    private buildRoutesFilter(): HTMLElement {
+        const wrapper = document.createElement("div");
+        wrapper.id = "filterbar";
+
+        const select = document.createElement("calcite-select") as any;
+        select.label = "Route";
+        select.id = "route-select";
+        select.addEventListener("calciteSelectChange", () => {
+            this.filterByRoute(select.value);
+            this.showRouteInfo(select.value);
+            if (!select.value) {
+                this.routeInfoPanel.hidden = true;
+            }
+        });
+
+        wrapper.appendChild(select);
+        this.routePanel = wrapper;
+        return wrapper;
+    }
     private buildFilterBar(): HTMLElement {
         const actionBar = document.createElement("calcite-action-bar") as any;
         actionBar.id = "filterbar";
@@ -143,9 +166,12 @@ export class MapWindow extends HTMLElement {
             action.dataset.actionId = a.id;
             action.icon = a.icon;
             action.text = a.text;
-            action.addEventListener("click", () => this.togglePanel(a.id, actionBar, {
-                routes: this.routePanel,
-            }));
+            action.addEventListener("click", () => {
+                this.togglePanel(a.id, actionBar, { routes: this.routePanel });
+                if (this.routePanel.hidden) {
+                    this.routeInfoPanel.hidden = true;
+                }
+            });
             actionBar.appendChild(action);
         }
         return actionBar;
@@ -227,26 +253,61 @@ export class MapWindow extends HTMLElement {
 
         select.addEventListener("calciteSelectChange", () => {
             this.filterByRoute(select.value);
+            this.showRouteInfo(select.value);
         });
 
         panel.appendChild(select);
         this.routePanel = panel;
         return panel;
     }
-
-    private async populateRouteSelect(): Promise<void> {
-        const result = await this.busStopsLayer.queryFeatures({
-            where: "1=1",
-            outFields: ["route_names"],
-            returnGeometry: false,
-            orderByFields: ["route_names"],
+    private buildRouteInfoPanel(): HTMLElement {
+        const panel = document.createElement("calcite-panel");
+        panel.classList.add("route-info");
+        panel.heading = "Route Info";
+        panel.hidden = true;
+        panel.closed = false;
+        panel.closable = true;
+        panel.addEventListener("calcitePanelClose", () => {
+            this.routeInfoPanel.hidden = true;
         });
+        this.routeInfoPanel = panel;
+        return panel;
+    }
 
-        const routeNames: string[] = [...new Set(
-            result.features
-                .flatMap(f => (f.attributes.route_names as string).split(","))
-                .map(r => r.trim())
-        )].sort();
+    private showRouteInfo(route: string): void {
+        if (!route) {
+            this.routeInfoPanel.hidden = true;
+            return;
+        }
+
+        const feature = this.routesData.find((f: any) => f.properties.route_desc === route);
+        if (!feature) return;
+
+        const props = feature.properties;
+        this.routeInfoPanel.innerHTML = "";
+        (this.routeInfoPanel as any).heading = `Route ${props.route}`;
+        (this.routeInfoPanel as any).closed = false;
+        (this.routeInfoPanel as any).closable = true;
+
+        const list = document.createElement("calcite-list");
+
+        for (const [key, val] of Object.entries(props)) {
+            if (key === "route") continue;
+            const item = document.createElement("calcite-list-item") as any;
+            item.label = key.replace(/_/g, " ");
+            item.description = String(val ?? "—");
+            list.appendChild(item);
+        }
+
+        this.routeInfoPanel.appendChild(list);
+        this.routeInfoPanel.hidden = false;
+    }
+    private async populateRouteSelect(): Promise<void> {
+        const res = await fetch("layers/routes");
+        const data = await res.json();
+
+        this.routesData = data.features;
+        const routes = data.features.map((f: any) => f.properties.route_desc).sort();
 
         const select = this.routePanel.querySelector("calcite-select") as any;
 
@@ -255,10 +316,10 @@ export class MapWindow extends HTMLElement {
         allOption.label = "All routes";
         select.appendChild(allOption);
 
-        for (const name of routeNames) {
+        for (const r of routes) {
             const option = document.createElement("calcite-option") as any;
-            option.value = name;
-            option.label = name;
+            option.value = r;
+            option.label = r;
             select.appendChild(option);
         }
     }
@@ -278,6 +339,14 @@ export class MapWindow extends HTMLElement {
             includedEffect: "bloom(2, 1px, 0.3) drop-shadow(2px 2px 4px black) brightness(2)",
             excludedEffect: "opacity(60%) brightness(1)"
         });
+        const result = await this.busStopsLayer.queryFeatures({
+            where: `route_names like '%${routeName}%'`,
+            returnGeometry: true,
+            outSpatialReference: { wkid: STLWKID },
+        });
+        if (result.features.length) {
+            await this.arcgisMap.view.goTo(result.features, { duration: 600 });
+        }
     }
     private addStyling(): HTMLStyleElement {
         return Object.assign(document.createElement("style"), { textContent: STYLE });
@@ -343,7 +412,6 @@ const STYLE = `
     width: min-content;
 }
 
-
 calcite-action-bar {
     position: absolute;
     bottom: 1.8rem;
@@ -360,10 +428,27 @@ calcite-panel {
     max-height: 55%;
     max-width: 98%;
 }
+#filterbar {
+    position: absolute;
+    bottom: 1.8rem;
+    left: 5px;
+    z-index: 10;
+    width: 220px;
+}
+calcite-panel.route-info {
+    left: 230px;
+    right: unset;
+}
 calcite-panel.filter {
     left: 5px;
     right: unset;  /* override the global right */
 }
+
+calcite-panel.route-info {
+    left: 25px;
+    right: unset;
+}
+
 calcite-panel > * {
     background0color: rgba(125, 140, 151, 0.1);
 }

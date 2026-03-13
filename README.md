@@ -1,8 +1,5 @@
 # stl-transit
-Interactive Map of multi-modal transportation options in the St. Louis Metropolitan Statistical Area. Powered by the ESRI ArcGIS Maps SDK for JavaScript. Users can explore relationships between transit access and various dependent variables. For more details, see the [scope](/z_docs/SCOPE.md) document
-
-## Latest working example: 
-<img src="z_docs/img/out1.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
+Interactive Map of multi-modal transportation options in the St. Louis Metropolitan Statistical Area. Powered by the ESRI ArcGIS Maps SDK for JavaScript. Users can explore relationships between transit access and various dependent variables. For more details, see the [scope](/z_docs/SCOPE.md) document. For photo examples, [jump to the examples section](#examples)
 
 ## PRIMARY DATA SOURCES
 - ### Metro Transit
@@ -42,6 +39,13 @@ Interactive Map of multi-modal transportation options in the St. Louis Metropoli
         - sql/shell scripts run on database creation
 - ### SCRIPTS DIRECTORY: /scr
     - Contains various bash scripts primarily for importing external data into or backing up the database
+
+# Examples
+## Latest working example: 
+<img src="z_docs/img/out1.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
+
+## Highlighting Stops by Route
+<img src="z_docs/img/ex0313.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
 
 
 ## HOW TO RUN LOCALLY
