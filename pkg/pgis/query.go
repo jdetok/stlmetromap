@@ -1,7 +1,13 @@
 package pgis
 
-var QPLACES string = `select osm_id, type, name, operator, bus_near, rail_near, geom from api.places`
-var QAMTRAK string = `
+type Query struct {
+	Q      string
+	IsGeom bool
+}
+
+var QPLACES = &Query{Q: `select osm_id, type, name, operator, bus_near, rail_near, geom from api.places`, IsGeom: true}
+
+var QAMTRAK = &Query{Q: `
 select p.osm_id, p.name, p.operator, way,
     ST_AsGeoJSON(ST_Transform(p.way, 4326)) as geom
 from public.planet_osm_point p
@@ -14,8 +20,9 @@ and not exists (
     and p2.operator = 'Amtrak'
     and ST_DWithin(p.way, p2.way, 200)
 )
-`
-var QCYCLE string = `
+`, IsGeom: true}
+
+var QCYCLE = &Query{Q: `
 select osm_id,
 	coalesce(name, 'Cycle/Foot Path') as name,
 	coalesce(surface, '') as surface,
@@ -29,8 +36,9 @@ and way && ST_Transform(
     ST_MakeEnvelope(-92.5, 37, -89.5, 40, 4326),
     3857
 )	
-`
-var QBUS string = `
+`, IsGeom: true}
+
+var QBUS = &Query{Q: `
 select a.stop_id, c.stop_name, c.wheelchair_boarding as wheelchair,
 	string_agg(distinct d.route_short_name, ', ') as route_ids,
 	string_agg(distinct(d.route_short_name || '-' || d.route_long_name), ', ') as route_names,
@@ -41,8 +49,9 @@ inner join public.stops c on c.stop_id = a.stop_id
 inner join public.routes d on d.route_id = b.route_id
 where d.route_type = '3'
 group by a.stop_id, c.stop_name, c.stop_loc, c.wheelchair_boarding
-`
-var QRAIL string = `
+`, IsGeom: true}
+
+var QRAIL = &Query{Q: `
 select a.stop_id, c.stop_name, string_agg(distinct d.route_short_name, ', ') as route_ids,
 	string_agg(distinct d.route_long_name, ', ') as route_names, c.wheelchair_boarding as wheelchair,
 	ST_AsGeoJSON(c.stop_loc) as geom 
@@ -52,8 +61,9 @@ inner join public.stops c on c.stop_id = a.stop_id
 inner join public.routes d on d.route_id = b.route_id
 where d.route_type = '2'
 group by a.stop_id, c.stop_name, c.stop_loc, c.wheelchair_boarding
-`
-var QTRACTS string = `
+`, IsGeom: true}
+
+var QTRACTS = &Query{Q: `
 with stopcnt as (
 	select a.geoid, count(b.stop_id) as stops
 	from tgr.tract a
@@ -92,8 +102,9 @@ and (
 	or (a.geoid like '14000US29%' and t.countyfp in ('189', '510', '183', '099', '071', '219'))
 	or round(a.b01001001::numeric * 2589988.0 / nullif(t.aland, 0), 2) >= 1000
 )
-`
-var QCOUNTIES string = `
+`, IsGeom: true}
+
+var QCOUNTIES = &Query{Q: `
 with stopcnt as (
     select a.countyfp, a.statefp, count(b.stop_id) as stops
     from tgr.county a
@@ -155,4 +166,6 @@ from tgr.county x
 join acs a on a.county_geoid = x.geoid
 left join stopcnt z on z.countyfp = x.countyfp and z.statefp = x.statefp
 where x.statefp in ('29', '17')
-`
+`, IsGeom: true}
+
+var QROUTES = &Query{Q: `select * from public.routes`, IsGeom: false}

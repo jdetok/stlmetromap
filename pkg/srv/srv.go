@@ -15,7 +15,7 @@ func Mount(layers gis.FeatureLayers) *http.ServeMux {
 		w.Write([]byte("server is healthy"))
 	})
 
-	mountLayers(mux, layers)
+	mountLayers(mux, "layers", layers)
 
 	mux.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "www/about.html")
@@ -39,9 +39,9 @@ func mountStatic(mux *http.ServeMux) {
 
 }
 
-func mountLayers(mux *http.ServeMux, layers gis.FeatureLayers) {
+func mountLayers(mux *http.ServeMux, prefix string, layers gis.FeatureLayers) {
 	for name, data := range layers {
-		mux.HandleFunc(fmt.Sprintf("/layers/%s", name), func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(fmt.Sprintf("/%s/%s", prefix, name), func(w http.ResponseWriter, r *http.Request) {
 			data.Features.WriteJSONResp(w, r)
 		})
 	}

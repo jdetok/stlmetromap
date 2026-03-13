@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jdetok/stlmetromap/pkg/pgis"
 	"github.com/jdetok/stlmetromap/pkg/util"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -18,20 +19,22 @@ type FeatureWriter interface {
 	WriteJSONResp(http.ResponseWriter, *http.Request)
 }
 
-type Feature struct {
-	Type       string          `json:"type"`
-	Geometry   json.RawMessage `json:"geometry"`
-	Properties map[string]any  `json:"properties"`
+type FeatureData struct {
+	Features *FeatureColl
+	q        *string
+	isGeom   bool
 }
 
+// The FeatureColl type is exposed to the frontend
 type FeatureColl struct {
 	Type     string    `json:"type"`
 	Features []Feature `json:"features"`
 }
 
-type FeatureData struct {
-	Features *FeatureColl
-	q        *string
+type Feature struct {
+	Type       string          `json:"type"`
+	Geometry   json.RawMessage `json:"geometry,omitempty"`
+	Properties map[string]any  `json:"properties"`
 }
 
 // map the layer name to a FeatureData pointer, holding the FeatureColl struct that will be filled with the data
@@ -40,7 +43,7 @@ type FeatureLayers map[string]*FeatureData
 
 // pass to build layers, build with a string for the desired layer name (will be the REST endpoint) and a pointer to
 // a SQL query string | map[layer name]pointer-to-query
-type LayerMeta map[string]*string
+type LayerMeta map[string]*pgis.Query
 
 func (l FeatureLayers) DataToJSONFile() error {
 	return util.WriteStructToJSONFile(l, PERSISTF)
@@ -57,7 +60,7 @@ func (f *FeatureColl) WriteJSONResp(w http.ResponseWriter, r *http.Request) {
 func NewFeatureLayers(layerNames LayerMeta) FeatureLayers {
 	fl := make(FeatureLayers)
 	for l, q := range layerNames {
-		fl[l] = &FeatureData{q: q, Features: &FeatureColl{}}
+		fl[l] = &FeatureData{q: &q.Q, isGeom: q.IsGeom, Features: &FeatureColl{}}
 	}
 	return fl
 }
@@ -69,8 +72,8 @@ func GetFeatureLayers(ctx context.Context, layerNames LayerMeta, db *pgxpool.Poo
 	for l, data := range fl {
 		g.Go(func() error {
 			lg.Infof("getting data for %s from db", l)
-			if err := data.Features.QueryDB(ctx, db, *data.q, "geom", []any{}); err != nil {
-				return fmt.Errorf("failed to fetch bus stops: %w", err)
+			if err := data.Features.QueryDB(ctx, db, *data.q, "geom", data.isGeom, []any{}); err != nil {
+				return fmt.Errorf("failed to fetch %s from db: %w", l, err)
 			}
 			return nil
 		})
@@ -84,10 +87,12 @@ func GetFeatureLayers(ctx context.Context, layerNames LayerMeta, db *pgxpool.Poo
 	return fl, nil
 }
 
+// Query postgres fill existing FeatureColl struct. if isGeom is true, the function finds the column specified
+// as geomCol and asigns it at the Geometry field. all other fields are mapped as properties.
+// if isGeom is false, every field is mapped in properties
 func (fc *FeatureColl) QueryDB(
-	ctx context.Context, db *pgxpool.Pool, query, geomCol string, args []any,
+	ctx context.Context, db *pgxpool.Pool, query, geomCol string, isGeom bool, args []any,
 ) error {
-	fc.Type = "FeatureCollection"
 	fc.Features = []Feature{}
 
 	rows, err := db.Query(ctx, query, args...)
@@ -98,16 +103,25 @@ func (fc *FeatureColl) QueryDB(
 
 	flds := rows.FieldDescriptions()
 	colNames := make([]string, len(flds))
+
+	fc.Type = "DataCollection"
+	featType := "Data"
 	geomIdx := -1
 	for i, f := range flds {
-		name := string(f.Name)
-		colNames[i] = name
-		if name == geomCol {
-			geomIdx = i
-		}
+		colNames[i] = string(f.Name)
 	}
-	if geomIdx == -1 {
-		return fmt.Errorf("geometry column %v not found", geomCol)
+	if isGeom {
+		fc.Type = "FeatureCollection"
+		featType = "Feature"
+		for i, name := range colNames {
+			if name == geomCol {
+				geomIdx = i
+				break
+			}
+		}
+		if geomIdx == -1 {
+			return fmt.Errorf("geometry column %v not found", geomCol)
+		}
 	}
 
 	for rows.Next() {
@@ -115,8 +129,15 @@ func (fc *FeatureColl) QueryDB(
 		if err != nil {
 			return err
 		}
-		props := make(map[string]any, len(vals)-1)
-		var geom json.RawMessage
+		propsLen := len(vals)
+
+		if isGeom {
+			propsLen--
+		}
+
+		props := make(map[string]any, propsLen)
+
+		var geom json.RawMessage = nil
 
 		// map col values in properties
 		for i, v := range vals {
@@ -140,11 +161,11 @@ func (fc *FeatureColl) QueryDB(
 			}
 			props[col] = v
 		}
-		if len(geom) == 0 {
+		if len(geom) == 0 && isGeom {
 			continue
 		}
 		fc.Features = append(fc.Features, Feature{
-			Type:       "Feature",
+			Type:       featType,
 			Geometry:   geom,
 			Properties: props,
 		})
