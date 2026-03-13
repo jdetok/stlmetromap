@@ -2,7 +2,7 @@ create schema if not exists api;
 drop table api.places;
 create table if not exists api.places (
 	id bigserial primary key,
-	osm_id int8 unique,
+	osm_id int8,
 	type text not null,
 	name text,
 	operator text,
@@ -119,5 +119,7 @@ with mbus as (
 	group by a.osm_id, a.type, a.name, a.operator, a.way
 )
 insert into api.places (osm_id, type, name, operator, bus_near, rail_near, way, geom)
-select distinct on (osm_id) osm_id, type, name, operator, bus_near, rail_near, way, ST_AsGeoJSON(way) as geom from polygons;
+select osm_id, type, name, operator, bus_near, rail_near, way, ST_AsGeoJSON(way) as geom from polygons;
 select * from api.places;
+
+select osm_id, type, name, operator, bus_near, rail_near, geom from api.places;
