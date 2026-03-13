@@ -215,7 +215,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
 };
 
 const AMTRAK_LAYER_TTL = "Amtrak";
-const AMTRAK_LAYER_URL = "/amtrak";
+const AMTRAK_LAYER_URL = "/layers/amtrak";
 const AMTRAK_COLOR = [245, 245, 245, 0.6];
 const AMTRAK_SIZE = 18;
 export const LAYER_AMTRAK: FeatureLayerMeta = {
@@ -362,7 +362,7 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
 
 export const LAYER_PLACES: FeatureLayerMeta = {
     title: 'Places',
-    dataUrl: '/places',
+    dataUrl: '/layers/places',
     geometryType: "polygon",
     fields: PLACE_FIELDS,
     renderer: new UniqueValueRenderer({

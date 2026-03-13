@@ -2,45 +2,49 @@ package srv
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/jdetok/stlmetromap/pkg/gis"
 )
 
-func NewMux(layers *gis.DataLayers) *http.ServeMux {
+func Mount(layers gis.FeatureLayers) *http.ServeMux {
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("server is healthy"))
 	})
 
-	mux.HandleFunc("/counties", func(w http.ResponseWriter, r *http.Request) {
-		layers.Counties.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/tracts", func(w http.ResponseWriter, r *http.Request) {
-		layers.Tracts.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/metrobus", func(w http.ResponseWriter, r *http.Request) {
-		layers.BusStops.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/metrolink", func(w http.ResponseWriter, r *http.Request) {
-		layers.TrnStops.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/amtrak", func(w http.ResponseWriter, r *http.Request) {
-		layers.Amtrak.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/bikes", func(w http.ResponseWriter, r *http.Request) {
-		layers.CyclePaths.WriteJSONResp(w, r)
-	})
-	mux.HandleFunc("/places", func(w http.ResponseWriter, r *http.Request) {
-		layers.Places.WriteJSONResp(w, r)
-	})
+	mountLayers(mux, layers)
+
 	mux.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "www/about.html")
 	})
-	mux.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("www/js"))))
-	mux.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("www/css"))))
-	mux.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("www"))))
+	mountStatic(mux)
+
 	return mux
+}
+
+func mountStatic(mux *http.ServeMux) {
+	toMount := []string{"/", "js", "css"}
+	for _, m := range toMount {
+		dir := "www"
+		q := m
+		if m != "" {
+			dir += fmt.Sprintf("/%s", m)
+			q = fmt.Sprintf("/%s/", m)
+		}
+		mux.Handle(q, http.StripPrefix(q, http.FileServer(http.Dir(dir))))
+	}
+
+}
+
+func mountLayers(mux *http.ServeMux, layers gis.FeatureLayers) {
+	for name, data := range layers {
+		mux.HandleFunc(fmt.Sprintf("/layers/%s", name), func(w http.ResponseWriter, r *http.Request) {
+			data.Features.WriteJSONResp(w, r)
+		})
+	}
 }
 
 func Serve(addr string, handler http.Handler) error {

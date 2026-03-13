@@ -8,19 +8,19 @@ export const STLCOORDS = {
 };
 
 export const TRACTS_LAYER_TTL = "Census Tract Population Density";
-export const TRACTS_LAYER_URL = "/tracts";
+export const TRACTS_LAYER_URL = "/layers/tracts";
 
 export const COUNTIES_LAYER_TTL = "St. Louis MSA Counties";
-export const COUNTIES_LAYER_URL = "/counties";
+export const COUNTIES_LAYER_URL = "/layers/counties";
 
 export const ML_LAYER_TTL = "MetroLink Stops";
-export const ML_LAYER_URL = "/metrolink";
+export const ML_LAYER_URL = "/layers/ml";
 
 export const BUS_LAYER_TTL = "MetroBus Stops";
-export const BUS_LAYER_URL = "/metrobus";
+export const BUS_LAYER_URL = "/layers/bus";
 
 export const CYCLE_LAYER_TTL = "Bicycle/Walking Paths";
-export const CYCLE_LAYER_URL = "/bikes";
+export const CYCLE_LAYER_URL = "/layers/cycle";
 
 export const PLACE_FIELDS: __esri.FieldProperties[] = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },

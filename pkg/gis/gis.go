@@ -7,7 +7,9 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jdetok/stlmetromap/pkg/util"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const PERSISTF = "data/persist.json"
@@ -27,6 +29,23 @@ type FeatureColl struct {
 	Features []Feature `json:"features"`
 }
 
+type FeatureData struct {
+	Features *FeatureColl
+	q        *string
+}
+
+// map the layer name to a FeatureData pointer, holding the FeatureColl struct that will be filled with the data
+// from the db, along with the pointer to the db query
+type FeatureLayers map[string]*FeatureData
+
+// pass to build layers, build with a string for the desired layer name (will be the REST endpoint) and a pointer to
+// a SQL query string | map[layer name]pointer-to-query
+type LayerMeta map[string]*string
+
+func (l FeatureLayers) DataToJSONFile() error {
+	return util.WriteStructToJSONFile(l, PERSISTF)
+}
+
 func (f *FeatureColl) WriteJSONResp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/geo+json; charset=utf-8")
 	if err := json.NewEncoder(w).Encode(f); err != nil {
@@ -35,19 +54,34 @@ func (f *FeatureColl) WriteJSONResp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func BuildLayers(ctx context.Context, db *pgxpool.Pool, lg *zap.SugaredLogger) (*DataLayers, error) {
-	layers, err := GetDataLayers(ctx, PERSISTF, db, lg)
-	if err != nil {
-		return nil, err
+func NewFeatureLayers(layerNames LayerMeta) FeatureLayers {
+	fl := make(FeatureLayers)
+	for l, q := range layerNames {
+		fl[l] = &FeatureData{q: q, Features: &FeatureColl{}}
 	}
-	layers.Outfile = PERSISTF
+	return fl
+}
 
-	if err := layers.DataToJSONFile(); err != nil {
-		return nil, err
+func GetFeatureLayers(ctx context.Context, layerNames LayerMeta, db *pgxpool.Pool, lg *zap.SugaredLogger) (FeatureLayers, error) {
+	g, ctx := errgroup.WithContext(ctx)
+	fl := NewFeatureLayers(layerNames)
+
+	for l, data := range fl {
+		g.Go(func() error {
+			lg.Infof("getting data for %s from db", l)
+			if err := data.Features.QueryDB(ctx, db, *data.q, "geom", []any{}); err != nil {
+				return fmt.Errorf("failed to fetch bus stops: %w", err)
+			}
+			return nil
+		})
 	}
-	lg.Infof("DataLayers struct stored as JSON at %s", layers.Outfile)
-
-	return layers, nil
+	if err := g.Wait(); err != nil {
+		return nil, fmt.Errorf("an error occured getting data: %v", err)
+	}
+	if err := fl.DataToJSONFile(); err != nil {
+		return fl, fmt.Errorf("failed to write built map to %s: %v", PERSISTF, err)
+	}
+	return fl, nil
 }
 
 func (fc *FeatureColl) QueryDB(

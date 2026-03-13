@@ -40,7 +40,15 @@ func main() {
 
 	a.lg.Info("postgis connection successful, building data layers...")
 
-	layers, err := gis.BuildLayers(ctx, a.db, a.lg)
+	layers, err := gis.GetFeatureLayers(ctx, gis.LayerMeta{
+		"bus":      &pgis.QBUS,
+		"ml":       &pgis.QRAIL,
+		"amtrak":   &pgis.QAMTRAK,
+		"places":   &pgis.QPLACES,
+		"cycle":    &pgis.QCYCLE,
+		"tracts":   &pgis.QTRACTS,
+		"counties": &pgis.QCOUNTIES,
+	}, a.db, a.lg)
 	if err != nil {
 		a.lg.Fatal(err)
 	}
@@ -48,7 +56,7 @@ func main() {
 
 	a.lg.Infof("finished buildling DataLayers, starting HTTP server at %s...", a.addr)
 
-	mux := srv.NewMux(a.layers)
+	mux := srv.Mount(a.layers)
 	if err := srv.Serve(a.addr, mux); err != nil {
 		a.lg.Fatal(err)
 	}

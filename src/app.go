@@ -13,7 +13,7 @@ type app struct {
 	lg     *zap.SugaredLogger
 	db     *pgxpool.Pool
 	addr   string
-	layers *gis.DataLayers
+	layers gis.FeatureLayers
 }
 
 func buildLogger() (*zap.SugaredLogger, error) {
