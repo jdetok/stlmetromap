@@ -31,7 +31,8 @@ import {
     LAYER_CENSUS_TRACTS,
     LAYER_CYCLING,
     LAYER_AMTRAK,
-    LAYER_PLACES
+    LAYER_PLACES, 
+    BUS_STOP_SIZE,
 } from "../layers.js";
 
 
@@ -62,10 +63,10 @@ export class MapWindow extends HTMLElement {
 
         const root = this.attachShadow({ mode: "open" });
         
-        this.BUS_META = makeBusStopsLayer((route: string) => {
-            this.filterByRoute(route);
-            this.showRouteInfo(route);
-        });
+        this.BUS_META = makeBusStopsLayer(
+            (route) => { this.filterByRoute(route); this.showRouteInfo(route); },
+            (routes) => { this.filterByRoutes(routes);  },
+        );
         // order matters
         this.layers = [
             LAYER_CENSUS_COUNTIES,
@@ -74,7 +75,6 @@ export class MapWindow extends HTMLElement {
             LAYER_CYCLING,
             LAYER_AMTRAK,
             this.BUS_META,
-            // LAYER_BUS_STOPS,
             LAYER_ML_STOPS,
         ];
 
@@ -89,6 +89,7 @@ export class MapWindow extends HTMLElement {
             this.buildRoutesFilter(),
             this.buildRouteInfoPanel(),
         );
+
     }
     disconnectedCallback(): void {
         this.arcgisMap?.remove();
@@ -114,10 +115,8 @@ export class MapWindow extends HTMLElement {
             (this.printPanel.querySelector("arcgis-print") as any).view = view;
             for (let i = 0; i < this.layers.length; i++) {
                 try {
-                    // const meta = this.layers[i] === LAYER_BUS_STOPS ? makeBusStopsLayer(this.filterByRoute.bind(this)) : this.layers[i];
                     const layer = await this.makeFeatureLayer(this.layers[i]);
                     if (this.layers[i] === this.BUS_META) {
-                    // if (this.layers[i] === LAYER_BUS_STOPS) {
                         this.busStopsLayer = layer;
                     }
                     this.arcgisMap.map?.add(layer, i);
@@ -126,9 +125,24 @@ export class MapWindow extends HTMLElement {
                 }
             }
             await this.populateRouteSelect();
+            // re-render stop size based on zoom amount
+            this.renderOnZoom();
 
         }, { once: true });
         return this.arcgisMap;
+    }
+    private renderOnZoom() {
+        this.arcgisMap.view.watch("zoom", (zoom) => {
+            console.log("zoom: ", zoom);
+            const scale = zoom <= 9 ? 0.5 : zoom <= 11 ? 0.75 : zoom <= 12 ? 1 : zoom < 15 ? 1.25 : zoom < 17 ? 1.5 : 2;
+            (this.busStopsLayer.renderer as any).visualVariables[0].stops = [
+                { value: 1, size: BUS_STOP_SIZE * scale },
+                { value: 2, size: BUS_STOP_SIZE * 1.5 * scale },
+                { value: 3, size: BUS_STOP_SIZE * 2.5 * scale },
+                { value: 4, size: BUS_STOP_SIZE * 3.5 * scale },
+                { value: 5, size: BUS_STOP_SIZE * 4 * scale },
+            ];
+        });
     }
     private async makeFeatureLayer(meta: FeatureLayerMeta): Promise<FeatureLayer> {
         try {
@@ -350,6 +364,30 @@ export class MapWindow extends HTMLElement {
         }
 
         const whereClause = `route_names like '%${routeName}%'`;
+
+        layerView.featureEffect = new FeatureEffect({
+            filter: new FeatureFilter({ where: whereClause }),
+            includedEffect: "bloom(2, 1px, 0.3) drop-shadow(2px 2px 4px black) brightness(2)",
+            excludedEffect: "opacity(60%) brightness(1)"
+        });
+        const result = await this.busStopsLayer.queryFeatures({
+            where: whereClause,
+            returnGeometry: true,
+            outSpatialReference: { wkid: STLWKID },
+        });
+        if (result.features.length) {
+            await this.arcgisMap.view.goTo(result.features, { duration: 600 });
+        }
+    }
+    private async filterByRoutes(routeNames: string[]): Promise<void> {
+        const layerView = await this.arcgisMap.view.whenLayerView(this.busStopsLayer) as __esri.FeatureLayerView;
+
+        if (!routeNames) {
+            layerView.featureEffect = null;
+            return;
+        }
+
+        const whereClause = routeNames.map(r => `route_names like '%${r}%'`).join(" or ");
 
         layerView.featureEffect = new FeatureEffect({
             filter: new FeatureFilter({ where: whereClause }),

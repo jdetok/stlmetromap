@@ -43,6 +43,7 @@ export const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "stop_id", alias: "Stop ID", type: "string" },
     { name: "stop_name", alias: "Name", type: "string" },
     { name: "wheelchair_access", alias: "Wheelchair Accessible", type: "string" },
+    { name: "route_count", alias: "Route Count", type: "integer" },
     { name: "route_names", alias: "Route Names", type: "string" },
     { name: "route_ids", alias: "Route Nums", type: "string" },
     { name: "amenity_access", alias: "Amenity Access", type: "string" },

@@ -3,6 +3,7 @@ import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
 import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol";
 import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer";
 import SimpleMarkerSymbol from "@arcgis/core/symbols/SimpleMarkerSymbol.js";
+import SizeVariable from "@arcgis/core/renderers/visualVariables/SizeVariable.js";
 import Point from "@arcgis/core/geometry/Point";
 import Polyline from "@arcgis/core/geometry/Polyline";
 import Graphic from "@arcgis/core/Graphic";
@@ -45,7 +46,7 @@ const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
 const BUS_STOP_Y_COLOR = [0, 255, 255, 0.5];
 const BUS_STOP_NO_COLOR = [180, 110, 200, 0.5];
 const BUS_STOP_NA_COLOR = [0, 165, 255, 0.5];
-const BUS_STOP_SIZE = 4;
+export const BUS_STOP_SIZE = 4;
 const ML_STOP_SIZE = 10;
 const RAIL_INNER_COLOR = [0, 0, 0, 0.6];
 const CYCLE_LAYER_GRAVEL_COLOR = [180, 80, 170, 0.7];
@@ -102,12 +103,19 @@ const stopsToGraphics = (data: any): Graphic[] => {
                 latitude: f.geometry.coordinates[1],
                 spatialReference: { wkid: STLWKID },
             }),
-            attributes: { ...f.properties, ObjectID: f.properties.id, },
+            attributes: {
+                ...f.properties,
+                ObjectID: f.properties.id,
+                route_count: f.properties.route_names ? f.properties.route_names.split(", ").length : 1,
+            },
         })
     })
 };
 
-export const makeBusStopsLayer = (onRouteClick: (route: string) => void): FeatureLayerMeta => ({
+export const makeBusStopsLayer = (
+    onRouteClick: (route: string) => void,
+    onRoutesClick: (route: string[]) => void
+): FeatureLayerMeta => ({
     title: BUS_LAYER_TTL,
     dataUrl: BUS_LAYER_URL,
     geometryType: "point",
@@ -115,11 +123,23 @@ export const makeBusStopsLayer = (onRouteClick: (route: string) => void): Featur
     outFields: ["*"],
     renderer: new UniqueValueRenderer({
         field: "wheelchair_access",
+        visualVariables: [
+            new SizeVariable({
+                field: "route_count",
+                stops: [
+                    { value: 1, size: BUS_STOP_SIZE },
+                    { value: 2, size: BUS_STOP_SIZE * 1.5 },
+                    { value: 3, size: BUS_STOP_SIZE * 2.5 },
+                    { value: 4, size: BUS_STOP_SIZE * 3.5 },
+                    { value: 5, size: BUS_STOP_SIZE * 4 },
+                ]
+            }),
+        ],
         defaultLabel: "NA",
         defaultSymbol: new SimpleMarkerSymbol({
             style: "circle",
             color: BUS_STOP_NA_COLOR,
-            size: BUS_STOP_SIZE,
+            // size: BUS_STOP_SIZE,
         }),
         uniqueValueInfos: [
             {
@@ -127,7 +147,7 @@ export const makeBusStopsLayer = (onRouteClick: (route: string) => void): Featur
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
                     color: BUS_STOP_Y_COLOR,
-                    size: BUS_STOP_SIZE,
+                    // size: BUS_STOP_SIZE,
                 }),
                 label: "Wheelchair Accessible",
             },
@@ -136,7 +156,7 @@ export const makeBusStopsLayer = (onRouteClick: (route: string) => void): Featur
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
                     color: BUS_STOP_NO_COLOR,
-                    size: BUS_STOP_SIZE,
+                    // size: BUS_STOP_SIZE,
                 }),
                 label: "Not Wheelchair Accessible",
             },
@@ -155,14 +175,18 @@ export const makeBusStopsLayer = (onRouteClick: (route: string) => void): Featur
             const routeNames: string = attrs?.route_names;
             if (routeNames) {
                 routeNames.split(", ").forEach((route: string) => {
-                    const btn = document.createElement("calcite-button");
-                    btn.textContent = route.trim();
-                    btn.style.setProperty("--calcite-button-text-color", "black");
-                    btn.setAttribute("appearance", "outline");
-                    btn.setAttribute("scale", "s");
+                    const btn = makeRtsBtn(route);
                     btn.addEventListener("click", () => onRouteClick(route.trim()));
                     routeBtns.push(btn);
                 });
+                if (routeBtns.length > 1) {
+                    const allBtn = makeRtsBtn("Highlight Each");
+                    allBtn.addEventListener("click", () => {
+                        const routes = routeNames.split(", ").map(r => r.trim());
+                        onRoutesClick(routes);
+                    });
+                    routeBtns.push(allBtn)
+                }
             }
 
             // fields table
@@ -186,6 +210,14 @@ export const makeBusStopsLayer = (onRouteClick: (route: string) => void): Featur
     },
     toGraphics: stopsToGraphics,
 });
+function makeRtsBtn(txt: string): HTMLCalciteButtonElement {
+    const btn = document.createElement("calcite-button");
+    btn.textContent = txt.trim();
+    btn.style.setProperty("--calcite-button-text-color", "black");
+    btn.setAttribute("appearance", "outline");
+    btn.setAttribute("scale", "s");
+    return btn;
+}
 export const LAYER_ML_STOPS: FeatureLayerMeta = {
     title: ML_LAYER_TTL,
     dataUrl: ML_LAYER_URL,
