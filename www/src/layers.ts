@@ -8,6 +8,7 @@ import Polyline from "@arcgis/core/geometry/Polyline";
 import Graphic from "@arcgis/core/Graphic";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
 import Renderer from "@arcgis/core/renderers/Renderer";
+import "@esri/calcite-components/dist/components/calcite-button";
 import {
     STLWKID, TRACTS_LAYER_URL, TRACTS_LAYER_TTL, TRACTS_FIELDS, TRACTS_FIELDINFOS,
     COUNTIES_LAYER_URL, COUNTIES_LAYER_TTL, COUNTIES_FIELDS, COUNTIES_FIELDINFOS,
@@ -24,6 +25,7 @@ export type FeatureLayerMeta = {
     renderer: Renderer;
     popupTemplate?: __esri.PopupTemplateProperties;
     fields?: __esri.FieldProperties[];
+    outFields?: string[];
     geometryType?: 'point' | 'polygon' | 'polyline';
     toGraphics?: (data: any) => Graphic[];
 }
@@ -93,14 +95,14 @@ const toPolygon = (data: any): Graphic[] => {
 
 // create and return an array of graphics from passed bus/metro stop locations
 const stopsToGraphics = (data: any): Graphic[] => {
-    return data.features.map((f: any, i: number) => {
+    return data.features.map((f: any) => {
         return new Graphic({
             geometry: new Point({
                 longitude: f.geometry.coordinates[0],
                 latitude: f.geometry.coordinates[1],
                 spatialReference: { wkid: STLWKID },
             }),
-            attributes: f.properties,
+            attributes: { ...f.properties, ObjectID: f.properties.id, },
         })
     })
 };
@@ -151,7 +153,85 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
     },
     toGraphics: stopsToGraphics,
 };
+export const makeBusStopsLayer = (onRouteClick: (route: string) => void): FeatureLayerMeta => ({
+    title: BUS_LAYER_TTL,
+    dataUrl: BUS_LAYER_URL,
+    geometryType: "point",
+    fields: STOP_FIELDS,
+    outFields: ["*"],
+    renderer: new UniqueValueRenderer({
+        field: "wheelchair_access",
+        defaultLabel: "NA",
+        defaultSymbol: new SimpleMarkerSymbol({
+            style: "circle",
+            color: BUS_STOP_NA_COLOR,
+            size: BUS_STOP_SIZE,
+        }),
+        uniqueValueInfos: [
+            {
+                value: "true",
+                symbol: new SimpleMarkerSymbol({
+                    style: "circle",
+                    color: BUS_STOP_Y_COLOR,
+                    size: BUS_STOP_SIZE,
+                }),
+                label: "Wheelchair Accessible",
+            },
+            {
+                value: "false",
+                symbol: new SimpleMarkerSymbol({
+                    style: "circle",
+                    color: BUS_STOP_NO_COLOR,
+                    size: BUS_STOP_SIZE,
+                }),
+                label: "Not Wheelchair Accessible",
+            },
+        ],
+    }),
+    popupTemplate: {
+        title: `MetroBus ({route_ids}) Stop: {stop_name}`,
+        outFields: ["*"],
+        content: (feature: any) => {
+            const attrs = feature.graphic?.attributes;
 
+            const div = document.createElement("div");
+
+            let routeBtns: HTMLCalciteButtonElement[] = [];
+
+            const routeNames: string = attrs?.route_names;
+            if (routeNames) {
+                routeNames.split(", ").forEach((route: string) => {
+                    const btn = document.createElement("calcite-button");
+                    btn.textContent = route.trim();
+                    btn.style.setProperty("--calcite-button-text-color", "black");
+                    btn.setAttribute("appearance", "outline");
+                    btn.setAttribute("scale", "s");
+                    btn.addEventListener("click", () => onRouteClick(route.trim()));
+                    routeBtns.push(btn);
+                });
+            }
+
+            // fields table
+            const tbl = document.createElement("table");
+
+            // add each route as a button
+            const row = tbl.insertRow();
+            row.insertCell().textContent = "MetroBus Routes Served:";
+            row.insertCell().append(...routeBtns);
+
+            STOP_FIELDINFOS.forEach(({ fieldName, label }) => {
+                if (fieldName === "route_names") return; // handled separately
+                const row = tbl.insertRow();
+                row.insertCell().textContent = label;
+                row.insertCell().textContent = attrs?.[fieldName] ?? "—";
+            });
+            div.appendChild(tbl);
+
+            return div;
+        }
+    },
+    toGraphics: stopsToGraphics,
+});
 export const LAYER_ML_STOPS: FeatureLayerMeta = {
     title: ML_LAYER_TTL,
     dataUrl: ML_LAYER_URL,

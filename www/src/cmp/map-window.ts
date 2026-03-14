@@ -13,6 +13,7 @@ import "@esri/calcite-components/dist/components/calcite-panel";
 import "@esri/calcite-components/dist/components/calcite-select";
 import "@esri/calcite-components/dist/components/calcite-option";
 import "@esri/calcite-components/dist/components/calcite-table";
+import "@esri/calcite-components/dist/components/calcite-button";
 import "@esri/calcite-components/dist/components/calcite-table-header";
 import "@esri/calcite-components/dist/components/calcite-table-row";
 import "@esri/calcite-components/dist/components/calcite-table-cell";
@@ -23,6 +24,7 @@ import Polygon from "@arcgis/core/geometry/Polygon";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import { STLCOORDS, STLWKID, BASEMAP } from "../data.js";
 import {
+    makeBusStopsLayer,
     FeatureLayerMeta,
     LAYER_BUS_STOPS,
     LAYER_ML_STOPS,
@@ -43,11 +45,11 @@ function buildCalcitePanel(elementType: string, heading: string): HTMLCalcitePan
     panel.appendChild(content);
     return panel;
 }
-
 export const TAG = "map-window";
 export class MapWindow extends HTMLElement {
     private arcgisMap!: HTMLArcgisMapElement;
     private layers: FeatureLayerMeta[];
+    private BUS_META: FeatureLayerMeta;
     private busStopsLayer!: FeatureLayer;
     private routePanel!: HTMLElement;
     private layerListPanel!: HTMLCalcitePanelElement;
@@ -61,6 +63,7 @@ export class MapWindow extends HTMLElement {
 
         const root = this.attachShadow({ mode: "open" });
         
+        this.BUS_META = makeBusStopsLayer(this.filterByRoute.bind(this));
         // order matters
         this.layers = [
             LAYER_CENSUS_COUNTIES,
@@ -68,7 +71,8 @@ export class MapWindow extends HTMLElement {
             LAYER_PLACES,
             LAYER_CYCLING,
             LAYER_AMTRAK,
-            LAYER_BUS_STOPS,
+            this.BUS_META,
+            // LAYER_BUS_STOPS,
             LAYER_ML_STOPS,
         ];
 
@@ -108,8 +112,10 @@ export class MapWindow extends HTMLElement {
             (this.printPanel.querySelector("arcgis-print") as any).view = view;
             for (let i = 0; i < this.layers.length; i++) {
                 try {
+                    // const meta = this.layers[i] === LAYER_BUS_STOPS ? makeBusStopsLayer(this.filterByRoute.bind(this)) : this.layers[i];
                     const layer = await this.makeFeatureLayer(this.layers[i]);
-                    if (this.layers[i] === LAYER_BUS_STOPS) {
+                    if (this.layers[i] === this.BUS_META) {
+                    // if (this.layers[i] === LAYER_BUS_STOPS) {
                         this.busStopsLayer = layer;
                     }
                     this.arcgisMap.map?.add(layer, i);
@@ -121,6 +127,45 @@ export class MapWindow extends HTMLElement {
 
         }, { once: true });
         return this.arcgisMap;
+    }
+    private async makeFeatureLayer(meta: FeatureLayerMeta): Promise<FeatureLayer> {
+        try {
+            if (meta.dataUrl) {
+                const res = await fetch(meta.dataUrl);
+                const data = await res.json();
+
+                if (meta.toGraphics) {
+                    meta.source = meta.toGraphics(data);
+                } else {
+                    if (!data?.features?.length) {
+                        throw new Error(`layer "${meta.title}" expected data.features[]`);
+                    }
+                    meta.source = data.features.map((f: any) => new Graphic({
+                        geometry: new Polygon({
+                            rings: f.geometry.rings,
+                            spatialReference: { wkid: STLWKID },
+                        }),
+                        attributes: f.attributes,
+                    }));
+                }
+            }
+        } catch (e) {
+            throw new Error(`no data source for ${meta.title} layer: ${e}`);
+        }
+        return new FeatureLayer({
+            title: meta.title,
+            source: meta.source,
+            objectIdField: "ObjectID",
+            geometryType: meta.geometryType,
+            spatialReference: { wkid: STLWKID },
+            renderer: meta.renderer,
+            popupTemplate: meta.popupTemplate,
+            fields: meta.fields,
+            outFields: ["*"],
+        });
+    }
+    private addStyling(): HTMLStyleElement {
+        return Object.assign(document.createElement("style"), { textContent: STYLE });
     }
     private togglePanel(id: string, actionBar: any, panels: Record<string, HTMLElement>): void {
         actionBar.querySelectorAll("calcite-action").forEach((a: any) => {
@@ -153,7 +198,21 @@ export class MapWindow extends HTMLElement {
             }));
             actionBar.appendChild(action);
         }
+        actionBar.appendChild(this.buildFsBtn())
         return actionBar;
+    }
+    private buildFsBtn(): HTMLCalciteActionElement {
+        const fsAction = document.createElement("calcite-action") as any;
+        fsAction.icon = "extent";
+        fsAction.text = "Fullscreen";
+        fsAction.addEventListener("click", () => {
+            if (!document.fullscreenElement) {
+                this.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+        return fsAction;
     }
     private buildRoutesFilter(): HTMLElement {
         const wrapper = document.createElement("div");
@@ -248,9 +307,10 @@ export class MapWindow extends HTMLElement {
         for (const [key, val] of Object.entries(props)) {
             if (!key.includes("_access_")) continue;
             const row = document.createElement("calcite-table-row");
-            
             const keyVal = key.split("_").at(-1);
-            const amenity = Object.assign(document.createElement("calcite-table-cell"), { innerText: `${String(keyVal).charAt(0).toUpperCase()}${String(keyVal).slice(1)}` });
+            const amenity = Object.assign(document.createElement("calcite-table-cell"), {
+                innerText: `${String(keyVal).charAt(0).toUpperCase()}${String(keyVal).slice(1)}`
+            });
             const access = Object.assign(document.createElement("calcite-table-cell"), { innerText: val });
             row.append(amenity, access);
             tbl.appendChild(row);
@@ -302,47 +362,6 @@ export class MapWindow extends HTMLElement {
         if (result.features.length) {
             await this.arcgisMap.view.goTo(result.features, { duration: 600 });
         }
-    }
-    
-    private async makeFeatureLayer(meta: FeatureLayerMeta): Promise<FeatureLayer> {
-        try {
-            if (meta.dataUrl) {
-                const res = await fetch(meta.dataUrl);
-                const data = await res.json();
-                console.log(data);
-
-                // build graphics layer if specified
-                if (meta.toGraphics) {
-                    meta.source = meta.toGraphics(data);
-                } else {
-                    if (!data?.features?.length) {
-                        throw new Error(`layer "${meta.title}" expected data.features[]`);
-                    }
-                    meta.source = data.features.map((f: any) => new Graphic({
-                        geometry: new Polygon({
-                            rings: f.geometry.rings,
-                            spatialReference: { wkid: STLWKID },
-                        }),
-                        attributes: f.attributes,
-                    }));
-                }
-            }
-        } catch (e) {
-            throw new Error(`no data source for ${meta.title} layer: ${e}`);
-        }
-        return new FeatureLayer({
-            title: meta.title,
-            source: meta.source,
-            objectIdField: "ObjectID",
-            geometryType: meta.geometryType,
-            spatialReference: { wkid: STLWKID },
-            renderer: meta.renderer,
-            popupTemplate: meta.popupTemplate,
-            fields: meta.fields,
-        });
-    }
-    private addStyling(): HTMLStyleElement {
-        return Object.assign(document.createElement("style"), { textContent: STYLE });
     }
 }
 

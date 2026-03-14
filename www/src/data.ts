@@ -40,7 +40,7 @@ export const PLACE_FIELDINFOS = [
 
 export const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "stop_id", alias: "ID", type: "string" },
+    { name: "stop_id", alias: "Stop ID", type: "string" },
     { name: "stop_name", alias: "Name", type: "string" },
     { name: "wheelchair_access", alias: "Wheelchair Accessible", type: "string" },
     { name: "route_names", alias: "Route Names", type: "string" },
@@ -57,7 +57,7 @@ export const STOP_FIELDS: __esri.FieldProperties[] = [
 ];
 
 export const STOP_FIELDINFOS = [
-    { fieldName: "stop_name", label: "Name" },
+    // { fieldName: "stop_name", label: "Name" },
     { fieldName: "route_names", label: "Route Names" },
     { fieldName: "wheelchair_access", label: "Wheelchair Accessible" },
     { fieldName: "amenity_access", label: "Amenity Access" },
