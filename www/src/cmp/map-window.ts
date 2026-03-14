@@ -26,7 +26,6 @@ import { STLCOORDS, STLWKID, BASEMAP } from "../data.js";
 import {
     makeBusStopsLayer,
     FeatureLayerMeta,
-    LAYER_BUS_STOPS,
     LAYER_ML_STOPS,
     LAYER_CENSUS_COUNTIES,
     LAYER_CENSUS_TRACTS,
@@ -63,7 +62,10 @@ export class MapWindow extends HTMLElement {
 
         const root = this.attachShadow({ mode: "open" });
         
-        this.BUS_META = makeBusStopsLayer(this.filterByRoute.bind(this));
+        this.BUS_META = makeBusStopsLayer((route: string) => {
+            this.filterByRoute(route);
+            this.showRouteInfo(route);
+        });
         // order matters
         this.layers = [
             LAYER_CENSUS_COUNTIES,

@@ -107,52 +107,6 @@ const stopsToGraphics = (data: any): Graphic[] => {
     })
 };
 
-// LAYERS DEFINED HERE: TO ADD NEW LAYER, CREATE A CONFIG HERE AND ADD IT TO THE ARRAY IN map-window.ts
-export const LAYER_BUS_STOPS: FeatureLayerMeta = {
-    title: BUS_LAYER_TTL,
-    dataUrl: BUS_LAYER_URL,
-    geometryType: "point",
-    fields: STOP_FIELDS,
-    renderer: new UniqueValueRenderer({
-        field: "wheelchair_access",
-        defaultLabel: "NA",
-        defaultSymbol: new SimpleMarkerSymbol({
-            style: "circle",
-            color: BUS_STOP_NA_COLOR,
-            size: BUS_STOP_SIZE,
-        }),
-        uniqueValueInfos: [
-            {
-                value: "true",
-                symbol: new SimpleMarkerSymbol({
-                    style: "circle",
-                    color: BUS_STOP_Y_COLOR,
-                    size: BUS_STOP_SIZE,
-                }),
-                label: "Wheelchair Accessible",
-            },
-            {
-                value: "false",
-                symbol: new SimpleMarkerSymbol({
-                    style: "circle",
-                    color: BUS_STOP_NO_COLOR,
-                    size: BUS_STOP_SIZE,
-                }),
-                label: "Not Wheelchair Accessible",
-            },
-        ],
-    }),
-    popupTemplate: {
-        title: `MetroBus ({route_ids}) Stop: {stop_name}`,
-        content: [
-            {
-                type: "fields",
-                fieldInfos: STOP_FIELDINFOS
-            },
-        ],
-    },
-    toGraphics: stopsToGraphics,
-};
 export const makeBusStopsLayer = (onRouteClick: (route: string) => void): FeatureLayerMeta => ({
     title: BUS_LAYER_TTL,
     dataUrl: BUS_LAYER_URL,
