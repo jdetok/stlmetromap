@@ -57,6 +57,8 @@ const FUN_COLOR = [255, 153, 255, 0.25];
 const SOCIAL_COLOR = [184, 217, 255, 0.35];
 const SCHOOL_COLOR = [242, 238, 122, 0.3];
 const UNI_COLOR = [160, 238, 150, 0.3];
+const CHURCH_COLOR = [10, 238, 255, 0.3];
+const MED_COLOR = [255, 25, 25, 0.3];
 
 // choropleth levels, pass min val, max val, rgb val
 type cplethEls = [number, number, number[]];
@@ -110,7 +112,7 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
     geometryType: "point",
     fields: STOP_FIELDS,
     renderer: new UniqueValueRenderer({
-        field: "wheelchair",
+        field: "wheelchair_access",
         defaultLabel: "NA",
         defaultSymbol: new SimpleMarkerSymbol({
             style: "circle",
@@ -119,7 +121,7 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
         }),
         uniqueValueInfos: [
             {
-                value: "accessible",
+                value: "true",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
                     color: BUS_STOP_Y_COLOR,
@@ -128,7 +130,7 @@ export const LAYER_BUS_STOPS: FeatureLayerMeta = {
                 label: "Wheelchair Accessible",
             },
             {
-                value: "not_accessible",
+                value: "false",
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
                     color: BUS_STOP_NO_COLOR,
@@ -400,6 +402,24 @@ export const LAYER_PLACES: FeatureLayerMeta = {
             label: "College/University",
             symbol: new SimpleFillSymbol({
                 color: UNI_COLOR,
+                style: "diagonal-cross",
+                outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
+            }),
+        },
+        {
+            value: "church",
+            label: "Place of Worship",
+            symbol: new SimpleFillSymbol({
+                color: CHURCH_COLOR,
+                style: "diagonal-cross",
+                outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
+            }),
+        },
+        {
+            value: "medical",
+            label: "Medical Facility",
+            symbol: new SimpleFillSymbol({
+                color: MED_COLOR,
                 style: "diagonal-cross",
                 outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
             }),

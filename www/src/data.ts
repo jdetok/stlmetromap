@@ -14,10 +14,10 @@ export const COUNTIES_LAYER_TTL = "St. Louis MSA Counties";
 export const COUNTIES_LAYER_URL = "/layers/counties";
 
 export const ML_LAYER_TTL = "MetroLink Stops";
-export const ML_LAYER_URL = "/layers/ml";
+export const ML_LAYER_URL = "/layers/metrolink";
 
 export const BUS_LAYER_TTL = "MetroBus Stops";
-export const BUS_LAYER_URL = "/layers/bus";
+export const BUS_LAYER_URL = "/layers/metrobus";
 
 export const CYCLE_LAYER_TTL = "Bicycle/Walking Paths";
 export const CYCLE_LAYER_URL = "/layers/cycle";
@@ -42,14 +42,14 @@ export const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },
     { name: "stop_id", alias: "ID", type: "string" },
     { name: "stop_name", alias: "Name", type: "string" },
-    { name: "wheelchair", alias: "Wheelchair Accessible", type: "string" },
+    { name: "wheelchair_access", alias: "Wheelchair Accessible", type: "string" },
     { name: "route_names", alias: "Route Names", type: "string" },
     { name: "route_ids", alias: "Route Nums", type: "string" },
 ];
 
 export const STOP_FIELDINFOS = [
     { fieldName: "stop_name", label: "Name" },
-    { fieldName: "wheelchair", label: "Wheelchair Accessible" },
+    { fieldName: "wheelchair_access", label: "Wheelchair Accessible" },
     { fieldName: "route_names", label: "Route Names" },
 ];
 

@@ -37,6 +37,20 @@ with mbus as (
     	coalesce(coalesce(operator, brand), 'NA') as operator, ST_Transform(way, 4326) as way
 	from public.planet_osm_polygon
 	where amenity in ('school', 'kindergarten')
+), medical as (
+	select 
+		osm_id::int8 as osm_id, 'medical' as type,
+		coalesce(coalesce(coalesce(name, operator), brand), 'NA') as name,
+		coalesce(coalesce(operator, brand), 'NA') as operator, ST_Transform(way, 4326) as way
+	from public.planet_osm_polygon
+	where amenity in ('hospital', 'clinic', 'doctors')
+), church as (
+	select 
+		osm_id::int8 as osm_id, 'church' as type,
+		coalesce(coalesce(coalesce(name, operator), brand), 'NA') as name,
+		coalesce(coalesce(operator, brand), 'NA') as operator, ST_Transform(way, 4326) as way
+	from public.planet_osm_polygon
+	where amenity in ('place_of_worship')
 ), uni as (
 	select 
 	
@@ -99,6 +113,8 @@ with mbus as (
 	    select osm_id, type, name, operator, ST_Centroid(way) as centroid, way from uni union all
 	    select osm_id, type, name, operator, ST_Centroid(way) as centroid, way from social union all
 	    select osm_id, type, name, operator, ST_Centroid(way) as centroid, way from parks union all
+	    select osm_id, type, name, operator, ST_Centroid(way) as centroid, way from medical union all
+		select osm_id, type, name, operator, ST_Centroid(way) as centroid, way from church union all
 	    select osm_id, type, name, operator, ST_Centroid(way) as centroid, way from fun
 	) a
 	left join lateral (
@@ -121,5 +137,7 @@ with mbus as (
 insert into api.places (osm_id, type, name, operator, bus_near, rail_near, way, geom)
 select osm_id, type, name, operator, bus_near, rail_near, way, ST_AsGeoJSON(way) as geom from polygons;
 select * from api.places;
+truncate table api.places restart identity;
 
 select osm_id, type, name, operator, bus_near, rail_near, geom from api.places;
+select * from api.places;

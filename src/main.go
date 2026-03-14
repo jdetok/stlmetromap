@@ -41,14 +41,16 @@ func main() {
 	a.lg.Info("postgis connection successful, building data layers...")
 
 	layers, err := gis.GetFeatureLayers(ctx, gis.LayerMeta{
-		"bus":      pgis.QBUS,
-		"ml":       pgis.QRAIL,
-		"amtrak":   pgis.QAMTRAK,
-		"places":   pgis.QPLACES,
-		"cycle":    pgis.QCYCLE,
-		"tracts":   pgis.QTRACTS,
-		"counties": pgis.QCOUNTIES,
-		"routes":   pgis.QROUTES,
+		"bus":       pgis.QBUS,
+		"ml":        pgis.QRAIL,
+		"metrobus":  pgis.METROBUS,
+		"metrolink": pgis.METROLINK,
+		"amtrak":    pgis.QAMTRAK,
+		"places":    pgis.QPLACES,
+		"cycle":     pgis.QCYCLE,
+		"tracts":    pgis.QTRACTS,
+		"counties":  pgis.QCOUNTIES,
+		"routes":    pgis.QROUTES,
 	}, a.db, a.lg)
 	if err != nil {
 		a.lg.Fatal(err)

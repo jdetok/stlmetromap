@@ -16,6 +16,8 @@ create table if not exists api.routes (
 	stops_access_colleges integer,
 	stops_access_parks integer,
 	stops_access_social_facilities integer,
+	stops_access_churches integer,
+	stops_access_medical integer,
 	stops_access_entertainment integer
 );
 
@@ -44,6 +46,8 @@ with mtr as (
         bool_or(d.type = 'university') as has_uni,
         bool_or(d.type = 'park') as has_park,
         bool_or(d.type = 'social_facility') as has_social,
+		bool_or(d.type = 'church') as has_church,
+		bool_or(d.type = 'medical') as has_medical,
         bool_or(d.type = 'entertainment') as has_fun
     from stops c
     cross join mtr m
@@ -66,6 +70,8 @@ with mtr as (
         count(distinct case when sn.has_uni then b.stop_id end) as stops_access_colleges,
         count(distinct case when sn.has_park then b.stop_id end) as stops_access_parks,
         count(distinct case when sn.has_social then b.stop_id end) as stops_access_social_facilities,
+        count(distinct case when sn.has_medical then b.stop_id end) as stops_access_medical,
+		count(distinct case when sn.has_church then b.stop_id end) as stops_access_churches,
         count(distinct case when sn.has_fun then b.stop_id end) as stops_access_entertainment
     from trips a
     join stop_times b on b.trip_id = a.trip_id
@@ -73,18 +79,25 @@ with mtr as (
     left join stops_near sn on sn.stop_id = b.stop_id
     group by a.route_id
 )
---insert into api.routes (route, route_type, route_name, route_desc, trips, stops_total, stops_accessible, 
---	stops_access_amenities, stops_access_grocery, stops_access_schools, stops_access_colleges, stops_access_parks, 
---	stops_access_social_facilities, stops_access_entertainment
---)
+insert into api.routes (route, route_type, route_name, route_desc, trips, stops_total, stops_accessible, 
+	stops_access_amenities, stops_access_grocery, stops_access_schools, stops_access_colleges, stops_access_parks, 
+	stops_access_social_facilities, stops_access_medical, stops_access_churches, stops_access_entertainment
+)
 select
     route, route_type, route_name, route_desc, trips,
     stops_total, stops_accessible,
     stops_access_amenities, stops_access_grocery,
     stops_access_schools, stops_access_colleges, stops_access_parks,
-    stops_access_social_facilities, stops_access_entertainment
+    stops_access_social_facilities, stops_access_medical, stops_access_churches, stops_access_entertainment
 from rts a
 join num_stops b on b.route_id = a.route_id
 order by stops_total desc;
 
 select * from api.routes;
+select 
+    route, route_type, route_name, route_desc,
+    stops_total, stops_accessible,
+    stops_access_amenities, stops_access_grocery,
+    stops_access_schools, stops_access_colleges, stops_access_parks,
+    stops_access_social_facilities, stops_access_entertainment
+from api.routes;
