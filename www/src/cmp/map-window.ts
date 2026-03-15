@@ -25,6 +25,7 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import { STLCOORDS, STLWKID, BASEMAP } from "../data.js";
 import {
     makeBusStopsLayer,
+    makePlacesLayer,
     FeatureLayerMeta,
     LAYER_ML_STOPS,
     LAYER_CENSUS_COUNTIES,
@@ -50,6 +51,7 @@ export class MapWindow extends HTMLElement {
     private arcgisMap!: HTMLArcgisMapElement;
     private layers: FeatureLayerMeta[];
     private BUS_META: FeatureLayerMeta;
+    private PLACE_META: FeatureLayerMeta;
     private busStopsLayer!: FeatureLayer;
     private routePanel!: HTMLElement;
     private layerListPanel!: HTMLCalcitePanelElement;
@@ -67,11 +69,17 @@ export class MapWindow extends HTMLElement {
             (route) => { this.filterByRoute(route); this.showRouteInfo(route); },
             (routes) => { this.filterByRoutes(routes);  },
         );
+
+        this.PLACE_META = makePlacesLayer(
+            (route) => { this.filterByRoute(route); this.showRouteInfo(route); },
+            (routes) => { this.filterByRoutes(routes);  },
+        );
         // order matters
         this.layers = [
             LAYER_CENSUS_COUNTIES,
             LAYER_CENSUS_TRACTS,
-            LAYER_PLACES,
+            this.PLACE_META,
+            // LAYER_PLACES,
             LAYER_CYCLING,
             LAYER_AMTRAK,
             this.BUS_META,
@@ -322,6 +330,8 @@ export class MapWindow extends HTMLElement {
         // add the key as the first table cell and the val as the second
         for (const [key, val] of Object.entries(props)) {
             if (!key.includes("_access_")) continue;
+            if ((!key.toLowerCase().includes("amenity")) && String(val) === "false") continue;
+            console.log(String(val));
             const row = document.createElement("calcite-table-row");
             const keyVal = key.split("_").at(-1);
             const amenity = Object.assign(document.createElement("calcite-table-cell"), {

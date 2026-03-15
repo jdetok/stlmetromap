@@ -218,6 +218,143 @@ function makeRtsBtn(txt: string): HTMLCalciteButtonElement {
     btn.setAttribute("scale", "s");
     return btn;
 }
+export const makePlacesLayer = (
+    onRouteClick: (route: string) => void,
+    onRoutesClick: (route: string[]) => void
+): FeatureLayerMeta => ({
+    title: 'Places',
+    dataUrl: '/layers/places',
+    geometryType: "polygon",
+    fields: PLACE_FIELDS,
+    renderer: new UniqueValueRenderer({
+        field: "type",
+        uniqueValueInfos: [
+            {
+                value: "park",
+                label: "Parks",
+                symbol: new SimpleFillSymbol({
+                    color: PARKS_COLOR,
+                    style: "diagonal-cross",
+                    outline: new SimpleLineSymbol({ color: 'black', width: 1 }),
+                }),
+            },
+            {
+                value: "grocery",
+                label: "Grocery",
+                symbol: new SimpleFillSymbol({
+                    color: GROCERY_INNER_COLOR,
+                    style: "diagonal-cross",
+                    outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
+                }),
+            },
+            {
+                value: "social_facility",
+                label: "Social Facility",
+                symbol: new SimpleFillSymbol({
+                    color: SOCIAL_COLOR,
+                    style: "diagonal-cross",
+                    outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
+                }),
+            },
+            {
+                value: "university",
+                label: "College/University",
+                symbol: new SimpleFillSymbol({
+                    color: UNI_COLOR,
+                    style: "diagonal-cross",
+                    outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
+                }),
+            },
+            {
+                value: "church",
+                label: "Place of Worship",
+                symbol: new SimpleFillSymbol({
+                    color: CHURCH_COLOR,
+                    style: "diagonal-cross",
+                    outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
+                }),
+            },
+            {
+                value: "medical",
+                label: "Medical Facility",
+                symbol: new SimpleFillSymbol({
+                    color: MED_COLOR,
+                    style: "diagonal-cross",
+                    outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
+                }),
+            },
+            {
+                value: "entertainment",
+                label: "Enterntainment/Fun",
+                symbol: new SimpleFillSymbol({
+                    color: FUN_COLOR,
+                    style: "diagonal-cross",
+                    outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
+                }),
+            },
+            {
+                value: "school",
+                label: "School",
+                symbol: new SimpleFillSymbol({
+                    color: SCHOOL_COLOR,
+                    style: "diagonal-cross",
+                    outline: new SimpleLineSymbol({ color: 'black', width: 1 }),
+                }),
+            },
+            ],
+        defaultLabel: "Other", 
+        defaultSymbol: new SimpleFillSymbol({
+            color: [128, 128, 128, 0.3],
+            outline: new SimpleLineSymbol({ color: 'grey', width: 0.5 }),
+        }),
+    }),
+    popupTemplate: {
+        title: `{name} ({type})`,
+        content: (feature: any) => {
+            const attrs = feature.graphic?.attributes;
+
+            const div = document.createElement("div");
+
+            let routeBtns: HTMLCalciteButtonElement[] = [];
+
+            const routeNames: string = attrs?.bus_near;
+            if (routeNames) {
+                routeNames.split(", ").forEach((route: string) => {
+                    const btn = makeRtsBtn(route);
+                    btn.addEventListener("click", () => onRouteClick(route.trim()));
+                    routeBtns.push(btn);
+                });
+                if (routeBtns.length > 1) {
+                    const allBtn = makeRtsBtn("Highlight Each");
+                    allBtn.addEventListener("click", () => {
+                        const routes = routeNames.split(", ").map(r => r.trim());
+                        onRoutesClick(routes);
+                    });
+                    routeBtns.push(allBtn)
+                }
+            }
+
+            // fields table
+            const tbl = document.createElement("table");
+
+            // add each route as a button
+            const row = tbl.insertRow();
+            row.insertCell().textContent = "MetroBus Routes Served:";
+            row.insertCell().append(...routeBtns);
+
+            PLACE_FIELDINFOS.forEach(({ fieldName, label }) => {
+                if (fieldName === "bus_near") return; // handled separately
+                const row = tbl.insertRow();
+                row.insertCell().textContent = label;
+                row.insertCell().textContent = attrs?.[fieldName] ?? "—";
+            });
+            div.appendChild(tbl);
+
+            return div;
+        }
+    },
+    toGraphics: toPolygon,
+});
 export const LAYER_ML_STOPS: FeatureLayerMeta = {
     title: ML_LAYER_TTL,
     dataUrl: ML_LAYER_URL,
