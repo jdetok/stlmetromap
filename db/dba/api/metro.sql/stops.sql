@@ -8,6 +8,7 @@ create table if not exists api.stops (
 	route_names text,
 	wheelchair_access boolean,
 	amenity_access boolean,
+	grocery_access boolean,
 	school_access boolean,
 	college_access boolean,
 	park_access boolean,
@@ -55,13 +56,13 @@ with mtr as (
     group by c.stop_id, c.stop_loc   
 )
 insert into api.stops (stop_id, stop_name, route_type, route_ids, route_names,
-	wheelchair_access, school_access, college_access, park_access,
+	wheelchair_access, amenity_access, grocery_access, school_access, college_access, park_access,
 	facility_access, medical_access, church_access, entertainment_access, geom) 
 select a.stop_id, stop_name, route_type, route_ids, route_names,
-	wheelchair_access, school_access, college_access, park_access,
+	wheelchair_access, amenity_access, grocery_access, school_access, college_access, park_access,
 	facility_access, medical_access, church_access, entertainment_access,
 	ST_AsGeoJSON(stop_loc)-- , stop_loc::geometry
 from bus_stops a 
 join nearby b on b.stop_id = a.stop_id;
 
-select * from api.stops where route_type = '2';
+select * from api.stops where route_type = '3';
