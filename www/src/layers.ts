@@ -30,23 +30,12 @@ export type FeatureLayerMeta = {
     geometryType?: 'point' | 'polygon' | 'polyline';
     toGraphics?: (data: any) => Graphic[];
 }
-const POPLDENS_ALPHA = 0.15;
-const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
-    [0, 2500, [94, 150, 98]],
-    [2500, 5000, [17, 200, 152]],
-    [5000, 7500, [0, 210, 255]],
-    [7500, 10000, [44, 60, 255]],
-    [10000, 99999, [50, 1, 63]],
-];
-const COUNTIES_OUTLINE_COLOR = [0, 0, 0, 0.5];
-const COUNTIES_OUTLINE_SIZE = 1.5;
-const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
 
 // const BUS_STOP_Y_COLOR = 'mediumseagreen';
+export const BUS_STOP_SIZE = 4;
 const BUS_STOP_Y_COLOR = [0, 255, 255, 0.5];
 const BUS_STOP_NO_COLOR = [180, 110, 200, 0.5];
 const BUS_STOP_NA_COLOR = [0, 165, 255, 0.5];
-export const BUS_STOP_SIZE = 4;
 const ML_STOP_SIZE = 10;
 const RAIL_INNER_COLOR = [0, 0, 0, 0.6];
 const CYCLE_LAYER_GRAVEL_COLOR = [180, 80, 170, 0.7];
@@ -62,9 +51,51 @@ const SCHOOL_COLOR = [242, 238, 122, 0.3];
 const UNI_COLOR = [160, 238, 150, 0.3];
 const CHURCH_COLOR = [10, 238, 255, 0.3];
 const MED_COLOR = [255, 25, 25, 0.3];
+const COUNTIES_OUTLINE_COLOR = [0, 0, 0, 0.5];
+const COUNTIES_OUTLINE_SIZE = 1.5;
+const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
+const POPLDENS_ALPHA = 0.15;
+const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
+    [0, 2500, [94, 150, 98]],
+    [2500, 5000, [17, 200, 152]],
+    [5000, 7500, [0, 210, 255]],
+    [7500, 10000, [44, 60, 255]],
+    [10000, 99999, [50, 1, 63]],
+];
 
 // choropleth levels, pass min val, max val, rgb val
 type cplethEls = [number, number, number[]];
+
+function makeRtsBtn(txt: string): HTMLCalciteButtonElement {
+    const btn = document.createElement("calcite-button");
+    btn.textContent = txt.trim();
+    btn.style.setProperty("--calcite-button-text-color", "black");
+    btn.setAttribute("appearance", "outline");
+    btn.setAttribute("scale", "s");
+    return btn;
+}
+function makeRoutesButtons(routeNames: string,
+    onRouteClick: (route: string) => void,
+    onRoutesClick: (route: string[]) => void
+): HTMLCalciteButtonElement[] {
+    let routeBtns: HTMLCalciteButtonElement[] = [];
+    if (routeNames) {
+        routeNames.split(", ").forEach((route: string) => {
+            const btn = makeRtsBtn(route);
+            btn.addEventListener("click", () => onRouteClick(route.trim()));
+            routeBtns.push(btn);
+        });
+        if (routeBtns.length > 1) {
+            const allBtn = makeRtsBtn("Highlight Each");
+            allBtn.addEventListener("click", () => {
+                const routes = routeNames.split(", ").map(r => r.trim());
+                onRoutesClick(routes);
+            });
+            routeBtns.push(allBtn)
+        }
+    }
+    return routeBtns;
+}
 
 // create choropleth levels for the array of min/max/color
 const newChoroplethLevel = (c: cplethEls) => {
@@ -95,7 +126,7 @@ const toPolygon = (data: any): Graphic[] => {
 }
 
 // create and return an array of graphics from passed bus/metro stop locations
-const stopsToGraphics = (data: any): Graphic[] => {
+const toPoint = (data: any): Graphic[] => {
     return data.features.map((f: any) => {
         return new Graphic({
             geometry: new Point({
@@ -139,7 +170,6 @@ export const makeBusStopsLayer = (
         defaultSymbol: new SimpleMarkerSymbol({
             style: "circle",
             color: BUS_STOP_NA_COLOR,
-            // size: BUS_STOP_SIZE,
         }),
         uniqueValueInfos: [
             {
@@ -147,7 +177,6 @@ export const makeBusStopsLayer = (
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
                     color: BUS_STOP_Y_COLOR,
-                    // size: BUS_STOP_SIZE,
                 }),
                 label: "Wheelchair Accessible",
             },
@@ -156,7 +185,6 @@ export const makeBusStopsLayer = (
                 symbol: new SimpleMarkerSymbol({
                     style: "circle",
                     color: BUS_STOP_NO_COLOR,
-                    // size: BUS_STOP_SIZE,
                 }),
                 label: "Not Wheelchair Accessible",
             },
@@ -167,27 +195,9 @@ export const makeBusStopsLayer = (
         outFields: ["*"],
         content: (feature: any) => {
             const attrs = feature.graphic?.attributes;
-
             const div = document.createElement("div");
-
-            let routeBtns: HTMLCalciteButtonElement[] = [];
-
             const routeNames: string = attrs?.route_names;
-            if (routeNames) {
-                routeNames.split(", ").forEach((route: string) => {
-                    const btn = makeRtsBtn(route);
-                    btn.addEventListener("click", () => onRouteClick(route.trim()));
-                    routeBtns.push(btn);
-                });
-                if (routeBtns.length > 1) {
-                    const allBtn = makeRtsBtn("Highlight Each");
-                    allBtn.addEventListener("click", () => {
-                        const routes = routeNames.split(", ").map(r => r.trim());
-                        onRoutesClick(routes);
-                    });
-                    routeBtns.push(allBtn)
-                }
-            }
+            const routeBtns = makeRoutesButtons(routeNames, onRouteClick, onRoutesClick);
 
             // fields table
             const tbl = document.createElement("table");
@@ -208,16 +218,9 @@ export const makeBusStopsLayer = (
             return div;
         }
     },
-    toGraphics: stopsToGraphics,
+    toGraphics: toPoint,
 });
-function makeRtsBtn(txt: string): HTMLCalciteButtonElement {
-    const btn = document.createElement("calcite-button");
-    btn.textContent = txt.trim();
-    btn.style.setProperty("--calcite-button-text-color", "black");
-    btn.setAttribute("appearance", "outline");
-    btn.setAttribute("scale", "s");
-    return btn;
-}
+
 export const makePlacesLayer = (
     onRouteClick: (route: string) => void,
     onRoutesClick: (route: string[]) => void
@@ -312,29 +315,9 @@ export const makePlacesLayer = (
         title: `{name} ({type})`,
         content: (feature: any) => {
             const attrs = feature.graphic?.attributes;
-
             const div = document.createElement("div");
-
-            let routeBtns: HTMLCalciteButtonElement[] = [];
-
             const routeNames: string = attrs?.bus_near;
-            if (routeNames) {
-                routeNames.split(", ").forEach((route: string) => {
-                    const btn = makeRtsBtn(route);
-                    btn.addEventListener("click", () => onRouteClick(route.trim()));
-                    routeBtns.push(btn);
-                });
-                if (routeBtns.length > 1) {
-                    const allBtn = makeRtsBtn("Highlight Each");
-                    allBtn.addEventListener("click", () => {
-                        const routes = routeNames.split(", ").map(r => r.trim());
-                        onRoutesClick(routes);
-                    });
-                    routeBtns.push(allBtn)
-                }
-            }
-
-            // fields table
+            const routeBtns = makeRoutesButtons(routeNames, onRouteClick, onRoutesClick);
             const tbl = document.createElement("table");
 
             // add each route as a button
@@ -416,7 +399,7 @@ export const LAYER_ML_STOPS: FeatureLayerMeta = {
             },
         ],
     },
-    toGraphics: stopsToGraphics,
+    toGraphics: toPoint,
 };
 
 const AMTRAK_LAYER_TTL = "Amtrak";
@@ -449,7 +432,7 @@ export const LAYER_AMTRAK: FeatureLayerMeta = {
             },
         ],
     },
-    toGraphics: stopsToGraphics,
+    toGraphics: toPoint,
 };
 
 export const LAYER_CENSUS_COUNTIES: FeatureLayerMeta = {
@@ -563,103 +546,4 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
             }),
         );
     }
-};
-
-export const LAYER_PLACES: FeatureLayerMeta = {
-    title: 'Places',
-    dataUrl: '/layers/places',
-    geometryType: "polygon",
-    fields: PLACE_FIELDS,
-    renderer: new UniqueValueRenderer({
-    field: "type",
-    uniqueValueInfos: [
-        {
-            value: "park",
-            label: "Parks",
-            symbol: new SimpleFillSymbol({
-                color: PARKS_COLOR,
-                style: "diagonal-cross",
-                outline: new SimpleLineSymbol({ color: 'black', width: 1 }),
-            }),
-        },
-        {
-            value: "grocery",
-            label: "Grocery",
-            symbol: new SimpleFillSymbol({
-                color: GROCERY_INNER_COLOR,
-                style: "diagonal-cross",
-                outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
-            }),
-        },
-        {
-            value: "social_facility",
-            label: "Social Facility",
-            symbol: new SimpleFillSymbol({
-                color: SOCIAL_COLOR,
-                style: "diagonal-cross",
-                outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
-            }),
-        },
-        {
-            value: "university",
-            label: "College/University",
-            symbol: new SimpleFillSymbol({
-                color: UNI_COLOR,
-                style: "diagonal-cross",
-                outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
-            }),
-        },
-        {
-            value: "church",
-            label: "Place of Worship",
-            symbol: new SimpleFillSymbol({
-                color: CHURCH_COLOR,
-                style: "diagonal-cross",
-                outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
-            }),
-        },
-        {
-            value: "medical",
-            label: "Medical Facility",
-            symbol: new SimpleFillSymbol({
-                color: MED_COLOR,
-                style: "diagonal-cross",
-                outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
-            }),
-        },
-        {
-            value: "entertainment",
-            label: "Enterntainment/Fun",
-            symbol: new SimpleFillSymbol({
-                color: FUN_COLOR,
-                style: "diagonal-cross",
-                outline: new SimpleLineSymbol({ color: 'black', width: 0.5 }),
-            }),
-        },
-        {
-            value: "school",
-            label: "School",
-            symbol: new SimpleFillSymbol({
-                color: SCHOOL_COLOR,
-                style: "diagonal-cross",
-                outline: new SimpleLineSymbol({ color: 'black', width: 1 }),
-            }),
-        },
-        ],
-    defaultLabel: "Other", 
-    defaultSymbol: new SimpleFillSymbol({
-        color: [128, 128, 128, 0.3],
-        outline: new SimpleLineSymbol({ color: 'grey', width: 0.5 }),
-    }),
-}),
-    popupTemplate: {
-        title: `{name} ({type})`,
-        content: [
-            {
-                type: "fields",
-                fieldInfos: PLACE_FIELDINFOS
-            },
-        ],
-    },
-    toGraphics: toPolygon,
 };

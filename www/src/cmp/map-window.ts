@@ -32,7 +32,6 @@ import {
     LAYER_CENSUS_TRACTS,
     LAYER_CYCLING,
     LAYER_AMTRAK,
-    LAYER_PLACES, 
     BUS_STOP_SIZE,
 } from "../layers.js";
 
