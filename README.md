@@ -42,7 +42,7 @@ Interactive Map of multi-modal transportation options in the St. Louis Metropoli
 
 # Examples
 ## Latest working example: 
-<img src="z_docs/img/out1.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
+<img src="z_docs/img/out.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
 
 ## Highlighting Stops by Route
 <img src="z_docs/img/ex0313.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>

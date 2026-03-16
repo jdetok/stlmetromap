@@ -1,3 +1,9 @@
+top-btm:not(:defined) {
+    display: none;
+}
+map-window:not(:defined) {
+    display: none;
+}
 :root {
     --popup-bg: rgba(192, 201, 209, 0.85);
     --popup-bdr: 2px solid black;
@@ -15,10 +21,12 @@ html, body {
 body {
   height: 100vh;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  /* grid-template-rows: auto auto minmax(0, 1fr) auto; */
 }
 
 body > * {
+    text-align: center;
     min-width: 0;
     max-width: 98%;
     min-height: 0;
@@ -30,4 +38,11 @@ map-window {
     height: 100%;
     border: 8px solid black;
     border-radius: 2rem;
+}
+
+/* STYLING FOR FOOTER (top-btm component) */
+.short { display: none; }
+@media ( max-width: 900px ) {
+    .long { display: none; }
+    .short { display: inline; }
 }
