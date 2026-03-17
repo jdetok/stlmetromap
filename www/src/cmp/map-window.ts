@@ -17,6 +17,7 @@ import "@esri/calcite-components/dist/components/calcite-button";
 import "@esri/calcite-components/dist/components/calcite-table-header";
 import "@esri/calcite-components/dist/components/calcite-table-row";
 import "@esri/calcite-components/dist/components/calcite-table-cell";
+import LocalBasemapsSource from "@arcgis/core/widgets/BasemapGallery/support/LocalBasemapsSource.js";
 import FeatureEffect from "@arcgis/core/layers/support/FeatureEffect";
 import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
 import Graphic from "@arcgis/core/Graphic";
@@ -24,9 +25,9 @@ import Polygon from "@arcgis/core/geometry/Polygon";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import { STLCOORDS, STLWKID, BASEMAP } from "../data.js";
 import {
+    FeatureLayerMeta,
     makeBusStopsLayer,
     makePlacesLayer,
-    FeatureLayerMeta,
     LAYER_ML_STOPS,
     LAYER_CENSUS_COUNTIES,
     LAYER_CENSUS_TRACTS,
@@ -34,7 +35,9 @@ import {
     LAYER_AMTRAK,
     BUS_STOP_SIZE,
 } from "../layers.js";
+import Basemap from "@arcgis/core/Basemap.js";
 
+// HELPER TO CREATE CUSTOM HIGHLIGHT SETTINGS
 function newHighlightSetting(name: string, color: __esri.ColorProperties): __esri.HighlightOptionsProperties {
     return {
         name: name, color: color,
@@ -42,7 +45,7 @@ function newHighlightSetting(name: string, color: __esri.ColorProperties): __esr
         shadowOpacity: 0.4, shadowDifference: 0.2,
     }
 }
-
+// CUSTOM HIGHLIGHT SETTINGS
 const HL_PARKS = newHighlightSetting("parks", "mediumseagreen");
 const HL_SCHOOLS = newHighlightSetting("schools", "khaki");
 const HL_CHURCH = newHighlightSetting("church", "violet");
@@ -57,6 +60,7 @@ const HIGHLIGHTS: __esri.CollectionProperties<__esri.HighlightOptionsProperties>
     HL_GROCERY,
 ];
 
+// TOGGLE BUTTONS FOR HIGHLIGHTING FEATURES
 type toggleAction = {
     id: string,
     icon: string,
@@ -64,7 +68,6 @@ type toggleAction = {
     where: string,
     highlightName: string,
 }
-
 const TOGGLE_ACTIONS: toggleAction[] = [
     {
         id: "parks", icon: "tree", text: "Highlight Parks",
@@ -90,43 +93,63 @@ const TOGGLE_ACTIONS: toggleAction[] = [
     },
 ];
 
-function buildCalcitePanel(elementType: string, heading: string): HTMLCalcitePanelElement {
+// HELPER FOR BUIDING GENERIC CALCITE PANEL WITH THE PASSED ELEMENT AS ITS CHILD
+function buildCalcitePanel(elementType: string, heading: string, baseMaps?: LocalBasemapsSource): HTMLCalcitePanelElement {
     const panel = document.createElement("calcite-panel");
     panel.heading = heading;
     panel.hidden = true;
 
     const content = document.createElement(elementType) as any;
+    if (baseMaps) {
+        content.source = baseMaps;
+    }
     panel.appendChild(content);
     return panel;
 }
-export const TAG = "map-window";
 
+// COMPONENT CLASS 
+export const TAG = "map-window";
 export class MapWindow extends HTMLElement {
     private arcgisMap!: HTMLArcgisMapElement;
+    
+    // HIGHLIGHT SETTING NAMES MAPPED TO HIGHLIGHT HANDLERS
     private highlightHandles: Map<string, __esri.Handle> = new Map();
+    
+    // UNNAMED FEATURE LAYER METAS
     private layers: FeatureLayerMeta[];
+
+    // NAMED FEATURE LAYER METAS
     private BUS_META: FeatureLayerMeta;
     private PLACE_META: FeatureLayerMeta;
+
+    // NAMED FEATURE LAYERS
     private busStopsLayer!: FeatureLayer;
     private placesLayer!: FeatureLayer;
+
+    // ROUTE FILTER ASSETS
+    private routesData: any[] = [];
     private routePanel!: HTMLElement;
-    private layerListPanel!: HTMLCalcitePanelElement;
     private routeInfoPanel!: HTMLCalcitePanelElement;
+
+    // ACTION BAR PANELS
+    // private ACTBAR_PANELS: Map<HTMLCalcitePanelElement, string>;
     private legendPanel!: HTMLCalcitePanelElement;
+    private layerListPanel!: HTMLCalcitePanelElement;
     private basemapPanel!: HTMLCalcitePanelElement;
     private printPanel!: HTMLCalcitePanelElement;
-    private routesData: any[] = [];
-    private TOGGLE_ACTIONS: toggleAction[]
+
+    // ACTIONS FOR TOGGLE BAR
+    private TOGGLE_ACTIONS: toggleAction[];
+    
+    // CONSTRUCTOR 
     public constructor() {
         super();
-
-        const root = this.attachShadow({ mode: "open" });
         
+        // BUILD DYNAMIC FEATURE LAYER METAS
         this.BUS_META = makeBusStopsLayer(
             (route) => { this.filterByRoute(route); this.showRouteInfo(route); },
             (routes) => { this.filterByRoutes(routes);  },
         );
-
         this.PLACE_META = makePlacesLayer(
             (route) => { this.filterByRoute(route); this.showRouteInfo(route); },
             (routes) => { this.filterByRoutes(routes);  },
@@ -145,6 +168,7 @@ export class MapWindow extends HTMLElement {
             LAYER_ML_STOPS,
         ];
 
+        const root = this.attachShadow({ mode: "open" });
         root.append(
             this.addStyling(),
             this.buildMap(),
@@ -157,7 +181,6 @@ export class MapWindow extends HTMLElement {
             this.buildRoutesFilter(),
             this.buildRouteInfoPanel(),
         );
-
     }
     disconnectedCallback(): void {
         this.arcgisMap?.remove();
@@ -174,17 +197,7 @@ export class MapWindow extends HTMLElement {
         } as __esri.Extent
 
         this.arcgisMap.addEventListener("arcgisViewReadyChange", async () => {
-            const view = this.arcgisMap.view as __esri.MapView;
-
-            // BUILD UTILITY WIDGETS
-            this.arcgisMap.appendChild(this.buildZoom());
-            this.arcgisMap.appendChild(this.buildSearch());
-
-            // SET CALCITE PANEL VIEWS
-            (this.layerListPanel.querySelector("arcgis-layer-list") as any).view = view;
-            (this.legendPanel.querySelector("arcgis-legend") as any).view = view;
-            (this.basemapPanel.querySelector("arcgis-basemap-gallery") as any).view = view;
-            (this.printPanel.querySelector("arcgis-print") as any).view = view;
+            
 
             // BUILD FEATURE LAYERS
             for (let i = 0; i < this.layers.length; i++) {
@@ -202,18 +215,37 @@ export class MapWindow extends HTMLElement {
                 }
             }
 
+            // BUILD UTILITY WIDGETS
+            this.arcgisMap.appendChild(this.buildZoom());
+            this.arcgisMap.appendChild(this.buildSearch());
+            
+            // SET OBJECT HIGHLIGHT COLORS
+            const view = this.arcgisMap.view as __esri.MapView;
+            view.highlights = HIGHLIGHTS;
+
+            await this.setPanelViews(view, new Map([
+                [this.layerListPanel, "arcgis-layer-list"],
+                [this.legendPanel, "arcgis-legend"],
+                [this.basemapPanel, "arcgis-basemap-gallery"],
+                [this.printPanel, "arcgis-print"],
+            ]));
+
             // BUILD ROUTE SELECTOR
             await this.populateRouteSelect();
 
             // ADD LISTENER ON ZOOM AMOUNT, RE RENDER FEATURES AT SPECIFIC POINTS
             this.renderOnZoom();
 
-            // SET OBJECT HIGHLIGHT COLORS
-            view.highlights = HIGHLIGHTS;
-
         }, { once: true });
 
         return this.arcgisMap;
+    }
+
+    private async setPanelViews(view: __esri.MapView, panelEls: Map<HTMLCalcitePanelElement, string>) {
+        for (const [k, v] of panelEls) {
+            await customElements.whenDefined(v);
+            (k.querySelector(v) as any).view = view;
+        }
     }
     // WATCH VIEW ZOOM, RERENDER FEATURES ACCORDINGLY
     private renderOnZoom() {
@@ -433,7 +465,13 @@ export class MapWindow extends HTMLElement {
         return panel;
     }
     private buildBasemapPanel(): HTMLCalcitePanelElement {
-        const panel = buildCalcitePanel("arcgis-basemap-gallery", "Basemaps");
+        const panel = buildCalcitePanel("arcgis-basemap-gallery", "Basemaps")
+        // const panel = buildCalcitePanel("arcgis-basemap-gallery", "Basemaps", new LocalBasemapsSource({
+        //     basemaps: [
+        //         Basemap.fromId("dark-gray")!, Basemap.fromId("hybrid")!, Basemap.fromId("streets-night-vector")!,
+        //         Basemap.fromId("imagery")!, Basemap.fromId("osm")!,
+        //     ]
+        // }));
         this.basemapPanel = panel;
         return panel;
     }
