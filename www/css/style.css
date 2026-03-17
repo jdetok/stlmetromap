@@ -11,7 +11,7 @@ map-window:not(:defined) {
     --map-margin: 1rem;
 }
 html, body {
-    background-color: rgba(141, 202, 255, 0.3);
+    background-color: rgba(17, 68, 115, 0.3);
     margin: 0;
     padding: 0;
     height: 100%;
@@ -38,6 +38,24 @@ map-window {
     height: 100%;
     border: 8px solid black;
     border-radius: 2rem;
+}
+
+.ttl {
+    display: grid;
+    grid-template-rows: auto auto auto;
+}
+
+.ttl p {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.ttl h1 {
+    font-size: 1.8rem;
+    margin-top: 0.2rem;
+    margin-bottom: 0.5rem;
 }
 
 /* STYLING FOR FOOTER (top-btm component) */

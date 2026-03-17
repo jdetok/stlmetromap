@@ -35,6 +35,28 @@ import {
     BUS_STOP_SIZE,
 } from "../layers.js";
 
+function newHighlightSetting(name: string, color: __esri.ColorProperties): __esri.HighlightOptionsProperties {
+    return {
+        name: name, color: color,
+        fillOpacity: 0.25, shadowColor: "black",
+        shadowOpacity: 0.4, shadowDifference: 0.2,
+    }
+}
+
+const HL_PARKS = newHighlightSetting("parks", "mediumseagreen");
+const HL_SCHOOLS = newHighlightSetting("schools", "khaki");
+const HL_UNI = newHighlightSetting("uni", "yellow");
+const HL_CHURCH = newHighlightSetting("church", "violet");
+const HL_MED = newHighlightSetting("med", "mediumvioletred");
+const HL_GROCERY = newHighlightSetting("grocery", "white");
+const HIGHLIGHTS: __esri.CollectionProperties<__esri.HighlightOptionsProperties> = [
+    newHighlightSetting("default", "cyan"),
+    HL_PARKS,
+    HL_SCHOOLS,
+    HL_CHURCH, 
+    HL_MED,
+    HL_GROCERY,
+];
 
 function buildCalcitePanel(elementType: string, heading: string): HTMLCalcitePanelElement {
     const panel = document.createElement("calcite-panel");
@@ -48,12 +70,12 @@ function buildCalcitePanel(elementType: string, heading: string): HTMLCalcitePan
 export const TAG = "map-window";
 export class MapWindow extends HTMLElement {
     private arcgisMap!: HTMLArcgisMapElement;
+    private highlightHandles: Map<string, __esri.Handle> = new Map();
     private layers: FeatureLayerMeta[];
     private BUS_META: FeatureLayerMeta;
     private PLACE_META: FeatureLayerMeta;
     private busStopsLayer!: FeatureLayer;
     private placesLayer!: FeatureLayer;
-    private parkHighlightHandle: __esri.Handle | null = null;
     private routePanel!: HTMLElement;
     private layerListPanel!: HTMLCalcitePanelElement;
     private routeInfoPanel!: HTMLCalcitePanelElement;
@@ -79,9 +101,8 @@ export class MapWindow extends HTMLElement {
         this.layers = [
             LAYER_CENSUS_COUNTIES,
             LAYER_CENSUS_TRACTS,
-            this.PLACE_META,
-            // LAYER_PLACES,
             LAYER_CYCLING,
+            this.PLACE_META,
             LAYER_AMTRAK,
             this.BUS_META,
             LAYER_ML_STOPS,
@@ -141,7 +162,10 @@ export class MapWindow extends HTMLElement {
             // re-render stop size based on zoom amount
             this.renderOnZoom();
 
+            // SET OBJECT HIGH LIGHT COLOR
+            view.highlights = HIGHLIGHTS;
         }, { once: true });
+
         return this.arcgisMap;
     }
     private renderOnZoom() {
@@ -212,7 +236,6 @@ export class MapWindow extends HTMLElement {
             { id: "legend", icon: "legend", text: "Legend" },
             { id: "layers", icon: "layers", text: "Layers" },
             { id: "basemaps", icon: "basemap", text: "Basemaps" },
-            // { id: "parks", icon: "tree", text: "Highlight Parks" },
             { id: "print", icon: "print", text: "Export" },
         ];
         for (const a of actions) {
@@ -221,20 +244,14 @@ export class MapWindow extends HTMLElement {
             action.icon = a.icon;
             action.text = a.text;
 
-            if (a.id === "parks") {
-                action.addEventListener("click", async () => {
-                    await this.highlightParks(action);
+            action.addEventListener("click", () => {
+                this.togglePanel(a.id, actionBar, {
+                    layers: this.layerListPanel,
+                    legend: this.legendPanel,
+                    basemaps: this.basemapPanel,
+                    print: this.printPanel,
                 });
-            } else {
-                action.addEventListener("click", () => {
-                    this.togglePanel(a.id, actionBar, {
-                        layers: this.layerListPanel,
-                        legend: this.legendPanel,
-                        basemaps: this.basemapPanel,
-                        print: this.printPanel,
-                    });
-                });
-            }
+            });
             actionBar.appendChild(action);
         }
         actionBar.appendChild(this.buildFsBtn())
@@ -246,7 +263,41 @@ export class MapWindow extends HTMLElement {
         actionBar.classList.add("place_toggles");
 
         const actions = [
-            { id: "parks", icon: "tree", text: "Highlight Parks" },
+            {
+                id: "parks", icon: "tree", text: "Highlight Parks",
+                layer: () => this.placesLayer, where: `type = 'park'`,
+                highlight: HL_PARKS,
+            },
+            {
+                id: "medical", icon: "medical", text: "Highlight Hospitals",
+                layer: () => this.placesLayer, where: `type = 'medical'`,
+                highlight: HL_MED,
+            },
+            {
+                id: "university", icon: "mooc", text: "Highlight Universities",
+                layer: () => this.placesLayer, where: `type = 'university'`,
+                highlight: HL_SCHOOLS,
+            },
+            {
+                id: "school", icon: "education", text: "Highlight Schools",
+                layer: () => this.placesLayer, where: `type = 'school'`,
+                highlight: HL_SCHOOLS,
+            },
+            {
+                id: "grocery", icon: "shopping-cart", text: "Highlight Grocery Stores",
+                layer: () => this.placesLayer, where: `type = 'grocery'`,
+                highlight: HL_GROCERY,
+            },
+            {
+                id: "church", icon: "organization", text: "Highlight Places of Worship",
+                layer: () => this.placesLayer, where: `type = 'church'`,
+                highlight: HL_CHURCH,
+            },
+            {
+                id: "social_facility", icon: "home", text: "Highlight Community Centers",
+                layer: () => this.placesLayer, where: `type = 'social_facility'`,
+                highlight: HL_MED,
+            },
         ];
         for (const a of actions) {
             const action = document.createElement("calcite-action") as any;
@@ -254,32 +305,44 @@ export class MapWindow extends HTMLElement {
             action.icon = a.icon;
             action.text = a.text;
             action.addEventListener("click", async () => {
-                await this.highlightParks(action);
+                await this.highlightFeatures(action, a.layer(), a.where, a.id, a.highlight.name ?? 'default');
             });
             actionBar.appendChild(action);
         }
+
+        const resetPlacesBtn = document.createElement("calcite-action");
+        resetPlacesBtn.icon = 'reset';
+        resetPlacesBtn.text = "Reset Highlighted Places"
+        resetPlacesBtn.addEventListener("click", async () => {
+            this.highlightHandles.forEach(h => h.remove());
+            this.highlightHandles.clear();
+            actionBar.querySelectorAll("calcite-action").forEach((a: any) => a.active = false)
+        })
+        actionBar.appendChild(resetPlacesBtn);
+
+        const resetBusesBtn = document.createElement("calcite-action");
+        resetBusesBtn.icon = 'bus';
+        resetBusesBtn.text = "Reset Highlighted Bus Stops"
+        resetBusesBtn.addEventListener("click", async () => {
+            const busLayerView = await this.arcgisMap.view.whenLayerView(this.busStopsLayer) as __esri.FeatureLayerView;
+            busLayerView.featureEffect = null;
+        })
+        actionBar.appendChild(resetBusesBtn);
+
         return actionBar;
     }
-    private async highlightParks(btn: any): Promise<void> {
-        const layerView = await this.arcgisMap.view.whenLayerView(this.placesLayer) as __esri.FeatureLayerView;
-        // const btn = this.shadowRoot!.querySelector("[data-action-id='parks']") as any
+    private async highlightFeatures(btn: any, layer: FeatureLayer, whereClause: string, id: string, highlight: string): Promise<void> {
+        const layerView = await this.arcgisMap.view.whenLayerView(layer) as __esri.FeatureLayerView;
 
         if (btn.active) {
             btn.active = false;
-            this.parkHighlightHandle?.remove();
-            this.parkHighlightHandle = null;
+            this.highlightHandles.get(id)?.remove();
+            this.highlightHandles.delete(id);
             return;
         }
 
         btn.active = true;
-
-        const whereClause = `type = 'park'`;
-        // layerView.featureEffect = new FeatureEffect({
-        //     filter: new FeatureFilter({ where: whereClause }),
-        //     includedEffect: "bloom(2, 1px, 0.3) drop-shadow(2px 2px 4px black) brightness(2)",
-        // });
-
-        const result = await this.placesLayer.queryFeatures({
+        const result = await layer.queryFeatures({
             where: whereClause,
             returnGeometry: true,
             outSpatialReference: { wkid: STLWKID },
@@ -287,8 +350,8 @@ export class MapWindow extends HTMLElement {
 
         if (result.features.length) {
             const objIds = result.features.map((f: any) => f.attributes.ObjectID);
-            this.parkHighlightHandle = layerView.highlight(objIds);
-            await this.arcgisMap.view.goTo(result.features, { duration: 600 });
+            this.highlightHandles.set(id, layerView.highlight(objIds, {name: highlight}));
+            // await this.arcgisMap.view.goTo(result.features, { duration: 600 });
         }
     }
     private buildFsBtn(): HTMLCalciteActionElement {
