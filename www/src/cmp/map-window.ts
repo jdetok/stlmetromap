@@ -9,6 +9,7 @@ import "@arcgis/map-components/dist/components/arcgis-print";
 import "@esri/calcite-components";
 import "@esri/calcite-components/dist/components/calcite-action-bar";
 import "@esri/calcite-components/dist/components/calcite-action";
+import "@esri/calcite-components/dist/components/calcite-notice";
 import "@esri/calcite-components/dist/components/calcite-panel";
 import "@esri/calcite-components/dist/components/calcite-select";
 import "@esri/calcite-components/dist/components/calcite-option";
@@ -109,14 +110,47 @@ function buildCalcitePanel(elementType: string, heading: string, baseMaps?: Loca
 function buildCalciteTableBlock(
     label: string, props: any, collapsible: boolean, open: boolean,
     buildTable: (props: unknown) => HTMLCalciteTableElement,
+    infoContent?: string
 ): HTMLCalciteBlockElement {
     const block = Object.assign(document.createElement('calcite-block'), {
-        heading: label, 
+        heading: label,
         label: label,
         collapsible: collapsible,
         open: open,
         headingLevel: 2
     });
+
+    if (infoContent) {
+        const actId = `popover-trigger-${label.replace(/\s+/g, '-')}`;
+        const btn = Object.assign(document.createElement('calcite-action'), {
+            slot: 'control',
+            icon: 'information',
+            text: 'Info',
+            id: actId,
+            scale: 'm',
+        });
+
+        const notice = Object.assign(document.createElement('calcite-notice'), {
+            open: false,
+            kind: 'info',
+            scale: 's',
+            closable: true,
+        });
+        
+        notice.appendChild(Object.assign(document.createElement('div'), {
+            slot: 'message',
+            innerText: infoContent,
+        }));
+
+        // toggle notice on button click
+        btn.addEventListener('click', () => {
+            notice.open = !notice.open;
+        });
+
+        block.appendChild(btn);
+        block.appendChild(notice);
+    }
+
     block.appendChild(buildTable(props));
     return block;
 }
@@ -524,7 +558,11 @@ export class MapWindow extends HTMLElement {
         this.routeInfoPanel.closable = true;
 
         // const freqTbl = this.buildFreqTable(props);
-        const freqTbl = buildCalciteTableBlock("Frequency (minutes)", props, false, true, this.buildFreqTable);
+        const freqTbl = buildCalciteTableBlock(
+            "Frequency (minutes)", props,
+            false, true, this.buildFreqTable,
+            "Frequencies were derived by\ntaking the mode of the difference\nin start times between two\nconsecutive trips. Frequencies\nmay differ during early/late hours." 
+        );
         this.routeInfoPanel.appendChild(freqTbl);
 
         const accessTbl = buildCalciteTableBlock("Stops w/ access to", props, true, false, this.buildPropsTable);
@@ -737,5 +775,13 @@ arcgis-search {
     top: 15px;
     left: 60px;
     z-index: 10;
+}
+calcite-notice {
+    width: 100%;
+    max-width: 100%;
+}
+calcite-notice > div {
+    width: 100%;
+    max-width: 100%;
 }
 `;
