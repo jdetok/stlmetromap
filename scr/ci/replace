@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+JS_MAIN='src="/js/main.js"'
+JS_JDME='src="/mrp/js/main.js"'
+CSS_MAIN='href="/css/style.css"'
+CSS_JDME='href="/mrp/css/style.css"'
+HTMLDIR="./www"
+BRANCH="main"
+
+parse_flags() {
+    OPTIND=1
+    while getopts "jm" flag; do
+        case "${flag}" in
+            j) BRANCH="jdme" ;;
+            m) BRANCH="main" ;; 
+            *) echo "invalid option: -${OPTARG}" >&2; exit 1 ;;
+        esac
+    done
+}
+
+parse_flags "$@"
+
+echo $BRANCH
+
+for file in "$HTMLDIR"/*.html; do
+    echo $file
+    if [[ "$BRANCH" = "jdme" ]]; then
+        sed -i '' "s|$JS_MAIN|$JS_JDME|g; s|$CSS_MAIN|$CSS_JDME|g" "$file"
+    else
+        sed -i '' "s|$JS_JDME|$JS_MAIN|g; s|$CSS_JDME|$CSS_MAIN|g" "$file"
+    fi
+done
