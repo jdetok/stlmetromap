@@ -169,13 +169,7 @@ where x.statefp in ('29', '17')
 `, IsGeom: true}
 
 var QROUTES = &Query{Q: `
-select 
-    route, route_type, route_name, route_desc,
-    stops_total, stops_access_wheelchair,
-    stops_access_amenities, stops_access_grocery,
-    stops_access_schools, stops_access_colleges, stops_access_parks,
-    stops_access_social_facilities, stops_access_churches, stops_access_entertainment
-from api.routes where route_type = '3'`, IsGeom: false}
+select * from api.routes where route_type = '3'`, IsGeom: false}
 
 var METROBUS = &Query{Q: `select * from api.stops where route_type = '3'`, IsGeom: true}
 var METROLINK = &Query{Q: `select * from api.stops where route_type = '2'`, IsGeom: true}

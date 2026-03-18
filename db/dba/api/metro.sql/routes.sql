@@ -3,11 +3,14 @@ create schema if not exists api;
 drop table if exists api.routes;
 create table if not exists api.routes (
 	id bigserial primary key,
-	route varchar(50),
-	route_type varchar(50),
-	route_name text,
-	route_desc text,
-	trips text,
+	route_id varchar(20) not null,
+	route_type varchar(20) not null,
+	route varchar(20) not null,
+	route_name varchar(255) not null,
+	route_desc varchar(255) not null,
+	freq_wk integer,
+	freq_sa integer,
+	freq_su integer,
 	stops_total integer,
 	stops_access_wheelchair integer,
 	stops_access_amenities integer,
@@ -78,19 +81,51 @@ with mtr as (
     join stops c on c.stop_id = b.stop_id
     left join stops_near sn on sn.stop_id = b.stop_id
     group by a.route_id
+), tripagg as (
+	select a.service_id, a.route_id, a.trip_id, a.trip_headsign, a.direction_id,
+		case 
+			when b.saturday = 'available' then 'SA'
+			when b.sunday = 'available' then 'SU'
+			else 'WK'
+		end as day_type,
+		c.trip_start_time,
+		max(c.arrival_time) as last_stop_arrival_time,
+		max(c.stop_sequence_consec) as num_stops
+	from trips a
+	join calendar b on b.service_id = a.service_id
+	join stop_times c on c.trip_id = a.trip_id
+	join routes d on d.route_id = a.route_id
+	group by a.service_id, a.route_id, a.trip_id, a.trip_headsign, a.direction_id, c.trip_start_time, b.saturday, b.sunday
+), freqs as (
+	select 
+		route_id, day_type, direction_id, trip_start_time, 
+		trip_start_time - lag(trip_start_time) over (
+			partition by route_id, day_type, direction_id order by trip_start_time
+		) as freq
+	from tripagg
+), freqs_by_route as (
+	select route_id, day_type,
+		mode() within group (order by ceil(extract(epoch from freq) / 60 / 5) * 5) as freq
+	from freqs
+	where freq is not null
+	group by route_id, day_type
 )
-insert into api.routes (route, route_type, route_name, route_desc, trips, stops_total, stops_access_wheelchair, 
+insert into api.routes (route_id, route_type, route, route_name, route_desc, freq_wk, freq_sa, freq_su, stops_total, stops_access_wheelchair, 
 	stops_access_amenities, stops_access_grocery, stops_access_schools, stops_access_colleges, stops_access_parks, 
 	stops_access_social_facilities, stops_access_medical, stops_access_churches, stops_access_entertainment
 )
 select
-    route, route_type, route_name, route_desc, trips,
+    a.route_id, route_type, route, route_name, route_desc,
+    wk.freq as freq_wk, sa.freq as freq_sa, coalesce(su.freq, sa.freq) as freq_su,
     stops_total, stops_access_wheelchair,
     stops_access_amenities, stops_access_grocery,
     stops_access_schools, stops_access_colleges, stops_access_parks,
     stops_access_social_facilities, stops_access_medical, stops_access_churches, stops_access_entertainment
 from rts a
 join num_stops b on b.route_id = a.route_id
+join freqs_by_route wk on wk.route_id = a.route_id and wk.day_type = 'WK'
+left join freqs_by_route sa on sa.route_id = a.route_id and sa.day_type = 'SA'
+left join freqs_by_route su on su.route_id = a.route_id and su.day_type = 'SU'
 order by stops_total desc;
 
 select * from api.routes;

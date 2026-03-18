@@ -107,6 +107,19 @@ function buildCalcitePanel(elementType: string, heading: string, baseMaps?: Loca
     return panel;
 }
 
+function buildCalciteTableBlock(
+    label: string, props: unknown, collapsible: boolean, open: boolean,
+    buildTable: (props: unknown) => HTMLCalciteTableElement,
+): HTMLCalciteBlockElement {
+    const block = Object.assign(document.createElement('calcite-block'), {
+        heading: label, 
+        collapsible: collapsible,
+        open: open,
+    });
+    block.appendChild(buildTable(props));
+    return block;
+}
+
 // COMPONENT CLASS 
 export const TAG = "map-window";
 export class MapWindow extends HTMLElement {
@@ -504,39 +517,74 @@ export class MapWindow extends HTMLElement {
         if (!feature) return;
 
         const props = feature.properties;
-        this.routeInfoPanel.querySelector("calcite-table")?.remove();
+        this.routeInfoPanel.querySelectorAll("calcite-block")?.forEach((t) => t.remove());
         this.routeInfoPanel.heading = `${route}: ${props.stops_total} stops`;
         this.routeInfoPanel.closed = false;
         this.routeInfoPanel.closable = true;
 
-        const tbl = this.buildPropsTable(`Route ${props.route}`, props);
-        this.routeInfoPanel.appendChild(tbl);
+        const freqTbl = this.buildFreqTable(props);
+        this.routeInfoPanel.appendChild(freqTbl);
+
+        const accessTbl = this.buildPropsTable(props);
+        this.routeInfoPanel.appendChild(accessTbl);
         this.routeInfoPanel.hidden = false;
     }
-    private buildPropsTable(routeHeading: string, props: any): HTMLCalciteTableElement {
+    private buildFreqTable(props: any): HTMLCalciteBlockElement {
+        const block = document.createElement("calcite-block") as any;
+        block.heading = "Frequency (minutes)";
+        block.open = true;
+        
         const tbl = document.createElement("calcite-table");
-        tbl.setAttribute("caption", routeHeading);
 
         const hdg = Object.assign(document.createElement("calcite-table-row"), { slot: "table-header" });
-        const h1 = Object.assign(document.createElement("calcite-table-header"), { heading: "Amenity Type" });
-        const h2 = Object.assign(document.createElement("calcite-table-header"), { heading: "Stops w/ Access" });
-        hdg.append(h1, h2);
+        const h1 = Object.assign(document.createElement("calcite-table-header"), { heading: "Weekday" });
+        const h2 = Object.assign(document.createElement("calcite-table-header"), { heading: "Saturday" });
+        const h3 = Object.assign(document.createElement("calcite-table-header"), { heading: "Sunday" });
+        hdg.append(h1, h2, h3);
         tbl.appendChild(hdg);
+        
+        const row = document.createElement("calcite-table-row");
+        for (const f of [props.freq_wk, props.freq_sa, props.freq_su]) {
+            row.appendChild(Object.assign(document.createElement("calcite-table-cell"), { innerText: f }));
+        }
+        tbl.appendChild(row);
+        block.appendChild(tbl);
+        return block;
+    }
+    private buildPropsTable(props: any): HTMLCalciteBlockElement {
+        const block = Object.assign(document.createElement("calcite-block"), {
+            heading: "Stops w/ access to:",
+            collapsible: true,
+            open: true,
+        });
+        // block.heading = "Stops w/ access to:";
+        // block.collapsible = true;
+        // block.open = true;
+
+        const tbl = document.createElement("calcite-table");
+        
         // add the key as the first table cell and the val as the second
         for (const [key, val] of Object.entries(props)) {
+            // exclusions
             if (!key.includes("_access_")) continue;
             if ((!key.toLowerCase().includes("amenity")) && String(val) === "false") continue;
-            console.log(String(val));
+            
             const row = document.createElement("calcite-table-row");
+            const keyCell = document.createElement("calcite-table-cell");
+            const valCell = document.createElement("calcite-table-cell");
+            
+            // last string after last _
             const keyVal = key.split("_").at(-1);
-            const amenity = Object.assign(document.createElement("calcite-table-cell"), {
-                innerText: `${String(keyVal).charAt(0).toUpperCase()}${String(keyVal).slice(1)}`
-            });
-            const access = Object.assign(document.createElement("calcite-table-cell"), { innerText: val });
-            row.append(amenity, access);
+
+            keyCell.innerText = `${String(keyVal).charAt(0).toUpperCase()}${String(keyVal).slice(1)}`;
+            valCell.innerText = String(val);
+
+            row.append(keyCell, valCell);
             tbl.appendChild(row);
         }
-        return tbl;
+        block.appendChild(tbl);
+
+        return block;
     }
     // BUILD SELECT LIST OF ALL BUS ROUTES
     private async populateRouteSelect(): Promise<void> {
