@@ -108,13 +108,15 @@ function buildCalcitePanel(elementType: string, heading: string, baseMaps?: Loca
 }
 
 function buildCalciteTableBlock(
-    label: string, props: unknown, collapsible: boolean, open: boolean,
+    label: string, props: any, collapsible: boolean, open: boolean,
     buildTable: (props: unknown) => HTMLCalciteTableElement,
 ): HTMLCalciteBlockElement {
     const block = Object.assign(document.createElement('calcite-block'), {
         heading: label, 
+        label: label,
         collapsible: collapsible,
         open: open,
+        headingLevel: 2
     });
     block.appendChild(buildTable(props));
     return block;
@@ -522,18 +524,15 @@ export class MapWindow extends HTMLElement {
         this.routeInfoPanel.closed = false;
         this.routeInfoPanel.closable = true;
 
-        const freqTbl = this.buildFreqTable(props);
+        // const freqTbl = this.buildFreqTable(props);
+        const freqTbl = buildCalciteTableBlock("Frequency (minutes)", props, false, true, this.buildFreqTable);
         this.routeInfoPanel.appendChild(freqTbl);
 
-        const accessTbl = this.buildPropsTable(props);
+        const accessTbl = buildCalciteTableBlock("Stops w/ access to", props, true, false, this.buildPropsTable);
         this.routeInfoPanel.appendChild(accessTbl);
         this.routeInfoPanel.hidden = false;
     }
-    private buildFreqTable(props: any): HTMLCalciteBlockElement {
-        const block = document.createElement("calcite-block") as any;
-        block.heading = "Frequency (minutes)";
-        block.open = true;
-        
+    private buildFreqTable(props: any): HTMLCalciteTableElement {
         const tbl = document.createElement("calcite-table");
 
         const hdg = Object.assign(document.createElement("calcite-table-row"), { slot: "table-header" });
@@ -548,23 +547,13 @@ export class MapWindow extends HTMLElement {
             row.appendChild(Object.assign(document.createElement("calcite-table-cell"), { innerText: f }));
         }
         tbl.appendChild(row);
-        block.appendChild(tbl);
-        return block;
+        return tbl;
     }
-    private buildPropsTable(props: any): HTMLCalciteBlockElement {
-        const block = Object.assign(document.createElement("calcite-block"), {
-            heading: "Stops w/ access to:",
-            collapsible: true,
-            open: true,
-        });
-        // block.heading = "Stops w/ access to:";
-        // block.collapsible = true;
-        // block.open = true;
-
+    private buildPropsTable(props: any): HTMLCalciteTableElement {
         const tbl = document.createElement("calcite-table");
         
         // add the key as the first table cell and the val as the second
-        for (const [key, val] of Object.entries(props)) {
+        for (const [key, val] of Object.entries(props as any)) {
             // exclusions
             if (!key.includes("_access_")) continue;
             if ((!key.toLowerCase().includes("amenity")) && String(val) === "false") continue;
@@ -582,9 +571,7 @@ export class MapWindow extends HTMLElement {
             row.append(keyCell, valCell);
             tbl.appendChild(row);
         }
-        block.appendChild(tbl);
-
-        return block;
+        return tbl;
     }
     // BUILD SELECT LIST OF ALL BUS ROUTES
     private async populateRouteSelect(): Promise<void> {
