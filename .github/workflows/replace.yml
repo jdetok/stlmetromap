@@ -1,0 +1,30 @@
+name: Change text in codebase by branch
+on: 
+    push:
+        branches:
+            - main
+            - jdme
+    pull_request:
+        branches:
+            - main
+            - jdme
+jobs:
+    replace:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            
+            - name: Run shell script
+              run: |
+                    if [[ "${GITHUB_REF_NAME}" == "main" || "${GITHUB_REF_NAME}" == "ci" ]]; then
+                        ./scr/ci/replace
+                    elif [[ "${GITHUB_REF_NAME}" == "jdme" ]]; then
+                        ./scr/ci/replace -j
+                    else
+                        echo "No replacement needed for branch ${GITHUB_REF_NAME}"
+                    fi  
