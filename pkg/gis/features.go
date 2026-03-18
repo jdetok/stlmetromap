@@ -81,9 +81,9 @@ func GetFeatureLayers(ctx context.Context, layerNames LayerMeta, db *pgxpool.Poo
 	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("an error occured getting data: %v", err)
 	}
-	if err := fl.DataToJSONFile(); err != nil {
-		return fl, fmt.Errorf("failed to write built map to %s: %v", PERSISTF, err)
-	}
+	// if err := fl.DataToJSONFile(); err != nil {
+	// 	return fl, fmt.Errorf("failed to write built map to %s: %v", PERSISTF, err)
+	// }
 	return fl, nil
 }
 
