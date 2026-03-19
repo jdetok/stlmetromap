@@ -99,3 +99,51 @@ export function makeRoutesButtons(routeNames: string,
     }
     return routeBtns;
 }
+
+// tooltips
+type tooltipPlacements = "left" | "right" | "auto" | "top" | "auto-start" | "auto-end" | "top-start" |
+    "top-end" | "bottom" | "bottom-start" | "bottom-end" | "right-start" | "right-end" | "left-start" |
+    "left-end" | "leading-start" | "leading" | "leading-end" | "trailing-end" | "trailing" | "trailing-start";
+export type calciteTooltipProps = {
+    text: string,
+    refElId?: string,
+    placement?: tooltipPlacements,
+};
+export function buildCalciteTooltip(props: calciteTooltipProps): HTMLCalciteTooltipElement {
+    const tooltip = document.createElement("calcite-tooltip");
+    tooltip.referenceElement = props.refElId ?? "";
+    tooltip.textContent = props.text;
+    tooltip.placement = props.placement ?? "bottom";
+    tooltip.overlayPositioning = "fixed";
+    return tooltip;
+};
+export type calciteActionProps = {
+    id: string,
+    icon: string,
+    text: string,
+    where?: string,
+    highlightName?: string,
+    onClick?: () => Promise<void>,
+    tooltipProps?: calciteTooltipProps,
+}
+export type calciteActionReturn = {
+    action: HTMLCalciteActionElement,
+    tooltip: HTMLCalciteTooltipElement | null,
+}
+export function buildCalciteAction(props: calciteActionProps): calciteActionReturn { 
+    const btnId = `toggle-action-${props.id}`;
+    const action = Object.assign(document.createElement('calcite-action'), {
+        id: btnId,
+        icon: props.icon,
+        text: props.text,
+    })
+    action.dataset.actionId = props.id;
+    if (props.onClick) {
+        action.addEventListener("click", props.onClick);
+    }
+    const tooltip = props.tooltipProps ? buildCalciteTooltip(props.tooltipProps) : null;
+    if (props.tooltipProps && tooltip) {
+        tooltip.referenceElement = btnId;
+    }
+    return { action, tooltip }
+};

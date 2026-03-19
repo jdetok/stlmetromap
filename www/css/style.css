@@ -80,3 +80,7 @@ map-window {
     .long { display: none; }
     .short { display: inline; }
 }
+
+calcite-tooltip {
+    z-index: 99 !important;
+}
