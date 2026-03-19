@@ -27,38 +27,45 @@ export function buildCalciteTableBlock(
     });
 
     if (infoContent) {
-        const actId = `popover-trigger-${label.replace(/\s+/g, '-')}`;
-        const btn = Object.assign(document.createElement('calcite-action'), {
-            slot: 'control',
-            icon: 'information',
-            text: 'Info',
-            id: actId,
-            scale: 'm',
-        });
-
-        const notice = Object.assign(document.createElement('calcite-notice'), {
-            open: false,
-            kind: 'info',
-            scale: 's',
-            closable: true,
-        });
-        
-        notice.appendChild(Object.assign(document.createElement('div'), {
-            slot: 'message',
-            innerText: infoContent,
-        }));
-
-        // toggle notice on button click
-        btn.addEventListener('click', () => {
-            notice.open = !notice.open;
-        });
-
-        block.appendChild(btn);
-        block.appendChild(notice);
+        const notice = buildCalciteNotice(label, infoContent);
+        block.appendChild(notice.btn);
+        block.appendChild(notice.notice);
     }
 
     block.appendChild(buildTable(props));
     return block;
+}
+
+export function buildCalciteNotice(label: string, content: string): {
+    notice: HTMLCalciteNoticeElement, btn: HTMLCalciteActionElement
+} {
+    const actId = `popover-trigger-${label.replace(/\s+/g, '-')}`;
+    const btn = Object.assign(document.createElement('calcite-action'), {
+        slot: 'control',
+        icon: 'information',
+        text: 'Info',
+        id: actId,
+        scale: 'm',
+    });
+
+    const notice = Object.assign(document.createElement('calcite-notice'), {
+        open: false,
+        kind: 'info',
+        scale: 's',
+        closable: true,
+    });
+
+    // toggle notice on button click
+    btn.addEventListener('click', () => {
+        notice.open = !notice.open;
+    });
+    
+    notice.appendChild(Object.assign(document.createElement('div'), {
+        slot: 'message',
+        innerText: content,
+    }));
+
+    return {notice: notice, btn: btn};
 }
 
 function makeRtsBtn(txt: string): HTMLCalciteButtonElement {

@@ -33,17 +33,15 @@ export type FeatureLayerMeta = {
     toGraphics?: (data: any) => Graphic[];
 }
 
-// const BUS_STOP_Y_COLOR = 'mediumseagreen';
 export const BUS_STOP_SIZE = 4;
 const BUS_STOP_Y_COLOR = [0, 255, 255, 0.5];
 const BUS_STOP_NO_COLOR = [180, 110, 200, 0.5];
 const BUS_STOP_NA_COLOR = [0, 165, 255, 0.5];
 const ML_STOP_SIZE = 10;
 const RAIL_INNER_COLOR = [0, 0, 0, 0.6];
-const CYCLE_LAYER_GRAVEL_COLOR = [180, 80, 170, 0.5];
-const CYCLE_LAYER_ASPHALT_COLOR = [208, 148, 75, 0.5];
-const CYCLE_LAYER_OTHER_COLOR = [75, 108, 208, 0.5];
-
+const CYCLE_LAYER_GRAVEL_COLOR = [180, 80, 170, 0.6];
+const CYCLE_LAYER_ASPHALT_COLOR = [208, 148, 75, 0.6];
+const CYCLE_LAYER_OTHER_COLOR = [75, 108, 208, 0.6];
 const CYCLE_LAYER_SIZE = .8;
 const GROCERY_INNER_COLOR = [0, 0, 255, 0.5];
 const PARKS_COLOR = [20, 255, 115, 0.35];

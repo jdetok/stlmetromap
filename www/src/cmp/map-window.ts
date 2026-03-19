@@ -127,6 +127,9 @@ export class MapWindow extends HTMLElement {
     private basemapPanel!: HTMLCalcitePanelElement;
     private printPanel!: HTMLCalcitePanelElement;
 
+    private actionBar!: HTMLCalciteActionBarElement;
+    private toggleBar!: HTMLCalciteActionBarElement;
+
     // ACTIONS FOR TOGGLE BAR
     private TOGGLE_ACTIONS: toggleAction[];
     
@@ -156,8 +159,8 @@ export class MapWindow extends HTMLElement {
             LAYER_CENSUS_TRACTS,
             LAYER_CYCLING,
             this.PLACE_META,
-            LAYER_AMTRAK,
             this.LINES_META,
+            LAYER_AMTRAK,
             this.BUS_META,
             LAYER_ML_STOPS,
         ];
@@ -191,7 +194,43 @@ export class MapWindow extends HTMLElement {
         } as __esri.Extent
 
         this.arcgisMap.addEventListener("arcgisViewReadyChange", async () => {
-            
+            const popupStyle = document.createElement("style");
+            popupStyle.textContent = `
+                .esri-popup {
+                    max-height: 30% !important;
+                }
+                .esri-popup__main-container {
+                    width: fit-content;
+                    max-width: 50%;
+                    background: rgba(115, 128, 137, 0.75) !important;
+                }
+                .esri-widget__table {
+                    font-size: 0.75rem !important;
+                }
+                div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup.esri-popup--is-docked.esri-popup--is-docked-top-right > div > div > calcite-flow > calcite-flow-item > h2 {
+                    padding-left: 0.3rem;
+                    font-weight: bold;
+                    font-size: 1.1rem !important;
+                    text-align: left !important;
+                }
+                .esri-feature-fields__field-header,
+                    div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup.esri-popup--is-docked.esri-popup--is-docked-top-right > div > div > calcite-flow > calcite-flow-item > div > div > div > div > div > div > div > table > tbody > tr > td:nth-child(1) {
+                    padding: 0 !important;
+                    margin-top: 0 !important;
+                    margin-bottom: 0 !important;    
+                    text-align: right !important;
+                    font-weight: bold;
+                }
+                .esri-feature-fields__field-data,
+                div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup.esri-popup--is-docked.esri-popup--is-docked-top-right > div > div > calcite-flow > calcite-flow-item > div > div > div > div > div > div > div > table > tbody > tr > td:nth-child(2) > calcite-button,
+                div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup.esri-popup--is-docked.esri-popup--is-docked-top-right > div > div > calcite-flow > calcite-flow-item > div > div > div > div > div > div > div > table > tbody > tr > td:nth-child(2) {
+                    margin-top: 0 !important;    
+                    margin-bottom: 0 !important;    
+                    text-align: left !important;
+                }
+                
+            `;
+            this.arcgisMap.shadowRoot?.appendChild(popupStyle);
 
             // BUILD FEATURE LAYERS
             for (let i = 0; i < this.layers.length; i++) {
@@ -235,6 +274,10 @@ export class MapWindow extends HTMLElement {
             // ADD LISTENER ON ZOOM AMOUNT, RE RENDER FEATURES AT SPECIFIC POINTS
             this.renderOnZoom();
 
+            // open legend when bus stop layer has been created
+            this.busStopsLayer.when(() => this.togglePanel('legend', this.actionBar, {
+                legend: this.legendPanel,
+            }));
         }, { once: true });
 
         return this.arcgisMap;
@@ -304,7 +347,7 @@ export class MapWindow extends HTMLElement {
     // BUILD CALCITE ACTION BAR WITH TOGGLE BUTTONS FOR HIGHLIGHTING FEATURES
     private buildToggleBar(): HTMLCalciteActionBarElement {
         const actionBar = document.createElement("calcite-action-bar") as any;
-        actionBar.layout = "vertical";
+        actionBar.layout = "horizontal";
         actionBar.classList.add("place_toggles");
 
         for (const a of this.TOGGLE_ACTIONS) {
@@ -314,7 +357,7 @@ export class MapWindow extends HTMLElement {
         // BUILD AND APPEND RESET BUTTONS (BUS AND PLACES HIGHIGHTS)
         actionBar.appendChild(this.resetPlacesHighlight(actionBar));
         actionBar.appendChild(this.resetBusRoutesBtn());
-
+        this.toggleBar = actionBar;
         return actionBar;
     }
     private buildToggleBtn(a: toggleAction): HTMLCalciteActionElement {
@@ -387,6 +430,7 @@ export class MapWindow extends HTMLElement {
             actionBar.appendChild(this.buildActionBtn(a as toggleAction, actionBar));
         }
         actionBar.appendChild(this.buildFsBtn())
+        this.actionBar = actionBar;
         return actionBar;
     }
     private buildActionBtn(a: toggleAction, actionBar: HTMLCalciteActionBarElement): HTMLCalciteActionElement {
@@ -665,46 +709,51 @@ const STYLE = `
 }
 
 #filterbar {
-    left: 5px;
+    left: 0.8rem;
     width: min-content;
 }
 .place_toggles {
     position: absolute;
-    bottom: 4.5rem;
-    right: 5px;
+    bottom: 1.6rem;
+    right: 0.8rem;
     z-index: 10;
+}
+.esri-features {
+    max-height: 20%;
+    color: green;
 }
 calcite-action-bar {
     position: absolute;
-    bottom: 1.8rem;
-    right: 5px;
+    bottom: 4.5rem;
+    right: 0.8rem;
     z-index: 10;
 }
 calcite-panel {
     position: absolute;
-    right: 55px;
-    bottom: 70px;
+    right: 0.8rem;
+    bottom: 7.2rem;
     z-index: 10;
     width: fit-content;
     height: fit-content;
-    max-height: 55%;
+    max-height: 65%;
     max-width: 98%;
 }
 #filterbar {
     position: absolute;
-    bottom: 1.8rem;
-    left: 5px;
+    bottom: 1.6rem;
+    left: 0.8rem;
     z-index: 10;
     width: 220px;
 }
 calcite-panel.filter {
-    left: 5px;
+    left: 0.8rem;
     right: unset;
 }
 
 calcite-panel.route-info {
-    left: 5px;
+    left: 0.8rem;
     right: unset;
+    bottom: 4rem;
 }
 
 calcite-panel > * {
@@ -713,6 +762,7 @@ calcite-panel > * {
 arcgis-map {
     --calcite-block-padding: 0.25rem;
     --calcite-list-item-spacing: 0.25rem; 
+    --calcite-popover-text-color: green;
     border-radius: 1rem;
     display: block;
     width: 100%;
@@ -722,7 +772,7 @@ arcgis-map {
 arcgis-zoom {
     position: absolute;
     top: 15px;
-    left: 15px;
+    left: 0.8rem;
     z-index: 10;
 }
 
