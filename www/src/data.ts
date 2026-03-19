@@ -48,16 +48,12 @@ export const LINES_FIELDS: __esri.FieldProperties[] = [
     {name: "freq_su", alias: "freq_su", type: "integer"},
     
 ];
-
-/*
-route_id, route_type, route, route_name, 
-	route_desc, freq_wk, freq_sa, freq_su,
-	stops_total, stops_access_wheelchair,
-    stops_access_amenities, stops_access_grocery,
-    stops_access_schools, stops_access_colleges, stops_access_parks,
-    stops_access_social_facilities, stops_access_churches, 
-    stops_access_medical, stops_access_entertainment,
-*/
+export const LINES_FIELDINFOS = [
+    {fieldName: "stops_total", label: "Total Stops", },
+    {fieldName: "freq_wk", label: "Weekday Frequency (minutes)", },
+    {fieldName: "freq_sa", label: "Saturday Frequency (minutes)", },
+    {fieldName: "freq_su", label: "Sunday Frequency (minutes)", },
+];
 
 export const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },

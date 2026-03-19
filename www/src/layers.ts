@@ -17,7 +17,8 @@ import {
     CYCLE_LAYER_URL, CYCLE_LAYER_TTL, CYCLING_FIELDS,
     STOP_FIELDINFOS, STOP_FIELDS, AMTRAK_FIELDS, AMTRAK_FIELDINFOS,
     PLACE_FIELDS, PLACE_FIELDINFOS,
-    LINES_FIELDS
+    LINES_FIELDS,
+    LINES_FIELDINFOS
 } from "./data.js";
 
 export type FeatureLayerMeta = {
@@ -71,7 +72,11 @@ const LINES_CLASSBREAKS: cplethEls[] = [
     [61, 720, [255, 70, 10]],
 ];
 
-export const LAYER_LINES: FeatureLayerMeta = {
+// export const LAYER_LINES: FeatureLayerMeta = {
+export const makeLinesLayer = (
+    onRouteClick: (route: string) => void,
+    onRoutesClick: (route: string[]) => void
+): FeatureLayerMeta => ({
     title: "Metro Transit Lines",
     dataUrl: "/layers/lines",
     geometryType: "polyline",
@@ -79,10 +84,36 @@ export const LAYER_LINES: FeatureLayerMeta = {
     renderer: new ClassBreaksRenderer({
         field: "freq_wk",
         classBreakInfos: makeChoroplethLevels(LINES_CLASSBREAKS, true),
-        defaultSymbol: new SimpleLineSymbol({ color: "gray", width: 1})
+        defaultSymbol: new SimpleLineSymbol({ color: "gray", width: 1 })
     }),
     toGraphics: toPolyline,
-}
+    popupTemplate: {
+        title: "{route_desc}",
+        content: (feature: any) => {
+            const attrs = feature.graphic?.attributes;
+            const div = document.createElement("div");
+            const routeBtns = makeRoutesButtons(attrs?.route_desc, onRouteClick, onRoutesClick);
+
+            // fields table
+            const tbl = document.createElement("table");
+
+            // add each route as a button
+            const row = tbl.insertRow();
+            row.insertCell().textContent = "MetroBus Routes Served:";
+            row.insertCell().append(...routeBtns);
+
+            LINES_FIELDINFOS.forEach(({ fieldName, label }) => {
+                if (fieldName === "route_desc") return; // handled separately
+                const row = tbl.insertRow();
+                row.insertCell().textContent = label;
+                row.insertCell().textContent = attrs?.[fieldName] ?? "—";
+            });
+            div.appendChild(tbl);
+
+            return div;
+        }
+    }
+});
 
 export const makeBusStopsLayer = (
     onRouteClick: (route: string) => void,

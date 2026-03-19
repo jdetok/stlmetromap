@@ -28,6 +28,7 @@ import { buildCalcitePanel, buildCalciteTableBlock } from "../calcite.js";
 import {
     FeatureLayerMeta,
     makeBusStopsLayer,
+    makeLinesLayer,
     makePlacesLayer,
     LAYER_ML_STOPS,
     LAYER_CENSUS_COUNTIES,
@@ -35,7 +36,6 @@ import {
     LAYER_CYCLING,
     LAYER_AMTRAK,
     BUS_STOP_SIZE,
-    LAYER_LINES
 } from "../layers.js";
 
 // HELPER TO CREATE CUSTOM HIGHLIGHT SETTINGS
@@ -108,6 +108,7 @@ export class MapWindow extends HTMLElement {
 
     // NAMED FEATURE LAYER METAS
     private BUS_META: FeatureLayerMeta;
+    private LINES_META: FeatureLayerMeta;
     private PLACE_META: FeatureLayerMeta;
 
     // NAMED FEATURE LAYERS
@@ -138,6 +139,10 @@ export class MapWindow extends HTMLElement {
             (route) => { this.filterByRoute(route); this.showRouteInfo(route); },
             (routes) => { this.filterByRoutes(routes);  },
         );
+        this.LINES_META = makeLinesLayer(
+            (route) => { this.filterByRoute(route); this.showRouteInfo(route); },
+            (routes) => { this.filterByRoutes(routes);  },
+        );
         this.PLACE_META = makePlacesLayer(
             (route) => { this.filterByRoute(route); this.showRouteInfo(route); },
             (routes) => { this.filterByRoutes(routes);  },
@@ -152,7 +157,7 @@ export class MapWindow extends HTMLElement {
             LAYER_CYCLING,
             this.PLACE_META,
             LAYER_AMTRAK,
-            LAYER_LINES,
+            this.LINES_META,
             this.BUS_META,
             LAYER_ML_STOPS,
         ];

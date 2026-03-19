@@ -59,8 +59,6 @@ export const toPolyline = (data: any): Graphic[] => {
         return new Graphic({
             geometry: new Polyline({
                 paths: f.geometry.coordinates,
-                // longitude: f.geometry.coordinates[0],
-                // latitude: f.geometry.coordinates[1],
                 spatialReference: { wkid: STLWKID },
             }),
             attributes: {
