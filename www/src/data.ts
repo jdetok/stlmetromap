@@ -38,6 +38,27 @@ export const PLACE_FIELDINFOS = [
     { fieldName: "rail_near", label: "Rail Routes within 1Mi." },
 ];
 
+export const LINES_FIELDS: __esri.FieldProperties[] = [
+    {name: "ObjectID", alias: "ObjectID", type: "oid"},
+    {name: "route_desc", alias: "route_desc", type: "string"},
+    {name: "route_type", alias: "route_type", type: "string"},
+    {name: "stops_total", alias: "stops_total", type: "integer"},
+    {name: "freq_wk", alias: "Weekday Frequency (minutes)", type: "integer"},
+    {name: "freq_sa", alias: "freq_sa", type: "integer"},
+    {name: "freq_su", alias: "freq_su", type: "integer"},
+    
+];
+
+/*
+route_id, route_type, route, route_name, 
+	route_desc, freq_wk, freq_sa, freq_su,
+	stops_total, stops_access_wheelchair,
+    stops_access_amenities, stops_access_grocery,
+    stops_access_schools, stops_access_colleges, stops_access_parks,
+    stops_access_social_facilities, stops_access_churches, 
+    stops_access_medical, stops_access_entertainment,
+*/
+
 export const STOP_FIELDS: __esri.FieldProperties[] = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },
     { name: "stop_id", alias: "Stop ID", type: "string" },

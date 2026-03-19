@@ -35,6 +35,7 @@ import {
     LAYER_CYCLING,
     LAYER_AMTRAK,
     BUS_STOP_SIZE,
+    LAYER_LINES
 } from "../layers.js";
 
 // HELPER TO CREATE CUSTOM HIGHLIGHT SETTINGS
@@ -212,6 +213,7 @@ export class MapWindow extends HTMLElement {
             LAYER_CYCLING,
             this.PLACE_META,
             LAYER_AMTRAK,
+            LAYER_LINES,
             this.BUS_META,
             LAYER_ML_STOPS,
         ];
@@ -269,6 +271,11 @@ export class MapWindow extends HTMLElement {
             
             // SET OBJECT HIGHLIGHT COLORS
             const view = this.arcgisMap.view as __esri.MapView;
+            if (view.popup) {
+                view.popup.dockOptions = { breakpoint: false };
+                view.popup.dockEnabled = true;
+            }
+            
             view.highlights = HIGHLIGHTS;
 
             await this.setPanelViews(view, new Map([
@@ -298,7 +305,7 @@ export class MapWindow extends HTMLElement {
     // WATCH VIEW ZOOM, RERENDER FEATURES ACCORDINGLY
     private renderOnZoom() {
         this.arcgisMap.view.watch("zoom", (zoom) => {
-            console.log("zoom: ", zoom);
+            // console.log("zoom: ", zoom);
             const scale = zoom <= 9 ? 0.5 : zoom <= 11 ? 0.75 : zoom <= 12 ? 1 : zoom < 15 ? 1.25 : zoom < 17 ? 1.5 : 2;
             (this.busStopsLayer.renderer as any).visualVariables[0].stops = [
                 { value: 1, size: BUS_STOP_SIZE * scale },
@@ -702,7 +709,7 @@ const STYLE = `
     width: 100%;
     min-height: 0;
     height: 100%;
-    --popup-bg: rgba(125, 140, 151, 0.42);
+    --popup-bg: rgba(115, 128, 137, 0.75);
     --calcite-color-brand: var(--popup-bg);
     --calcite-color-background: var(--popup-bg);
     --calcite-color-foreground-1: var(--popup-bg);
@@ -757,7 +764,7 @@ calcite-panel.route-info {
 }
 
 calcite-panel > * {
-    background0color: rgba(125, 140, 151, 0.1);
+    background0color: rgba(125, 140, 151, 0.5);
 }
 arcgis-map {
     --calcite-block-padding: 0.25rem;

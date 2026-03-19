@@ -16,7 +16,8 @@ import {
     ML_LAYER_URL, ML_LAYER_TTL, BUS_LAYER_TTL, BUS_LAYER_URL,
     CYCLE_LAYER_URL, CYCLE_LAYER_TTL, CYCLING_FIELDS,
     STOP_FIELDINFOS, STOP_FIELDS, AMTRAK_FIELDS, AMTRAK_FIELDINFOS,
-    PLACE_FIELDS, PLACE_FIELDINFOS
+    PLACE_FIELDS, PLACE_FIELDINFOS,
+    LINES_FIELDS
 } from "./data.js";
 import Polygon from "@arcgis/core/geometry/Polygon.js";
 export type FeatureLayerMeta = {
@@ -62,6 +63,14 @@ const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
     [7500, 10000, [44, 60, 255]],
     [10000, 99999, [50, 1, 63]],
 ];
+const LINES_CLASSBREAKS: cplethEls[] = [
+    [0, 19, [0, 255, 100]],
+    [20, 29, [50, 150, 127]], // slateish green
+    [30, 44, [0, 127, 255]], // blue lighter
+    [45, 59, [255, 200, 127]],
+    [60, 60, [255, 100, 100]],
+    [61, 720, [255, 70, 10]],
+];
 
 // choropleth levels, pass min val, max val, rgb val
 type cplethEls = [number, number, number[]];
@@ -99,17 +108,18 @@ function makeRoutesButtons(routeNames: string,
 }
 
 // create choropleth levels for the array of min/max/color
-const newChoroplethLevel = (c: cplethEls) => {
+const newChoroplethLevel = (c: cplethEls, line?: boolean) => {
     return {
         minValue: c[0],
         maxValue: c[1],
-        symbol: new SimpleFillSymbol({ color: [...c[2], POPLDENS_ALPHA] }),
+        symbol: line ? new SimpleLineSymbol({ color: [...c[2], 0.65], width: 0.5 }) :
+            new SimpleFillSymbol({ color: [...c[2], POPLDENS_ALPHA] }),
     };
 };
-const makeChoroplethLevels = (levels: cplethEls[]): __esri.ClassBreakInfoProperties[] => {
+const makeChoroplethLevels = (levels: cplethEls[], line?: boolean): __esri.ClassBreakInfoProperties[] => {
     let lvls: __esri.ClassBreakInfoProperties[] = [];
     for (const l of levels) {
-        lvls.push(newChoroplethLevel(l));
+        lvls.push(newChoroplethLevel(l, line));
     }
     return lvls;
 };
@@ -143,7 +153,23 @@ const toPoint = (data: any): Graphic[] => {
         })
     })
 };
-
+const toPolyline = (data: any): Graphic[] => {
+    return data.features.map((f: any) => {
+        return new Graphic({
+            geometry: new Polyline({
+                paths: f.geometry.coordinates,
+                // longitude: f.geometry.coordinates[0],
+                // latitude: f.geometry.coordinates[1],
+                spatialReference: { wkid: STLWKID },
+            }),
+            attributes: {
+                ...f.properties,
+                ObjectID: f.properties.id,
+                route_count: f.properties.route_names ? f.properties.route_names.split(", ").length : 1,
+            },
+        })
+    })
+};
 export const makeBusStopsLayer = (
     onRouteClick: (route: string) => void,
     onRoutesClick: (route: string[]) => void
@@ -501,24 +527,17 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
                 symbol: new SimpleLineSymbol({
                     color: CYCLE_LAYER_ASPHALT_COLOR,
                     width: CYCLE_LAYER_SIZE,
+                    style: 'dash',
                 }),
             }],
         }, {
             classes: [{
                 label: "Unpaved Path",
-                values: ["unpaved", "dirt"] as __esri.UniqueValueProperties[],
-                symbol: new SimpleLineSymbol({
-                    color: CYCLE_LAYER_UNPAVED_COLOR,
-                    width: CYCLE_LAYER_SIZE,
-                }),
-            }],
-        }, {
-            classes: [{
-                label: "Gravel Path",
-                values: ["gravel", "fine_gravel", "crushed_limestone"] as __esri.UniqueValueProperties[],
+                values: ["unpaved", "dirt", "gravel", "fine_gravel", "crushed_limestone"] as __esri.UniqueValueProperties[],
                 symbol: new SimpleLineSymbol({
                     color: CYCLE_LAYER_GRAVEL_COLOR,
                     width: CYCLE_LAYER_SIZE,
+                    style: 'dash',
                 }),
             }],
         }],        
@@ -548,3 +567,16 @@ export const LAYER_CYCLING: FeatureLayerMeta = {
         );
     }
 };
+
+export const LAYER_LINES: FeatureLayerMeta = {
+    title: "Metro Transit Lines",
+    dataUrl: "/layers/lines",
+    geometryType: "polyline",
+    fields: LINES_FIELDS,
+    renderer: new ClassBreaksRenderer({
+        field: "freq_wk",
+        classBreakInfos: makeChoroplethLevels(LINES_CLASSBREAKS, true),
+        defaultSymbol: new SimpleLineSymbol({ color: "gray", width: 1})
+    }),
+    toGraphics: toPolyline,
+}

@@ -173,3 +173,5 @@ select * from api.routes where route_type = '3'`, IsGeom: false}
 
 var METROBUS = &Query{Q: `select * from api.stops where route_type = '3'`, IsGeom: true}
 var METROLINK = &Query{Q: `select * from api.stops where route_type = '2'`, IsGeom: true}
+
+var LINES = &Query{Q: `select * from api.lines`, IsGeom: true}

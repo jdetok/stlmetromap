@@ -51,6 +51,7 @@ func main() {
 		"tracts":    pgis.QTRACTS,
 		"counties":  pgis.QCOUNTIES,
 		"routes":    pgis.QROUTES,
+		"lines":     pgis.LINES,
 	}, a.db, a.lg)
 	if err != nil {
 		a.lg.Fatal(err)

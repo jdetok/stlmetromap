@@ -139,3 +139,10 @@ truncate table api.places restart identity;
 
 select osm_id, type, name, operator, bus_near, rail_near, geom from api.places;
 select * from api.places;
+
+select a.shape_id, c.route_desc,
+	ST_MakeLine(a.shape_pt_loc::geometry) as geom
+from shapes a
+join trips b on b.shape_id = a.shape_id
+join api.routes c on c.route_id = b.route_id
+group by a.shape_id, c.route_desc;

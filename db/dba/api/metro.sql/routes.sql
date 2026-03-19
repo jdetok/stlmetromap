@@ -24,6 +24,7 @@ create table if not exists api.routes (
 	stops_access_entertainment integer
 );
 
+begin; 
 truncate table api.routes restart identity;
 
 with mtr as (
@@ -127,6 +128,7 @@ join freqs_by_route wk on wk.route_id = a.route_id and wk.day_type = 'WK'
 left join freqs_by_route sa on sa.route_id = a.route_id and sa.day_type = 'SA'
 left join freqs_by_route su on su.route_id = a.route_id and su.day_type = 'SU'
 order by stops_total desc;
+commit;
 
 select * from api.routes;
 select 
