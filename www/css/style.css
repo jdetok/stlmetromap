@@ -67,7 +67,11 @@ map-window {
         flex-direction: column;
     }
 }
-
+@media ( max-height: 900px ) {
+    .subt {
+        display: none;
+    }
+}
 .ttl h1 {
     font-size: 1.8rem;
     margin-top: 0.2rem;
