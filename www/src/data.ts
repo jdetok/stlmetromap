@@ -1,5 +1,5 @@
 export const BASEMAP = 'dark-gray';
-export const STLWKID = 4326;
+export const PROJID = 4326;
 export const STLCOORDS = {
     xmin: -90.32,
     ymin: 38.53,

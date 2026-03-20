@@ -73,7 +73,7 @@ const LINES_CLASSBREAKS: cplethEls[] = [
 // export const LAYER_LINES: FeatureLayerMeta = {
 export const makeLinesLayer = (
     onRouteClick: (route: string) => void,
-    onRoutesClick: (route: string[]) => void
+    onRoutesClick: (route: string | string[]) => void
 ): FeatureLayerMeta => ({
     title: "Metro Transit Lines",
     dataUrl: "/layers/lines",
@@ -115,7 +115,7 @@ export const makeLinesLayer = (
 
 export const makeBusStopsLayer = (
     onRouteClick: (route: string) => void,
-    onRoutesClick: (route: string[]) => void
+    onRoutesClick: (route: string | string[]) => void
 ): FeatureLayerMeta => ({
     title: BUS_LAYER_TTL,
     dataUrl: BUS_LAYER_URL,
@@ -193,7 +193,7 @@ export const makeBusStopsLayer = (
 
 export const makePlacesLayer = (
     onRouteClick: (route: string) => void,
-    onRoutesClick: (route: string[]) => void
+    onRoutesClick: (route: string | string[]) => void
 ): FeatureLayerMeta => ({
     title: 'Places',
     dataUrl: '/layers/places',
