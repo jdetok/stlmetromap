@@ -149,6 +149,7 @@ export type calciteActionProps = {
     onClick?: () => Promise<void>,
     tooltipProps?: calciteTooltipProps,
 }
+// return action with or without a tooltip. tooltip must be appended to the root as well
 export type calciteActionReturn = {
     action: HTMLCalciteActionElement,
     tooltip: HTMLCalciteTooltipElement | null,
