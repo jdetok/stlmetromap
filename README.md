@@ -43,11 +43,14 @@ Interactive Map of multi-modal transportation options in the St. Louis Metropoli
     - Contains various bash scripts primarily for importing external data into or backing up the database
 
 # Examples
-## Latest working example: 
+## Overview: 
 <img src="z_docs/img/out.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
 
 ## Highlighting Stops by Route
 <img src="z_docs/img/ex0313.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
+
+## Changing route lines/stops sizes
+<img src="z_docs/img/sliders.gif" alt="screenshot of the project homepage" style="max-height:45vh;"><br>
 
 
 ## HOW TO RUN LOCALLY

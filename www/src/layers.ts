@@ -62,7 +62,7 @@ const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
     [10000, 99999, [50, 1, 63]],
 ];
 const LINES_CLASSBREAKS: cplethEls[] = [
-    [0, 19, [0, 255, 100]],
+    [0, 19, [62, 225, 67]],
     [20, 29, [50, 150, 127]], // slateish green
     [30, 44, [0, 127, 255]], // blue lighter
     [45, 59, [255, 200, 127]],
@@ -82,7 +82,7 @@ export const makeLinesLayer = (
     renderer: new ClassBreaksRenderer({
         field: "freq_wk",
         classBreakInfos: makeChoroplethLevels(LINES_CLASSBREAKS, true),
-        defaultSymbol: new SimpleLineSymbol({ color: "gray", width: 1 })
+        defaultSymbol: new SimpleLineSymbol({ color: "gray", width: 3 })
     }),
     toGraphics: toPolyline,
     popupTemplate: {

@@ -5,6 +5,16 @@ import Graphic from "@arcgis/core/Graphic";
 import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol";
 import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
 import { STLWKID } from "./data";
+
+// HELPER TO CREATE CUSTOM HIGHLIGHT SETTINGS
+export function newHighlightSetting(name: string, color: __esri.ColorProperties): __esri.HighlightOptionsProperties {
+    return {
+        name: name, color: color,
+        fillOpacity: 0.05, shadowColor: "black",
+        shadowOpacity: 0.4, shadowDifference: 0.2,
+    }
+}
+
 // choropleth levels, pass min val, max val, rgb val
 export type cplethEls = [number, number, number[]];
 
