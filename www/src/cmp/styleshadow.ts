@@ -113,8 +113,14 @@ calcite-slider {
     --calcite-slider-handle-fill-color: rgba(192, 204, 250, 0.5);
     --calcite-slider-accent-color: rgba(3, 11, 41, 0.5);
 }
+calcite-button {
+    --calcite-button-text-color: black;
+}
 `;
 export const MAP_STYLE = `
+calcite-button {
+    --calcite-button-text-color: black;
+}
 .esri-popup {
     max-height: 30% !important;
     z-index: 100;

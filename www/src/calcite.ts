@@ -36,6 +36,8 @@ export function buildCalciteTableBlock(
     return block;
 }
 
+// calcite notice with info button
+// closable block for medium amounts of text, naturally expands its container
 export function buildCalciteNotice(label: string, content: string): {
     notice: HTMLCalciteNoticeElement, btn: HTMLCalciteActionElement
 } {
@@ -68,10 +70,18 @@ export function buildCalciteNotice(label: string, content: string): {
     return {notice: notice, btn: btn};
 }
 
+// build a single calcite button
 function makeRtsBtn(txt: string): HTMLCalciteButtonElement {
-    const btn = document.createElement("calcite-button");
-    btn.textContent = txt.trim();
-    btn.style.setProperty("--calcite-button-text-color", "black");
+    // const btn = document.createElement("calcite-button");
+    // btn.textContent = txt.trim();
+    // btn.style.setProperty("--calcite-button-text-color", "black");
+    // btn.setAttribute("appearance", "outline");
+    // btn.setAttribute("scale", "s");
+    const btn = Object.assign(document.createElement("calcite-button"), {
+        textContent: txt.trim(),
+        appearance: "outline",
+        scale: "s",
+    });
     btn.setAttribute("appearance", "outline");
     btn.setAttribute("scale", "s");
     return btn;
@@ -147,3 +157,5 @@ export function buildCalciteAction(props: calciteActionProps): calciteActionRetu
     }
     return { action, tooltip }
 };
+
+
