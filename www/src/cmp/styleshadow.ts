@@ -39,10 +39,9 @@ calcite-panel {
     right: 0.8rem;
     bottom: 7.2rem;
     z-index: 10;
-    width: fit-content;
-    min-width: 18%;
     height: fit-content;
     max-height: 65%;
+    width: 300px;
     max-width: 98%;
 }
 #filterbar {
@@ -85,6 +84,8 @@ arcgis-zoom {
 arcgis-legend {
     color: black;
     font-weight: bold;
+    position: relative;
+    z-index: 20;
 }
 arcgis-search {
     position: absolute;
@@ -113,11 +114,34 @@ calcite-slider {
     --calcite-slider-handle-fill-color: rgba(192, 204, 250, 0.5);
     --calcite-slider-accent-color: rgba(3, 11, 41, 0.5);
 }
-`;
-export const MAP_STYLE = `
+calcite-button {
+    --calcite-button-text-color: black;
+}
 .esri-popup {
     max-height: 30% !important;
-    z-index: 100;
+    z-index: 100 !important;
+}
+.esri-popup__main-container {
+    z-index: 100 !important;
+    position: relative;
+}
+.esri-popup__main-container {
+    width: fit-content;
+    max-width: 50%;
+    background: rgba(115, 128, 137, 0.75) !important;
+}
+`;
+export const MAP_STYLE = `
+calcite-button {
+    --calcite-button-text-color: black;
+}
+.esri-popup {
+    max-height: 30% !important;
+    z-index: 100 !important;
+}
+.esri-popup__main-container {
+    z-index: 100 !important;
+    position: relative;
 }
 .esri-popup__main-container {
     width: fit-content;
@@ -152,5 +176,11 @@ div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-co
     margin-top: 0 !important;    
     margin-bottom: 0 !important;    
     text-align: left !important;
+}
+    .esri-component.esri-popup {
+    z-index: 200 !important;
+}
+.esri-component.esri-legend {
+    z-index: 50 !important;
 }
 `;

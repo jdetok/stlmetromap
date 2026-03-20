@@ -13,6 +13,24 @@ export function buildCalcitePanel(elementType: string, heading: string, baseMaps
     return panel;
 }
 
+export type calciteSliderBlock = {
+    heading: string,
+    sliderProps: Partial<HTMLCalciteSliderElement>,
+    onInput: (val: number) => Promise<void>,
+    cssClass?: string,
+    noticeTxt?: string,
+};
+export function buildCalciteSliderBlock(props: calciteSliderBlock): { block: HTMLCalciteBlockElement, slider: HTMLCalciteSliderElement } { 
+    const block = Object.assign(document.createElement('calcite-block'), {
+        heading: props.heading,
+        open: true,
+        className: props.cssClass ?? '',
+    });
+    const slider = Object.assign(document.createElement('calcite-slider'), { ...props.sliderProps });
+    slider.addEventListener('calciteSliderInput', async () => props.onInput(slider.value as number));
+    block.append(slider);
+    return { block, slider};
+};
 export function buildCalciteTableBlock(
     label: string, props: any, collapsible: boolean, open: boolean,
     buildTable: (props: unknown) => HTMLCalciteTableElement,
@@ -36,6 +54,8 @@ export function buildCalciteTableBlock(
     return block;
 }
 
+// calcite notice with info button
+// closable block for medium amounts of text, naturally expands its container
 export function buildCalciteNotice(label: string, content: string): {
     notice: HTMLCalciteNoticeElement, btn: HTMLCalciteActionElement
 } {
@@ -68,28 +88,31 @@ export function buildCalciteNotice(label: string, content: string): {
     return {notice: notice, btn: btn};
 }
 
-function makeRtsBtn(txt: string): HTMLCalciteButtonElement {
-    const btn = document.createElement("calcite-button");
-    btn.textContent = txt.trim();
-    btn.style.setProperty("--calcite-button-text-color", "black");
+// build a single calcite button
+function buildCalciteButton(txt: string, appearance?: string, scale?: string): HTMLCalciteButtonElement {
+    const btn = Object.assign(document.createElement("calcite-button"), {
+        textContent: txt.trim(),
+        appearance: appearance?.trim() ?? "outline",
+        scale: scale?.trim() ?? "s",
+    });
     btn.setAttribute("appearance", "outline");
     btn.setAttribute("scale", "s");
     return btn;
 }
 export function makeRoutesButtons(routeNames: string,
     onRouteClick: (route: string) => void,
-    onRoutesClick: (route: string[]) => void
+    onRoutesClick: (route: string | string[]) => void
 ): HTMLCalciteButtonElement[] {
     let routeBtns: HTMLCalciteButtonElement[] = [];
     if (routeNames) {
         routeNames.split(", ").forEach((route: string) => {
             if (route.includes("No bus stop")) return;
-            const btn = makeRtsBtn(route);
+            const btn = buildCalciteButton(route);
             btn.addEventListener("click", () => onRouteClick(route.trim()));
             routeBtns.push(btn);
         });
         if (routeBtns.length > 1) {
-            const allBtn = makeRtsBtn("Highlight Each");
+            const allBtn = buildCalciteButton("Highlight Each");
             allBtn.addEventListener("click", () => {
                 const routes = routeNames.split(", ").map(r => r.trim());
                 onRoutesClick(routes);
@@ -126,6 +149,7 @@ export type calciteActionProps = {
     onClick?: () => Promise<void>,
     tooltipProps?: calciteTooltipProps,
 }
+// return action with or without a tooltip. tooltip must be appended to the root as well
 export type calciteActionReturn = {
     action: HTMLCalciteActionElement,
     tooltip: HTMLCalciteTooltipElement | null,
