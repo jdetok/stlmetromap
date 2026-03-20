@@ -261,7 +261,7 @@ export class MapWindow extends HTMLElement {
             await this.populateRouteSelect();
 
             // ADD LISTENER ON ZOOM AMOUNT, RE RENDER FEATURES AT SPECIFIC POINTS
-            this.renderOnZoom();
+            // this.renderOnZoom();
 
             // open legend when bus stop layer has been created
             this.busStopsLayer.when(() => {

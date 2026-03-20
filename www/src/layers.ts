@@ -82,7 +82,7 @@ export const makeLinesLayer = (
     renderer: new ClassBreaksRenderer({
         field: "freq_wk",
         classBreakInfos: makeChoroplethLevels(LINES_CLASSBREAKS, true),
-        defaultSymbol: new SimpleLineSymbol({ color: "gray", width: 1 })
+        defaultSymbol: new SimpleLineSymbol({ color: "gray", width: 3 })
     }),
     toGraphics: toPolyline,
     popupTemplate: {
