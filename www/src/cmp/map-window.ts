@@ -22,10 +22,10 @@ import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
 import Graphic from "@arcgis/core/Graphic";
 import Polygon from "@arcgis/core/geometry/Polygon";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
-import { STLCOORDS, STLWKID, BASEMAP } from "../data.js";
+import { STLCOORDS, PROJID, BASEMAP } from "../data.js";
 import { STYLE, MAP_STYLE } from "./styleshadow.js";
-import { newHighlightSetting } from "../arcgis.js";
-import { buildCalciteAction, buildCalcitePanel, buildCalciteTableBlock, calciteActionProps } from "../calcite.js";
+import { newHighlightSetting, updateRenderedSizes } from "../arcgis.js";
+import { buildCalciteAction, buildCalcitePanel, buildCalciteSliderBlock, buildCalciteTableBlock, calciteActionProps } from "../calcite.js";
 import {
     FeatureLayerMeta, makeBusStopsLayer, makeLinesLayer, makePlacesLayer, LAYER_ML_STOPS, LAYER_CENSUS_COUNTIES,
     LAYER_CENSUS_TRACTS, LAYER_CYCLING, LAYER_AMTRAK, BUS_STOP_SIZE,
@@ -33,7 +33,6 @@ import {
 import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer.js";
 import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol.js";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer.js";
-import SimpleMarkerSymbol from "@arcgis/core/symbols/SimpleMarkerSymbol.js";
 
 // CUSTOM HIGHLIGHT SETTINGS
 const HL_PARKS = newHighlightSetting("parks", "mediumseagreen");
@@ -132,11 +131,13 @@ export class MapWindow extends HTMLElement {
 
     // LINES SLIDER
     private baseLineWidths: number[] = [];
-    private lineWidthSlider!: HTMLCalciteSliderElement;
+    private lineSizeSliderBlock!: HTMLCalciteBlockElement;
+    private lineSizeSlider!: HTMLCalciteSliderElement;
     
     private baseStopSizes: number[] = [];
+    private stopSliderBlock!: HTMLCalciteBlockElement;
     private stopSizeSlider!: HTMLCalciteSliderElement;
-    
+
     // CONSTRUCTOR
     public constructor() {
         super();
@@ -200,7 +201,7 @@ export class MapWindow extends HTMLElement {
             ymin: STLCOORDS.ymin,
             xmax: STLCOORDS.xmax,
             ymax: STLCOORDS.ymax,
-            spatialReference: {wkid: STLWKID}
+            spatialReference: {wkid: PROJID}
         } as __esri.Extent
 
         this.arcgisMap.addEventListener("arcgisViewReadyChange", async () => {
@@ -310,7 +311,7 @@ export class MapWindow extends HTMLElement {
             source: meta.source,
             objectIdField: "ObjectID",
             geometryType: meta.geometryType,
-            spatialReference: { wkid: STLWKID },
+            spatialReference: { wkid: PROJID },
             renderer: meta.renderer,
             popupTemplate: meta.popupTemplate,
             fields: meta.fields,
@@ -327,7 +328,7 @@ export class MapWindow extends HTMLElement {
             return data.features.map((f: any) => new Graphic({
                 geometry: new Polygon({
                     rings: f.geometry.rings,
-                    spatialReference: { wkid: STLWKID },
+                    spatialReference: { wkid: PROJID },
                 }),
                 attributes: f.attributes,
             }));
@@ -393,7 +394,7 @@ export class MapWindow extends HTMLElement {
         const result = await layer.queryFeatures({
             where: whereClause,
             returnGeometry: true,
-            outSpatialReference: { wkid: STLWKID },
+            outSpatialReference: { wkid: PROJID },
         });
 
         if (result.features.length) {
@@ -508,8 +509,7 @@ export class MapWindow extends HTMLElement {
         const panel = document.createElement("calcite-panel");
         panel.heading = 'Sliders';
         panel.hidden = true; panel.classList.add('action-panel');
-        panel.appendChild(this.buildLineWidthSlider());
-        panel.appendChild(this.buildStopSizeSlider());
+        panel.append(this.buildLineWidthSlider(), this.buildStopSizeSlider());
         this.slidersPanel = panel;
         return panel;
     }
@@ -649,7 +649,7 @@ export class MapWindow extends HTMLElement {
         const result = await this.busStopsLayer.queryFeatures({
             where: whereClause,
             returnGeometry: true,
-            outSpatialReference: { wkid: STLWKID },
+            outSpatialReference: { wkid: PROJID },
         });
         if (result.features.length) {
             await this.arcgisMap.view.goTo(result.features, { duration: 600 });
@@ -674,75 +674,58 @@ export class MapWindow extends HTMLElement {
         const result = await this.busStopsLayer.queryFeatures({
             where: whereClause,
             returnGeometry: true,
-            outSpatialReference: { wkid: STLWKID },
+            outSpatialReference: { wkid: PROJID },
         });
         if (result.features.length) {
             await this.arcgisMap.view.goTo(result.features, { duration: 600 });
         }
     }
     private buildLineWidthSlider(): HTMLCalciteBlockElement {
-        const container = document.createElement('calcite-block');
-        container.heading = 'Route Line Width';
-        container.open = true;
-        container.className = 'line-width-control';
-        
-        const slider = Object.assign(document.createElement('calcite-slider'), {
-            min: 0.25,
-            max: 15,
-            step: 0.25,
-            value: 1,
-            snap: true
+        const { block, slider} = buildCalciteSliderBlock({
+            heading: 'Route Line Width',
+            cssClass: 'line-width-control',
+            onInput: async () => {
+                this.linesLayer.renderer = updateRenderedSizes(
+                    (this.linesLayer.renderer as ClassBreaksRenderer),
+                    this.baseLineWidths,
+                    this.lineSizeSlider.value as number,
+                ).clone();
+            },
+            sliderProps: {
+                min: 0.25,   
+                max: 15,
+                step: 0.25,
+                value: 1,
+                snap: true 
+            },
         });
-
-        slider.addEventListener('calciteSliderInput', () => {
-            this.updateLineWidths(slider.value);
-        });
-
-        this.lineWidthSlider = slider;
-        container.append(slider);
-
-        return container;
-    }
-    private updateLineWidths(mult: number) {
-        const renderer = this.linesLayer?.renderer as ClassBreaksRenderer;
-        if (!renderer) return;
-        renderer.classBreakInfos.forEach((cb, i) => {
-            (cb.symbol as SimpleLineSymbol).width = this.baseLineWidths[i] * mult;
-        });
-        this.linesLayer.renderer = renderer.clone();
+        this.lineSizeSliderBlock = block;
+        this.lineSizeSlider = slider;
+        return this.lineSizeSliderBlock;
     }
     private buildStopSizeSlider(): HTMLCalciteBlockElement {
-        const container = document.createElement('calcite-block');
-        container.heading = 'MetroBus Stop Size';
-        container.open = true;
-        container.className = 'stop-size-control';
-        
-        const slider = Object.assign(document.createElement('calcite-slider'), {
-            min: 0.1,
-            max: 3,
-            step: 0.1,
-            value: 1,
-            snap: true
+        const { block, slider} = buildCalciteSliderBlock({
+            heading: 'MetroBus Stop Size',
+            cssClass: 'stop-size-control',
+            // onInput: async () => this.updateStopSize(),
+            onInput: async () => {
+                this.busStopsLayer.renderer = updateRenderedSizes(
+                    (this.busStopsLayer.renderer as UniqueValueRenderer),
+                    this.baseStopSizes,
+                    this.stopSizeSlider.value as number,
+                ).clone();
+            },
+            sliderProps: {
+                min: 0.1,   
+                max: 3,
+                step: 0.1,
+                value: 1,
+                snap: true 
+            },
         });
-
-        slider.addEventListener('calciteSliderInput', () => {
-            this.updateStopSize(slider.value);
-        });
-
+        this.stopSliderBlock = block;
         this.stopSizeSlider = slider;
-        container.append(slider);
-
-        return container;
-    }
-    private updateStopSize(mult: number) {
-        const renderer = this.busStopsLayer?.renderer as UniqueValueRenderer;
-        if (!renderer) return;
-
-        const sizeVar = renderer.visualVariables![0] as __esri.SizeVariable;
-        sizeVar.stops!.forEach((stop, i) => {
-            (stop as __esri.SizeStop).size = this.baseStopSizes[i] * mult;
-        });
-        this.busStopsLayer.renderer = renderer.clone();
+        return this.stopSliderBlock;
     }
     private addStyling(): HTMLStyleElement {
         return Object.assign(document.createElement("style"), { textContent: STYLE });

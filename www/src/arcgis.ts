@@ -4,7 +4,10 @@ import Polygon from "@arcgis/core/geometry/Polygon.js";
 import Graphic from "@arcgis/core/Graphic";
 import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol";
 import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
-import { STLWKID } from "./data";
+import { PROJID } from "./data";
+import Renderer from "@arcgis/core/renderers/Renderer";
+import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
+import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer";
 
 // HELPER TO CREATE CUSTOM HIGHLIGHT SETTINGS
 export function newHighlightSetting(name: string, color: __esri.ColorProperties): __esri.HighlightOptionsProperties {
@@ -40,7 +43,7 @@ export const toPolygon = (data: any): Graphic[] => {
         return new Graphic({
             geometry: new Polygon({
                 rings: (f.geometry.type === "MultiPolygon") ? f.geometry.coordinates.flat(1) : f.geometry.coordinates,
-                spatialReference: { wkid: STLWKID },
+                spatialReference: { wkid: PROJID },
             }),
             attributes: f.properties,
         })
@@ -54,7 +57,7 @@ export const toPoint = (data: any): Graphic[] => {
             geometry: new Point({
                 longitude: f.geometry.coordinates[0],
                 latitude: f.geometry.coordinates[1],
-                spatialReference: { wkid: STLWKID },
+                spatialReference: { wkid: PROJID },
             }),
             attributes: {
                 ...f.properties,
@@ -69,7 +72,7 @@ export const toPolyline = (data: any): Graphic[] => {
         return new Graphic({
             geometry: new Polyline({
                 paths: f.geometry.coordinates,
-                spatialReference: { wkid: STLWKID },
+                spatialReference: { wkid: PROJID },
             }),
             attributes: {
                 ...f.properties,
@@ -79,3 +82,20 @@ export const toPolyline = (data: any): Graphic[] => {
         })
     })
 };
+
+
+export type renderers = UniqueValueRenderer | ClassBreaksRenderer;
+export function updateRenderedSizes(renderer: Renderer, baseSizes: number[], mult: number): UniqueValueRenderer | ClassBreaksRenderer {
+    switch (renderer.type) {
+        case 'unique-value': {
+            const sizeVar = (renderer as UniqueValueRenderer).visualVariables![0] as __esri.SizeVariable;
+            sizeVar.stops!.forEach((stop, i) => (stop as __esri.SizeStop).size = baseSizes[i] * mult);
+            break;
+        }
+        case 'class-breaks': {
+            (renderer as ClassBreaksRenderer).classBreakInfos.forEach((cb, i) => (cb.symbol as SimpleLineSymbol).width = baseSizes[i] * mult);
+            break;
+        }
+    };
+    return renderer as renderers;
+}
