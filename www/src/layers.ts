@@ -16,9 +16,7 @@ import {
     ML_LAYER_URL, ML_LAYER_TTL, BUS_LAYER_TTL, BUS_LAYER_URL,
     CYCLE_LAYER_URL, CYCLE_LAYER_TTL, CYCLING_FIELDS,
     STOP_FIELDINFOS, STOP_FIELDS, AMTRAK_FIELDS, AMTRAK_FIELDINFOS,
-    PLACE_FIELDS, PLACE_FIELDINFOS,
-    LINES_FIELDS,
-    LINES_FIELDINFOS
+    PLACE_FIELDS, PLACE_FIELDINFOS, LINES_FIELDS, LINES_FIELDINFOS
 } from "./data.js";
 
 export type FeatureLayerMeta = {
@@ -31,6 +29,7 @@ export type FeatureLayerMeta = {
     outFields?: string[];
     geometryType?: 'point' | 'polygon' | 'polyline';
     toGraphics?: (data: any) => Graphic[];
+    legendEnabled?: boolean;
 }
 
 export const BUS_STOP_SIZE = 4;
@@ -183,7 +182,6 @@ export const makeMetroLinkLayer = (
             const attrs = feature.graphic?.attributes ?? feature.attributes; 
             const div = document.createElement("div");
             const routeNames: string = attrs?.route_names;
-            console.log(attrs);
             const routeBtns = makeRoutesButtons(routeNames, onRouteClick, onRoutesClick);
 
             // fields table
@@ -221,6 +219,7 @@ export const makeBusStopsLayer = (
         visualVariables: [
             new SizeVariable({
                 field: "route_count",
+                // legendOptions: { showLegend: false },
                 stops: [
                     { value: 1, size: BUS_STOP_SIZE },
                     { value: 2, size: BUS_STOP_SIZE * 1.5 },
@@ -402,69 +401,6 @@ export const makePlacesLayer = (
     },
     toGraphics: toPolygon,
 });
-export const LAYER_ML_STOPS: FeatureLayerMeta = {
-    title: ML_LAYER_TTL,
-    dataUrl: ML_LAYER_URL,
-    geometryType: "point",
-    fields: STOP_FIELDS,
-    renderer: new UniqueValueRenderer({
-        field: "route_ids",
-        uniqueValueInfos: [
-            {
-                value: "MLR",
-                label: "Red Line",
-                symbol: new SimpleMarkerSymbol({
-                    style: "circle",
-                    color: RAIL_INNER_COLOR,
-                    size: ML_STOP_SIZE,
-                    outline: new SimpleLineSymbol({
-                        color: 'red',
-                        width: 1,
-                        style: "solid",
-                    })
-                }),
-            },
-            {
-                value: "MLB",
-                label: "Blue Line",
-                symbol: new SimpleMarkerSymbol({
-                    style: "circle",
-                    color: RAIL_INNER_COLOR,
-                    size: ML_STOP_SIZE,
-                    outline: new SimpleLineSymbol({
-                        color: 'blue',
-                        width: 1,
-                        style: "solid",
-                    })
-                }),
-            },
-            {
-                value: "MLB, MLR",
-                label: "Blue/Red Lines",
-                symbol: new SimpleMarkerSymbol({
-                    style: "circle",
-                    color: RAIL_INNER_COLOR,
-                    size: ML_STOP_SIZE,
-                    outline: new SimpleLineSymbol({
-                        color: 'purple',
-                        width: 1,
-                        style: "solid",
-                    })
-                }),
-            },
-        ],
-    }),
-    popupTemplate: {
-        title: `Light Rail Stop: {stop_name}`,
-        content: [
-            {
-                type: "fields",
-                fieldInfos: STOP_FIELDINFOS
-            },
-        ],
-    },
-    toGraphics: toPoint,
-};
 
 const AMTRAK_LAYER_TTL = "Amtrak";
 const AMTRAK_LAYER_URL = "/layers/amtrak";
@@ -473,6 +409,7 @@ const AMTRAK_SIZE = 18;
 export const LAYER_AMTRAK: FeatureLayerMeta = {
     title: AMTRAK_LAYER_TTL,
     dataUrl: AMTRAK_LAYER_URL,
+    legendEnabled: false,
     geometryType: "point",
     fields: AMTRAK_FIELDS,
     renderer: new SimpleRenderer({
@@ -546,7 +483,6 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
     },
     toGraphics: toPolygon,
 };
-
 
 export const LAYER_CYCLING: FeatureLayerMeta = {
     title: CYCLE_LAYER_TTL,

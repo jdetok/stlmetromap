@@ -44,7 +44,7 @@ calcite-panel {
     width: 300px;
     max-width: 98%;
 }
-#filterbar {
+calcite-select {
     position: absolute;
     bottom: 1.6rem;
     left: 0.8rem;
