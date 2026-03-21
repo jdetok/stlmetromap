@@ -295,3 +295,55 @@ export async function buildCalciteSelect(props: calciteSelectProps): Promise<HTM
     }
     return sel;
 }
+
+
+export type calciteComboboxProps = {
+    heading: string,
+    onSelChange: (vals: string[]) => void,
+    cssClass?: string,
+    optsProps?: {
+        allOpt?: calciteOptionProps,
+        dataUrl?: string,
+        mapFeatures: (features: any[]) => any[],
+    },
+}
+
+export async function buildCalciteCombobox(props: calciteComboboxProps): Promise<HTMLCalciteComboboxElement> {
+    const combo = Object.assign(document.createElement('calcite-combobox'), {
+        heading: props.heading,
+        label: props.heading,
+        selectionMode: 'multiple',
+        placeholderIcon: 'bus',
+    });
+    if (props.cssClass) combo.classList.add(props.cssClass);
+    combo.addEventListener('calciteComboboxChange', () => {
+        const vals = Array.from(combo.selectedItems).map((i: any) => i.value);
+        props.onSelChange(vals);
+    });
+    if (props.optsProps) {
+        let builtOpts: HTMLCalciteComboboxItemElement[] = [];
+        if (props.optsProps.allOpt) {
+            builtOpts.push(Object.assign(document.createElement('calcite-combobox-item'), {
+                textLabel: props.optsProps.allOpt.label,
+                value: props.optsProps.allOpt.value,
+            }));
+        }
+        if (props.optsProps.dataUrl) {
+            try {
+                const data = await fetch(props.optsProps.dataUrl).then(r => r.json());
+                const opts = props.optsProps.mapFeatures(data.features);
+                for (const opt of opts) {
+                    builtOpts.push(Object.assign(document.createElement('calcite-combobox-item'), {
+                        textLabel: opt,
+                        value: opt,
+                    }));
+                }
+            } catch (e) {
+                throw new Error(`failed to fetch data from ${props.optsProps.dataUrl}: ${e}`);
+            }
+        }
+        if (builtOpts.length === 0) throw new Error('no options');
+        combo.append(...builtOpts);
+    }
+    return combo;
+}

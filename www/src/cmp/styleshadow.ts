@@ -13,6 +13,8 @@ export const STYLE = `
     --calcite-spacing-sm: 0.25rem;
     --calcite-spacing-md: 0.5rem;
     --calcite-spacing-lg: 0.75rem;
+    --route-combo-width: 220px;
+    --route-combo-left: 0.8rem;
 }
 #filterbar {
     left: 0.8rem;
@@ -44,22 +46,26 @@ calcite-panel {
     width: 300px;
     max-width: 98%;
 }
+calcite-combobox {
+    --calcite-combobox-background-color: var(--popup-bg);
+    position: absolute;
+    bottom: 1.6rem;
+    z-index: 10;
+    width: var(--route-combo-width);
+    left: var(--route-combo-left);
+}
+calcite-panel.route-info {
+    left: calc(var(--route-combo-width) + var(--route-combo-left) + 0.5rem);
+    right: unset;
+    bottom: 1.6rem;
+}
+
 calcite-select {
     position: absolute;
     bottom: 1.6rem;
     left: 0.8rem;
     z-index: 10;
     width: 220px;
-}
-calcite-panel.filter {
-    left: 0.8rem;
-    right: unset;
-}
-
-calcite-panel.route-info {
-    left: 0.8rem;
-    right: unset;
-    bottom: 4rem;
 }
 
 calcite-panel > * {
