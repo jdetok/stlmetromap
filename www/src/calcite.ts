@@ -1,4 +1,6 @@
-import LocalBasemapsSource from "@arcgis/core/widgets/BasemapGallery/support/LocalBasemapsSource.js";
+// calcite.ts
+// Helper factories for building calcite elements, imported in map-window custom element
+
 // HELPER FOR BUIDING GENERIC CALCITE PANEL WITH THE PASSED ELEMENT AS ITS CHILD
 export function buildCalcitePanel(props: {
     elementType?: string, heading?: string, closable?: boolean, cssClass?: string
@@ -13,6 +15,15 @@ export function buildCalcitePanel(props: {
         panel.appendChild(content);
     }
     return panel;
+}
+export type calciteActionBarProps = {
+    layout?: string;
+    cssClass?: string;
+}
+export function buildCalciteActionBar(props: calciteActionBarProps): HTMLCalciteActionBarElement {
+    const actBar = Object.assign(document.createElement("calcite-action-bar"), { layout: props.layout ?? 'horizontal' });
+    if (props.cssClass) actBar.classList.add(props.cssClass);
+    return actBar;
 }
 export function buildCalciteLegendPanel(heading: string): HTMLCalcitePanelElement {
     const panel = document.createElement("calcite-panel");

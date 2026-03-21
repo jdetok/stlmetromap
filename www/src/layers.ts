@@ -16,9 +16,7 @@ import {
     ML_LAYER_URL, ML_LAYER_TTL, BUS_LAYER_TTL, BUS_LAYER_URL,
     CYCLE_LAYER_URL, CYCLE_LAYER_TTL, CYCLING_FIELDS,
     STOP_FIELDINFOS, STOP_FIELDS, AMTRAK_FIELDS, AMTRAK_FIELDINFOS,
-    PLACE_FIELDS, PLACE_FIELDINFOS,
-    LINES_FIELDS,
-    LINES_FIELDINFOS
+    PLACE_FIELDS, PLACE_FIELDINFOS, LINES_FIELDS, LINES_FIELDINFOS
 } from "./data.js";
 
 export type FeatureLayerMeta = {
@@ -184,7 +182,6 @@ export const makeMetroLinkLayer = (
             const attrs = feature.graphic?.attributes ?? feature.attributes; 
             const div = document.createElement("div");
             const routeNames: string = attrs?.route_names;
-            console.log(attrs);
             const routeBtns = makeRoutesButtons(routeNames, onRouteClick, onRoutesClick);
 
             // fields table
@@ -486,7 +483,6 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
     },
     toGraphics: toPolygon,
 };
-
 
 export const LAYER_CYCLING: FeatureLayerMeta = {
     title: CYCLE_LAYER_TTL,

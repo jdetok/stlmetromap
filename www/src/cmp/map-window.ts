@@ -1,3 +1,6 @@
+// cmp/map-window.ts
+// Interactive map custom element definition
+// Imports generic helpers from calcite.ts and arcgis.ts for buildng specific elements of the map
 
 import "@arcgis/map-components/dist/components/arcgis-basemap-gallery";
 import "@arcgis/map-components/dist/components/arcgis-map";
@@ -29,6 +32,7 @@ import {
     buildCalciteAction, buildCalcitePanel, buildCalciteSliderBlock, buildCalciteTableBlock, calciteActionProps,
     buildCalciteLegendPanel,buildCalciteSelect,
     buildCalciteTable,
+    buildCalciteActionBar,
  } from "../calcite.js";
 import {
     FeatureLayerMeta, makeBusStopsLayer, makeMetroLinkLayer, makeLinesLayer, makePlacesLayer, LAYER_CENSUS_COUNTIES,
@@ -426,9 +430,7 @@ export class MapWindow extends HTMLElement {
     }
     // BUILD CALCITE ACTION BAR WITH TOGGLE BUTTONS FOR HIGHLIGHTING FEATURES
     private buildToggleBar(): actbarWithTooltips {
-        const actionBar = document.createElement("calcite-action-bar");
-        actionBar.layout = "horizontal";
-        actionBar.classList.add("place_toggles");
+        const actionBar = buildCalciteActionBar({ layout: 'horizontal', cssClass: 'place_toggles' });
         let tooltips: HTMLCalciteTooltipElement[] = [];
 
         for (const a of this.TOGGLE_ACTIONS) {
@@ -506,9 +508,8 @@ export class MapWindow extends HTMLElement {
     }
     // BUILD CALCITE ACTION BAR, ACTIONS DISPLAY CALCITE PANELS
     private buildMainActionBar(): actbarWithTooltips {
-        const actionBar = document.createElement("calcite-action-bar");
-        actionBar.layout = "horizontal";
-
+        const actionBar = buildCalciteActionBar({ layout: 'horizontal' });
+    
         let tooltips: HTMLCalciteTooltipElement[] = [];
 
         for (const a of MAIN_ACTIONS) {
@@ -578,9 +579,7 @@ export class MapWindow extends HTMLElement {
         return panel;
     }
     private buildSlidersPanel(): HTMLCalcitePanelElement {
-        const panel = document.createElement("calcite-panel");
-        panel.heading = 'Sliders';
-        panel.hidden = true; panel.classList.add('action-panel');
+        const panel = buildCalcitePanel({ heading: 'Sliders', cssClass: 'action-panel' });
         panel.append(
             this.buildLineSizeSlider(),
             this.buildBusStopSizeSlider(),
@@ -697,7 +696,6 @@ export class MapWindow extends HTMLElement {
             if (routes.some(r => r.includes("MetroLink"))) {
                 // lines layer stores metro routes as "MetroLink Red Line" rather than "MLR-MetroLink Red Line"
                 whereLine = (routes as string[]).map(r => `route_desc like '%${r.substring(4)}%'`).join(" or ");
-                console.log(whereLine)
             } else {
                 whereLine = (routes as string[]).map(r => `route_desc like '%${r}%'`).join(" or ");
             }

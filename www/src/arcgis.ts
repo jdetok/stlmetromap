@@ -1,3 +1,6 @@
+// arcgis.ts
+// Helpers for creating ArcGIS features/graphics 
+
 import Point from "@arcgis/core/geometry/Point";
 import Polyline from "@arcgis/core/geometry/Polyline";
 import Polygon from "@arcgis/core/geometry/Polygon.js";
