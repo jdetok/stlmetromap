@@ -13,15 +13,11 @@ export function buildCalcitePanel(elementType: string, heading: string, baseMaps
     panel.appendChild(content);
     return panel;
 }
-export function buildCalciteLegendPanel(heading: string, container: HTMLElement): HTMLCalcitePanelElement {
+export function buildCalciteLegendPanel(heading: string): HTMLCalcitePanelElement {
     const panel = document.createElement("calcite-panel");
     panel.heading = heading;
     panel.hidden = true;
     const content = document.createElement('arcgis-legend');
-        // legendStyle: {
-        //     type: layout,
-        //     layout: 'auto',
-        // }
     panel.append(content);
     return panel;
 }
