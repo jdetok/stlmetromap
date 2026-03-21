@@ -112,7 +112,101 @@ export const makeLinesLayer = (
         }
     }
 });
+export const makeMetroLinkLayer = (
+    onRouteClick: (route: string) => void,
+    onRoutesClick: (route: string | string[]) => void
+): FeatureLayerMeta => ({
+    title: ML_LAYER_TTL,
+    dataUrl: ML_LAYER_URL,
+    geometryType: "point",
+    fields: STOP_FIELDS,
+    renderer: new UniqueValueRenderer({
+        visualVariables: [
+            new SizeVariable({
+                field: "route_count",
+                stops: [
+                    { value: 1, size: ML_STOP_SIZE },
+                    { value: 2, size: ML_STOP_SIZE * 1.2 },
+                ]
+            }),
+        ],
+        field: "route_ids",
+        uniqueValueInfos: [
+            {
+                value: "MLR",
+                label: "Red Line",
+                symbol: new SimpleMarkerSymbol({
+                    style: "circle",
+                    color: RAIL_INNER_COLOR,
+                    size: ML_STOP_SIZE,
+                    outline: new SimpleLineSymbol({
+                        color: 'red',
+                        width: 1,
+                        style: "solid",
+                    })
+                }),
+            },
+            {
+                value: "MLB",
+                label: "Blue Line",
+                symbol: new SimpleMarkerSymbol({
+                    style: "circle",
+                    color: RAIL_INNER_COLOR,
+                    size: ML_STOP_SIZE,
+                    outline: new SimpleLineSymbol({
+                        color: 'blue',
+                        width: 1,
+                        style: "solid",
+                    })
+                }),
+            },
+            {
+                value: "MLB, MLR",
+                label: "Blue/Red Lines",
+                symbol: new SimpleMarkerSymbol({
+                    style: "circle",
+                    color: RAIL_INNER_COLOR,
+                    size: ML_STOP_SIZE,
+                    outline: new SimpleLineSymbol({
+                        color: 'purple',
+                        width: 1,
+                        style: "solid",
+                    })
+                }),
+            },
+        ],
+    }),
+    popupTemplate: {
+        title: `Light Rail Stop: {stop_name}`,
+        outFields: ["*"],
+        content: (feature: any) => {
+            const attrs = feature.graphic?.attributes ?? feature.attributes; 
+            const div = document.createElement("div");
+            const routeNames: string = attrs?.route_names;
+            console.log(attrs);
+            const routeBtns = makeRoutesButtons(routeNames, onRouteClick, onRoutesClick);
 
+            // fields table
+            const tbl = document.createElement("table");
+
+            // add each route as a button
+            const row = tbl.insertRow();
+            row.insertCell().textContent = "MetroLink Routes Served:";
+            row.insertCell().append(...routeBtns);
+
+            STOP_FIELDINFOS.forEach(({ fieldName, label }) => {
+                if (fieldName === "route_names") return; // handled separately
+                const row = tbl.insertRow();
+                row.insertCell().textContent = label;
+                row.insertCell().textContent = attrs?.[fieldName] ?? "—";
+            });
+            div.appendChild(tbl);
+
+            return div;
+        }
+    },
+    toGraphics: toPoint,
+});
 export const makeBusStopsLayer = (
     onRouteClick: (route: string) => void,
     onRoutesClick: (route: string | string[]) => void

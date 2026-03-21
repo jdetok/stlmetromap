@@ -85,7 +85,6 @@ export const toPolyline = (data: any): Graphic[] => {
     })
 };
 
-
 export type renderers = UniqueValueRenderer | ClassBreaksRenderer;
 export function updateRenderedSizes(renderer: Renderer, baseSizes: number[], mult: number): UniqueValueRenderer | ClassBreaksRenderer {
     switch (renderer.type) {
