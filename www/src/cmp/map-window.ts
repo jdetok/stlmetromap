@@ -30,9 +30,10 @@ import { STYLE, MAP_STYLE } from "./styleshadow.js";
 import { newHighlightSetting, queryLayer, updateRenderedSizes } from "../arcgis.js";
 import {
     buildCalciteAction, buildCalcitePanel, buildCalciteSliderBlock, buildCalciteTableBlock, calciteActionProps,
-    buildCalciteLegendPanel,buildCalciteSelect,
+    buildCalciteLegendPanel,buildCalciteSelect, buildCalciteCombobox,
     buildCalciteTable,
     buildCalciteActionBar,
+    buildCalciteDropdown,
  } from "../calcite.js";
 import {
     FeatureLayerMeta, makeBusStopsLayer, makeMetroLinkLayer, makeLinesLayer, makePlacesLayer, LAYER_CENSUS_COUNTIES,
@@ -139,6 +140,7 @@ export class MapWindow extends HTMLElement {
     // ROUTE FILTER SELECTOR
     private routesData: any[] = [];
     private routeSelect!: HTMLCalciteSelectElement;
+    private routeCombobox!: HTMLCalciteDropdownElement;
     private routeInfoPanel!: HTMLCalcitePanelElement;
 
     // ACTION BAR PANELS
@@ -216,8 +218,8 @@ export class MapWindow extends HTMLElement {
     }
     // build sections requiring async
     async connectedCallback(): Promise<void> {
-        this.routeSelect = await this.buildRoutesFilter();
-        this.shadowRoot?.append(this.routeSelect);
+        this.routeCombobox = await this.buildRoutesFilter();
+        this.shadowRoot?.append(this.routeCombobox);
     }
     disconnectedCallback(): void {
         this.arcgisMap?.remove();
@@ -227,7 +229,8 @@ export class MapWindow extends HTMLElement {
         for (const [meta, fn] of this.namedLayerMetas) {
             this[meta] = fn(
                 (route: string | string[]) => { this.filterByRoutes(route); this.showRouteInfo(route as string); },
-                (routes:string | string[]) => { this.filterByRoutes(routes); }
+                (routes: string | string[]) => { this.filterByRoutes(routes); this.routeInfoPanel.closed = true; }
+                
             );
         }
     }
@@ -430,7 +433,7 @@ export class MapWindow extends HTMLElement {
     }
     // BUILD CALCITE ACTION BAR WITH TOGGLE BUTTONS FOR HIGHLIGHTING FEATURES
     private buildToggleBar(): actbarWithTooltips {
-        const actionBar = buildCalciteActionBar({ layout: 'horizontal', cssClass: 'place_toggles' });
+        const actionBar = buildCalciteActionBar({ layout: window.innerWidth < 900 ? 'vertical' : 'horizontal', cssClass: 'place_toggles' });
         let tooltips: HTMLCalciteTooltipElement[] = [];
 
         for (const a of this.TOGGLE_ACTIONS) {
@@ -654,15 +657,19 @@ export class MapWindow extends HTMLElement {
         this.metroStopSizeSlider = slider;
         return this.metroStopSliderBlock;
     }
-        // BUILD A CALCITE SELECT TO FILTER BY BUS ROUTE
-    private async buildRoutesFilter(): Promise<HTMLCalciteSelectElement> {
-        const sel = await buildCalciteSelect({
-            heading: "Route",
-            onSelChange: (val: string) => {
-                this.filterByRoutes(val);
-                this.showRouteInfo(val);
-                if (!val) {
+    // BUILD A CALCITE SELECT TO FILTER BY BUS ROUTE
+    private async buildRoutesFilter(): Promise<HTMLCalciteDropdownElement> {
+        const sel = await buildCalciteDropdown({
+            heading: "Select MetroBus Routes",
+            placeholder: "",
+            selectMode: 'multiple',
+            icon: "bus",
+            onSelChange: (vals: string[]) => {
+                this.filterByRoutes(vals);
+                this.showRouteInfo(vals[0]);
+                if (!vals || vals.length > 1) {
                     this.routeInfoPanel.hidden = true;
+                    // this.clearStopsFX();
                 }
             },
             optsProps: {
@@ -670,13 +677,14 @@ export class MapWindow extends HTMLElement {
                 dataUrl: '/layers/routes',
                 mapFeatures: (features) => {
                     this.routesData = features;
-                    return features.map((f: any) => f.properties.route_desc).sort();
+                    return features.map((f: any) => f.properties.route_desc.replace("'", '')).sort();
                 }
             }
-        });
-        this.routeSelect = sel;
+        }, true);
+        this.routeCombobox = sel;
         return sel;
     }
+
     // HIGHLIGHT ALL STOPS FROM SEVERAL BUS ROUTES
     private async filterByRoutes(routeNames: string | string[]): Promise<void> {
         const routes = Array.isArray(routeNames) ? routeNames : [routeNames];
@@ -711,7 +719,7 @@ export class MapWindow extends HTMLElement {
             layerView.featureEffect = new FeatureEffect({
                 filter: new FeatureFilter({ where: i < (layers.length - 1) ? whereStop : whereLine }),
                 includedEffect: "bloom(1, 1px, 0.3) drop-shadow(2px 2px 4px black) brightness(2)",
-                excludedEffect: "opacity(60%) brightness(1)"
+                // excludedEffect: "opacity(60%) brightness(1)"
             });
         })
         

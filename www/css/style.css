@@ -67,7 +67,7 @@ map-window {
         flex-direction: column;
     }
 }
-@media ( max-height: 900px ) {
+@media ( max-height: 1400px ) {
     .subt {
         display: none;
     }
@@ -83,6 +83,7 @@ map-window {
 @media ( max-width: 900px ) {
     .long { display: none; }
     .short { display: inline; }
+    .ttl h1 { font-size: 1.2rem; }
 }
 
 calcite-tooltip {

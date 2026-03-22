@@ -158,7 +158,7 @@ export function buildCalciteNotice(label: string, content: string): {
 }
 
 // build a single calcite button
-function buildCalciteButton(txt: string, appearance?: string, scale?: string): HTMLCalciteButtonElement {
+function buildCalciteButton(txt: string, appearance?: string, scale?: string, icon?: string): HTMLCalciteButtonElement {
     const btn = Object.assign(document.createElement("calcite-button"), {
         textContent: txt.trim(),
         appearance: appearance?.trim() ?? "outline",
@@ -166,6 +166,7 @@ function buildCalciteButton(txt: string, appearance?: string, scale?: string): H
     });
     btn.setAttribute("appearance", "outline");
     btn.setAttribute("scale", "s");
+    if (icon) btn.iconStart = icon;
     return btn;
 }
 export function makeRoutesButtons(routeNames: string,
@@ -256,6 +257,20 @@ export type calciteSelectProps = {
         mapFeatures: (features: any[]) => any[],
     },
 }
+export type calciteComboboxProps = {
+    heading: string,
+    onSelChange: (vals: string[]) => void,
+    cssClass?: string,
+    placeholder?: string,
+    icon?: string,
+    selectMode?: 'single' | 'single-persist' | 'multiple',
+    optsProps?: {
+        allOpt?: calciteOptionProps,
+        dataUrl?: string,
+        mapFeatures: (features: any[]) => any[],
+    },
+}
+
 export async function buildCalciteSelect(props: calciteSelectProps): Promise<HTMLCalciteSelectElement> {
     const sel = Object.assign(document.createElement('calcite-select'), {
         heading: props.heading,
@@ -295,3 +310,105 @@ export async function buildCalciteSelect(props: calciteSelectProps): Promise<HTM
     }
     return sel;
 }
+
+// rather than combobox, create a dropdown with button and dropdown group selection multiple
+export async function buildCalciteDropdown(props: calciteComboboxProps, clearBtn?: boolean): Promise<HTMLCalciteDropdownElement> {
+    const down = Object.assign(document.createElement('calcite-dropdown'), {
+        width: 'm',
+        closeOnSelectDisabled: true,
+    });
+    if (props.cssClass) down.classList.add(props.cssClass);
+
+    const btn = Object.assign(buildCalciteButton(props.heading), { slot: 'trigger' });
+    if (props.icon) btn.iconStart = props.icon;
+    const dropGroup = Object.assign(document.createElement('calcite-dropdown-group'), {
+        groupTitle: props.heading,
+        selectionMode: props.selectMode,
+    });
+
+    if (props.optsProps) {
+        let builtOpts: HTMLCalciteDropdownItemElement[] = [];
+
+        if (props.optsProps.dataUrl) {
+            try {
+                const data = await fetch(props.optsProps.dataUrl).then(r => r.json());
+                const opts = props.optsProps.mapFeatures(data.features);
+                for (const opt of opts) {
+                    builtOpts.push(Object.assign(document.createElement('calcite-dropdown-item'), {
+                        label: opt,
+                        textContent: opt,
+                    }));
+                }
+            } catch (e) {
+                throw new Error(`failed to fetch data from ${props.optsProps.dataUrl}: ${e}`);
+            }
+        }
+        if (builtOpts.length === 0) {
+            throw new Error('no options');
+        }
+        dropGroup.append(...builtOpts);
+    }
+    down.addEventListener('calciteDropdownSelect', () => {
+        const vals = Array.from(dropGroup.querySelectorAll('calcite-dropdown-item'))
+            .filter((i: any) => i.selected)
+            .map((i: any) => i.textContent);
+        console.log(vals);
+        props.onSelChange(vals);    
+    });
+
+    if (clearBtn) {
+        const clearBtn = buildCalciteButton('')
+        clearBtn.slot = 'trigger';
+        clearBtn.iconStart = 'reset';
+        clearBtn.addEventListener('click', () => {
+            dropGroup.querySelectorAll('calcite-dropdown-item').forEach((item: HTMLCalciteDropdownItemElement) => item.selected = false);
+            props.onSelChange(["*"]);
+        })
+        down.append(clearBtn);
+    }
+    
+    down.append(btn, dropGroup);
+    return down;
+}
+
+export async function buildCalciteCombobox(props: calciteComboboxProps): Promise<HTMLCalciteComboboxElement> {
+    const combo = Object.assign(document.createElement('calcite-combobox'), {
+        heading: props.heading,
+        label: props.heading,
+        selectionMode: props.selectMode ?? 'multiple',
+        placeholderIcon: props.icon ?? 'filter',
+        placeholder: props.placeholder,
+    });
+    if (props.cssClass) combo.classList.add(props.cssClass);
+    combo.addEventListener('calciteComboboxChange', () => {
+        const vals = Array.from(combo.selectedItems).map((i: any) => i.value);
+        props.onSelChange(vals);
+    });
+    if (props.optsProps) {
+        let builtOpts: HTMLCalciteComboboxItemElement[] = [];
+        if (props.optsProps.allOpt) {
+            builtOpts.push(Object.assign(document.createElement('calcite-combobox-item'), {
+                textLabel: props.optsProps.allOpt.label,
+                value: props.optsProps.allOpt.value,
+            }));
+        }
+        if (props.optsProps.dataUrl) {
+            try {
+                const data = await fetch(props.optsProps.dataUrl).then(r => r.json());
+                const opts = props.optsProps.mapFeatures(data.features);
+                for (const opt of opts) {
+                    builtOpts.push(Object.assign(document.createElement('calcite-combobox-item'), {
+                        textLabel: opt,
+                        value: opt,
+                    }));
+                }
+            } catch (e) {
+                throw new Error(`failed to fetch data from ${props.optsProps.dataUrl}: ${e}`);
+            }
+        }
+        if (builtOpts.length === 0) throw new Error('no options');
+        combo.append(...builtOpts);
+    }
+    return combo;
+}
+

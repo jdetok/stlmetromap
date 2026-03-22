@@ -5,6 +5,8 @@ export const STYLE = `
     min-height: 0;
     height: 100%;
     --popup-bg: rgba(115, 128, 137, 0.75);
+    --btn-hvr: rgba(68, 78, 87, 0.9);
+    --btn-prs: rgba(80, 89, 96, 0.89);
     --calcite-color-brand: var(--popup-bg);
     --calcite-color-background: var(--popup-bg);
     --calcite-color-foreground-1: var(--popup-bg);
@@ -13,6 +15,8 @@ export const STYLE = `
     --calcite-spacing-sm: 0.25rem;
     --calcite-spacing-md: 0.5rem;
     --calcite-spacing-lg: 0.75rem;
+    --route-combo-width: 215px;
+    --route-combo-left: 0.8rem;
 }
 #filterbar {
     left: 0.8rem;
@@ -40,26 +44,92 @@ calcite-panel {
     bottom: 7.2rem;
     z-index: 10;
     height: fit-content;
-    max-height: 65%;
+    max-height: 50%;
     width: 300px;
     max-width: 98%;
 }
+calcite-panel.route-info {
+    left: calc(var(--route-combo-width) + var(--route-combo-left) + 0.5rem);
+    right: unset;
+    bottom: 1.6rem;
+}
+calcite-dropdown {
+    --calcite-dropdown-background-color: var(--popup-bg);
+    position: absolute;
+    bottom: 1.6rem;
+    z-index: 10;
+    --calcite-dropdown-width: var(--route-combo-width);
+    left: var(--route-combo-left);
+}
+@media (max-width: 900px) {
+    calcite-dropdown {
+        top: 0.4rem;
+        bottom: unset;
+        right: 1.6rem;
+        left: unset;
+    }
+    calcite-panel {
+        position: absolute;
+        right: 4rem;
+        bottom: 4rem;
+        z-index: 10;
+        height: fit-content;
+        max-height: 40%;
+        width: 250px;
+        max-width: 98%;
+    }
+    
+    calcite-panel.route-info {
+        unset: 3rem;
+        bottom: 4.5rem;
+        left: 0.2rem;
+        right: unset;
+    }
+    arcgis-zoom {
+        top: 0.4rem;
+    }
+    arcgis-search {
+        display: none;
+    }
+
+    calcite-action-bar {
+        position: absolute;
+        bottom: 1.4rem;
+        right: 0.4rem;
+        z-index: 15;
+    }
+    .place_toggles {
+        position: absolute;
+        bottom: 4rem;
+        right: 0.4rem;
+        /*z-index: 10;*/
+    }
+}
+calcite-dropdown-item {
+    --calcite-dropdown-item-background-color-hover: var(--btn-hvr);
+    --calcite-dropdown-item-background-color-press: var(--btn-prs);
+    --calcite-dropdown-item-icon-color-press: white;
+    --calcite-dropdown-item-text-color-press: white;
+    --calcite-dropdown-item-text-color: black;
+    max-width: var(--route-combo-width);
+}
+calcite-button {
+    --calcite-button-background-color: var(--popup-bg);
+    --calcite-button-border-color: black;
+}
+calcite-button:hover {
+    --calcite-button-background-color: var(--btn-hvr);
+    --calcite-button-border-color: white;
+}
+
+
+
 calcite-select {
     position: absolute;
     bottom: 1.6rem;
     left: 0.8rem;
     z-index: 10;
     width: 220px;
-}
-calcite-panel.filter {
-    left: 0.8rem;
-    right: unset;
-}
-
-calcite-panel.route-info {
-    left: 0.8rem;
-    right: unset;
-    bottom: 4rem;
 }
 
 calcite-panel > * {
@@ -76,7 +146,7 @@ arcgis-map {
 }
 arcgis-zoom {
     position: absolute;
-    top: 15px;
+    top: 1.6rem;
     left: 0.8rem;
     z-index: 10;
 }
@@ -85,12 +155,12 @@ arcgis-legend {
     color: black;
     font-weight: bold;
     position: relative;
-    z-index: 20;
+    z-index: 5;
 }
 arcgis-search {
     position: absolute;
-    top: 15px;
-    left: 60px;
+    top: 1.6rem;
+    left: 2.8rem;
     z-index: 10;
 }
 calcite-notice {
@@ -105,30 +175,14 @@ calcite-tooltip {
     --calcite-tooltip-z-index: 9999;
     z-index: 9999;
 }
-.esri-popup {
-    max-height: 30% !important;
-    z-index: 100;
-}
 calcite-slider {
-    --calcite-slider-track-color: black;
+    --calcite-slider-track-color: rgba(11, 90, 11, 0.75);
+    --calcite-slider-track-fill-color: black;
     --calcite-slider-handle-fill-color: rgba(192, 204, 250, 0.5);
     --calcite-slider-accent-color: rgba(3, 11, 41, 0.5);
 }
 calcite-button {
     --calcite-button-text-color: black;
-}
-.esri-popup {
-    max-height: 30% !important;
-    z-index: 100 !important;
-}
-.esri-popup__main-container {
-    z-index: 100 !important;
-    position: relative;
-}
-.esri-popup__main-container {
-    width: fit-content;
-    max-width: 50%;
-    background: rgba(115, 128, 137, 0.75) !important;
 }
 `;
 export const MAP_STYLE = `
@@ -136,21 +190,21 @@ calcite-button {
     --calcite-button-text-color: black;
 }
 .esri-popup {
-    max-height: 30% !important;
+    max-height: 40% !important;
     z-index: 100 !important;
+    max-width: 70% !important;
 }
 .esri-popup__main-container {
     z-index: 100 !important;
     position: relative;
-}
-.esri-popup__main-container {
     width: fit-content;
-    max-width: 50%;
+    
     background: rgba(115, 128, 137, 0.75) !important;
 }
-@media ( max-width: 900px ) {
-    .esri-popup__main-container {
+@media ( max-width: 900px ) and (max-height: 900px ) {
+    .esri-popup, .esri-popup__main-container {
         max-width: 85%;
+        max-height: 25%;
     }
 }           
 .esri-widget__table {
@@ -171,6 +225,8 @@ div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-co
     font-weight: bold;
 }
 .esri-feature-fields__field-data,
+div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup > div > div > calcite-flow > calcite-flow-item > div > div > div > div > div > div > div > table > tbody > tr > td:nth-child(2) > calcite-button,
+div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup > div > div > calcite-flow > calcite-flow-item > div > div > div > div > div > div > div > table > tbody > tr > td:nth-child(2) {
 div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup.esri-popup--is-docked.esri-popup--is-docked-top-right > div > div > calcite-flow > calcite-flow-item > div > div > div > div > div > div > div > table > tbody > tr > td:nth-child(2) > calcite-button,
 div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup.esri-popup--is-docked.esri-popup--is-docked-top-right > div > div > calcite-flow > calcite-flow-item > div > div > div > div > div > div > div > table > tbody > tr > td:nth-child(2) {
     margin-top: 0 !important;    

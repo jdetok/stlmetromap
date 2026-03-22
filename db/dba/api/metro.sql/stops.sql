@@ -65,4 +65,4 @@ select a.stop_id, stop_name, route_type, route_ids, route_names,
 from bus_stops a 
 join nearby b on b.stop_id = a.stop_id;
 
-select * from api.stops where route_type = '3';
+select * from api.stops;
