@@ -692,10 +692,8 @@ export class MapWindow extends HTMLElement {
         const { block, slider } = buildCalciteSliderBlock({
             heading: 'Census Tract Fill Opacity',
             onInput: async () => {
-                console.log("original colors:", this.tractOriginalColors); // should be 5 Color objects
                 const renderer = this.tractsLayer.renderer as ClassBreaksRenderer;
                 const opacity = this.tractOpacitySlider.value as number;
-                console.log(opacity, ', ', opacity * 255);
                 renderer.classBreakInfos.forEach((cb, i) => {
                     const { r, g, b } = this.tractOriginalColors[i];
                     cb.symbol.color = new Color([r, g, b, opacity]);
@@ -704,7 +702,7 @@ export class MapWindow extends HTMLElement {
             },
             sliderProps: {
                 min: 0,
-                max: 0.65,
+                max: 0.5,
                 step: 0.01,
                 value: 0.05,
                 snap: true,
