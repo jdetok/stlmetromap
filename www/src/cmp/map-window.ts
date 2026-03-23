@@ -21,6 +21,7 @@ import "@esri/calcite-components/dist/components/calcite-slider";
 import "@esri/calcite-components/dist/components/calcite-label";
 import "@esri/calcite-components/dist/components/calcite-table-cell";
 import FeatureEffect from "@arcgis/core/layers/support/FeatureEffect";
+import Circle from "@arcgis/core/geometry/Circle";
 import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
 import Graphic from "@arcgis/core/Graphic";
 import Polygon from "@arcgis/core/geometry/Polygon";
@@ -42,6 +43,8 @@ import {
 import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer.js";
 import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol.js";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer.js";
+import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol.js";
+import Point from "@arcgis/core/geometry/Point.js";
 
 // CUSTOM HIGHLIGHT SETTINGS
 const HL_PARKS = newHighlightSetting("parks", "mediumseagreen");
@@ -172,6 +175,9 @@ export class MapWindow extends HTMLElement {
     private metroStopSizeSlider!: HTMLCalciteSliderElement;
     private lineSizeSlider!: HTMLCalciteSliderElement;
 
+    private radiusGraphic: Graphic | null = null;
+    private circleMeters: number | null = null;
+
     // append all tooltips to this array, append to shadow root at once
     private tooltips: HTMLCalciteTooltipElement[] = []; 
 
@@ -200,7 +206,19 @@ export class MapWindow extends HTMLElement {
             ['toggleBar', this.buildToggleBar.bind(this)],
             ['actionBar', this.buildMainActionBar.bind(this)]
         ]);
-
+        // this.resizeRender();
+        window.addEventListener('resize', () => {
+            const isWide = this.offsetWidth >= 900;
+            const newLayout = isWide ? 'horizontal' : 'vertical';
+            
+            if (this.toggleBar?.layout !== newLayout) {
+                this.toggleBar.layout = newLayout;
+            }
+            if (this.actionBar?.layout !== newLayout) {
+                this.actionBar.layout = newLayout;
+            }
+        });
+        
         // build and append all elements to shadow dom
         root.append(
             this.addStyling(),
@@ -285,29 +303,59 @@ export class MapWindow extends HTMLElement {
 
             // ADD LISTENER ON ZOOM AMOUNT, RE RENDER FEATURES AT SPECIFIC POINTS
             // this.renderOnZoom();
+            view.on("click", async (event) => {
+                console.log("clicked view");
+                const point = event.mapPoint;
 
+                if (this.radiusGraphic) {
+                    view.graphics.remove(this.radiusGraphic);
+                }
+                this.circleMeters = 805;
+
+                const circle = new Circle({
+                    center: point,
+                    radius: this.circleMeters,
+                    radiusUnit: 'meters',
+                });
+                this.radiusGraphic = new Graphic({
+                    geometry: circle,
+                    symbol: new SimpleFillSymbol({
+                        color: [255, 255, 255, 0.05],
+                        outline: {
+                            color: [255, 255, 255, 0.5],
+                            width: 1.5,
+                            style: 'dash',
+                        }
+                    })
+                })
+                view.graphics.add(this.radiusGraphic);
+
+                // await this.highlightStopsWithinMeters(view, point, this.circleMeters); 
+            });
             // open legend when bus stop layer has been created
             this.busStopsLayer.when(async () => {
-                const legend = this.legendPanel.querySelector("arcgis-legend");
-                if (!legend) return;
                 
-                // trying to change the order of layers in the legend
-                const layers: __esri.LegendViewModelLayerInfo[] = [
-                    this.linesLayer, this.metroStopsLayer, this.busStopsLayer, this.cyclingLayer, this.placesLayer,
-                    this.tractsLayer, this.amtrakLayer, this.countiesLayer,
-                ].map((l) => {
-                    return { layer: l }
-                });
-                legend.layerInfos = layers;
-                
-                const type = this.arcgisMap.offsetHeight < 650 ? 'card' : 'classic';
-                legend.legendStyle = { type, layout: 'stack' };
                 if (this.arcgisMap.offsetWidth > 800) this.togglePanel('legend', this.actionBar, { legend: this.legendPanel });
             });
             
         }, { once: true });
 
         return this.arcgisMap;
+    }
+    private async highlightStopsWithinMeters(view: __esri.MapView, point: Point, meters: number, ): Promise<void> {
+        const layerView = await view.whenLayerView(this.busStopsLayer);
+        const query = Object.assign(this.busStopsLayer.createQuery(), {
+            geometry: point,
+            distance: meters,
+            units: "meters",
+        });
+        const { features } = await layerView.queryFeatures(query);
+        console.log(features);
+        this.busStopsLayer.featureEffect = new FeatureEffect({
+            filter: new FeatureFilter({objectIds: features.map(f => f.attributes.ObjectID)}),
+            includedEffect: "brightness(3)",
+            excludedEffect: "brightness(1) opacity(50%)"
+        })
     }
     private async buildFeatureLayers(): Promise<FeatureLayer[]> {
         let featureLayers: FeatureLayer[] = [];
@@ -434,6 +482,7 @@ export class MapWindow extends HTMLElement {
     // BUILD CALCITE ACTION BAR WITH TOGGLE BUTTONS FOR HIGHLIGHTING FEATURES
     private buildToggleBar(): actbarWithTooltips {
         const actionBar = buildCalciteActionBar({ layout: window.innerWidth < 900 ? 'vertical' : 'horizontal', cssClass: 'place_toggles' });
+        
         let tooltips: HTMLCalciteTooltipElement[] = [];
 
         for (const a of this.TOGGLE_ACTIONS) {

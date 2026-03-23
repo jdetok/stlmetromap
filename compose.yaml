@@ -18,19 +18,6 @@ services:
             - /etc/timezone:/etc/timezone:ro
             - /etc/localtime:/etc/localtime:ro
         command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
-
-    # one-off containers for importing data into db
-    gtfs: 
-        container_name: gtfs-import
-        build:
-            context: .
-            dockerfile: ./db/gtfs.Dockerfile
-        env_file:
-            - .env
-        volumes:
-            - ./scr/gtfs:/scr/gtfs:ro
-        entrypoint: [ "scr/gtfs" ]
-
     api:
         container_name: transit-api
         depends_on:
@@ -50,6 +37,8 @@ services:
     proxy:
         container_name: transit-proxy
         depends_on:
+            postgis:
+                condition: service_healthy
             api:
                 condition: service_healthy
         image: transit-nginx-proxy

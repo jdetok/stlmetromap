@@ -102,7 +102,6 @@ calcite-dropdown {
         position: absolute;
         bottom: 4rem;
         right: 0.4rem;
-        /*z-index: 10;*/
     }
 }
 calcite-dropdown-item {
@@ -116,24 +115,11 @@ calcite-dropdown-item {
 calcite-button {
     --calcite-button-background-color: var(--popup-bg);
     --calcite-button-border-color: black;
+    --calcite-button-text-color: black;
 }
 calcite-button:hover {
     --calcite-button-background-color: var(--btn-hvr);
     --calcite-button-border-color: white;
-}
-
-
-
-calcite-select {
-    position: absolute;
-    bottom: 1.6rem;
-    left: 0.8rem;
-    z-index: 10;
-    width: 220px;
-}
-
-calcite-panel > * {
-    background0color: rgba(125, 140, 151, 0.5);
 }
 arcgis-map {
     --calcite-block-padding: 0.25rem;
@@ -142,7 +128,6 @@ arcgis-map {
     display: block;
     width: 100%;
     height: 100%;
-    /*z-index: 1;*/
 }
 arcgis-zoom {
     position: absolute;
@@ -167,10 +152,6 @@ calcite-notice {
     width: 100%;
     max-width: 100%;
 }
-calcite-notice > div {
-    width: 100%;
-    max-width: 100%;
-}
 calcite-tooltip {
     --calcite-tooltip-z-index: 9999;
     z-index: 9999;
@@ -181,11 +162,10 @@ calcite-slider {
     --calcite-slider-handle-fill-color: rgba(192, 204, 250, 0.5);
     --calcite-slider-accent-color: rgba(3, 11, 41, 0.5);
 }
-calcite-button {
-    --calcite-button-text-color: black;
-}
 `;
+// have to inject styling into the arcgis-map shadow dom for popups etc
 export const MAP_STYLE = `
+/* hover to reveal outline inside popup*/
 calcite-button {
     --calcite-button-text-color: black;
 }
@@ -198,7 +178,6 @@ calcite-button {
     z-index: 100 !important;
     position: relative;
     width: fit-content;
-    
     background: rgba(115, 128, 137, 0.75) !important;
 }
 @media ( max-width: 900px ) and (max-height: 900px ) {

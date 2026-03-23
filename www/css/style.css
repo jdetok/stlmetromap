@@ -37,7 +37,7 @@ map-window {
     min-height: 0;
     height: 100%;
     border: 8px solid black;
-    border-radius: 2rem;
+    border-radius:1rem;
 }
 
 .ttl {
