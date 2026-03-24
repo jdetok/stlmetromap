@@ -2,7 +2,6 @@
 // Interactive map custom element definition
 // Imports generic helpers from calcite.ts and arcgis.ts for buildng specific elements of the map
 import "@arcgis/map-components/dist/components/arcgis-basemap-gallery";
-
 import "@arcgis/map-components/dist/components/arcgis-zoom";
 import "@arcgis/map-components/dist/components/arcgis-search";
 import "@arcgis/map-components/dist/components/arcgis-layer-list";
@@ -11,7 +10,6 @@ import "@arcgis/map-components/dist/components/arcgis-print";
 import * as reactiveUtils from "@arcgis/core/core/reactiveUtils"
 import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer.js";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer.js";
-import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol.js";
 import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol.js";
 import FeatureEffect from "@arcgis/core/layers/support/FeatureEffect";
 import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
@@ -108,37 +106,25 @@ export class MapWindow extends HTMLElement {
     // HIGHLIGHT SETTING NAMES MAPPED TO HIGHLIGHT HANDLERS
     private highlightHandles: Map<string, __esri.Handle> = new Map();
 
-    // NAMED FEATURE LAYER METAS
-    private BUS_META: FeatureLayerMeta = {} as FeatureLayerMeta;
-    private METRO_META: FeatureLayerMeta = {} as FeatureLayerMeta;
-    private LINES_META: FeatureLayerMeta = {} as FeatureLayerMeta;
-    private PLACE_META: FeatureLayerMeta = {} as FeatureLayerMeta;
-    
-    // init helper builds the named types with the imported func from layers.ts
-    private namedLayerMetas: Array<[string, Function]> = [
-        ['BUS_META', makeBusStopsLayer],
-        ['METRO_META', makeMetroLinkLayer],
-        ['LINES_META', makeLinesLayer],
-        ['PLACE_META', makePlacesLayer],
-    ];
-
+    private mapLayers: Map<string, { fn?: Function, meta: FeatureLayerMeta, layer: FeatureLayer}> = new Map([
+        ['counties', { meta: LAYER_CENSUS_COUNTIES, layer: new FeatureLayer }],
+        ['tracts', { meta: LAYER_CENSUS_TRACTS, layer: new FeatureLayer }],
+        ['amtrak', { meta: LAYER_AMTRAK, layer: new FeatureLayer }],
+        ['places', { fn: makePlacesLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer }],
+        ['cycling', { meta: LAYER_CYCLING, layer: new FeatureLayer }],
+        ['lines', { fn: makeLinesLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer }],
+        ['metro', { fn: makeMetroLinkLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer }],
+        ['bus', { fn: makeBusStopsLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer }],
+    ]);
     // ARRAY OF BUILT FEATURE LAYER METAS (makeFeatureLayer builds these as FeatureLayers)
-    private layers: FeatureLayerMeta[] = [];
     private builtLayers: FeatureLayer[] = [];
 
     // NAMED FEATURE LAYERS
-    private busStopsLayer: FeatureLayer = new FeatureLayer;
-    private metroStopsLayer: FeatureLayer = new FeatureLayer;
-    private linesLayer: FeatureLayer = new FeatureLayer;
-    private placesLayer: FeatureLayer = new FeatureLayer;
-    private cyclingLayer: FeatureLayer = new FeatureLayer;
-    private countiesLayer: FeatureLayer = new FeatureLayer;
-    private tractsLayer: FeatureLayer = new FeatureLayer;
-    private amtrakLayer: FeatureLayer = new FeatureLayer;
-
-    // ROUTE FILTER SELECTOR
-    private routesData: any[] = [];
-    private routeCombobox!: HTMLCalciteDropdownElement;
+    private get busStopsLayer(): FeatureLayer { return this.mapLayers.get('bus')!.layer }; 
+    private get metroStopsLayer(): FeatureLayer { return this.mapLayers.get('metro')!.layer }; 
+    private get linesLayer(): FeatureLayer { return this.mapLayers.get('lines')!.layer }; 
+    private get placesLayer(): FeatureLayer { return this.mapLayers.get('places')!.layer }; 
+    private get tractsLayer(): FeatureLayer { return this.mapLayers.get('tracts')!.layer }; 
 
     // CALCITE PANELS
     private routeInfoPanel: HTMLCalcitePanelElement = buildCalcitePanel({ heading: 'Route Info', cssClass: 'route-info' }); 
@@ -160,9 +146,17 @@ export class MapWindow extends HTMLElement {
     // ACTION BARS
     private actionBar!: HTMLCalciteActionBarElement;
     private toggleBar!: HTMLCalciteActionBarElement;
+    private actBarMetas: [string, () => actbarWithTooltips][] = [
+        ['toggleBar', this.buildToggleBar.bind(this)],
+        ['actionBar', this.buildMainActionBar.bind(this)]
+    ];
 
     // ACTIONS FOR TOGGLE BAR
     private TOGGLE_ACTIONS: calciteActionProps[] = TOGGLE_ACTIONS;
+
+    // ROUTE DROPDOWN
+    private routesData: any[] = [];
+    private routeDropdown!: HTMLCalciteDropdownElement;
 
     // ARRAYS OF FEATURE SIZES FOR SLIDERS
     private busStopSizes: number[] = [];
@@ -183,6 +177,7 @@ export class MapWindow extends HTMLElement {
     private radiusGraphic: Graphic | null = null;
     private circleMeters: number = 805; // approx 1/2 mile
     private tractOriginalColors: Color[] = [];
+
     // append all tooltips to this array, append to shadow root at once
     private tooltips: HTMLCalciteTooltipElement[] = []; 
 
@@ -193,32 +188,13 @@ export class MapWindow extends HTMLElement {
 
         // build feature layer metas imported as functions
         this.initLayerMetas();
-
-        // layers render in order (first element is bottom, last is top)
-        this.layers = [
-            LAYER_CENSUS_COUNTIES,
-            LAYER_CENSUS_TRACTS,
-            LAYER_CYCLING,
-            LAYER_AMTRAK,
-            this.PLACE_META,
-            this.LINES_META,
-            this.BUS_META,
-            this.METRO_META,
-        ];
         
         // build all action bars (in this)
-        this.initActionBars([
-            ['toggleBar', this.buildToggleBar.bind(this)],
-            ['actionBar', this.buildMainActionBar.bind(this)]
-        ]);
-        // this.resizeRender();
-        window.addEventListener('resize', this.onResize.bind(this));
-
+        this.initActionBars(this.actBarMetas);
         this.buildSlidersPanel();
         this.buildRouteInfoPanel();
-        
         this.arcgisMap = buildArcgisMap(this.mapProps);
-
+    
         // build and append all elements to shadow dom
         root.append(
             this.addStyling(STYLE),
@@ -229,23 +205,28 @@ export class MapWindow extends HTMLElement {
             ...this.actionBarPanels.keys(),
             ...this.tooltips,
         );
+
+        // reconfigure on window resizes
+        window.addEventListener('resize', this.onResize.bind(this));
     }
     // build sections requiring async
     async connectedCallback(): Promise<void> {
-        this.routeCombobox = await this.buildRoutesFilter();
-        this.shadowRoot?.append(this.routeCombobox);
+        this.routeDropdown = await this.buildRoutesDropdown();
+        this.shadowRoot?.append(this.routeDropdown);
     }
     disconnectedCallback(): void {
         this.arcgisMap?.remove();
     }
     // build layer metas imported as funcs from layers.ts
     private initLayerMetas(): void {
-        for (const [meta, fn] of this.namedLayerMetas) {
-            this[meta] = fn(
-                (route: string | string[]) => { this.filterByRoutes(route); this.showRouteInfo(route as string); },
-                (routes: string | string[]) => { this.filterByRoutes(routes); this.routeInfoPanel.closed = true; }
-                
-            );
+        for (const [key, entry] of this.mapLayers) {
+            if (entry.fn) {
+                console.log(`building ${key}`);
+                entry.meta = entry.fn(
+                    (route: string | string[]) => { this.filterByRoutes(route); this.showRouteInfo(route as string); },
+                    (routes: string | string[]) => { this.filterByRoutes(routes); this.routeInfoPanel.closed = true; }
+                )
+            }
         }
     }
     // set the action bar keys (have to be defined in this) with their associated function
@@ -271,8 +252,8 @@ export class MapWindow extends HTMLElement {
         this.arcgisMap.shadowRoot?.append(this.addStyling(MAP_STYLE));
 
         // BUILD FEATURE LAYERS
-        this.builtLayers = await this.buildFeatureLayers();
-        console.log(`%clayer metas: ${this.layers.length} | built layers: ${this.builtLayers.length}`,
+        this.builtLayers = await this.buildMapFeatureLayers();
+        console.log(`%cbuilt layers: ${this.builtLayers.length}`,
             'color: seagreen; font-weight: 600;'
         );
 
@@ -333,65 +314,37 @@ export class MapWindow extends HTMLElement {
             }
         })
     }
-    private async buildFeatureLayers(): Promise<FeatureLayer[]> {
-        const res = Promise.all(this.layers.map(async (layerMeta, i) => {
+    private async buildMapFeatureLayers(): Promise<FeatureLayer[]> {
+        return Promise.all([...this.mapLayers.entries()].map(async ([key, entry], i) => {
             try {
-                const layer = await this.makeFeatureLayer(layerMeta);
+                const layer = await this.makeFeatureLayer(entry.meta);
                 this.arcgisMap.map?.add(layer, i);
-
-                // assign named layers
-                switch (this.layers[i]) {
-                    case this.BUS_META: {
-                        this.busStopsLayer = layer;
-                        if (this.busStopsLayer.renderer) {
-                            const sizeVar = (this.busStopsLayer.renderer as UniqueValueRenderer).visualVariables![0] as __esri.SizeVariable;
-                            this.busStopSizes = sizeVar.stops!.map(s => (s as __esri.SizeStop).size as number);
-                        }
-                        break;
-                    }
-                    case this.METRO_META: {
-                        this.metroStopsLayer = layer;
-                        if (this.metroStopsLayer.renderer) {
-                            const sizeVar = (this.metroStopsLayer.renderer as UniqueValueRenderer).visualVariables![0] as __esri.SizeVariable;
-                            this.metroStopSizes = sizeVar.stops!.map(s => (s as __esri.SizeStop).size as number);
-                        }
-                        break;
-                    }
-                    case this.LINES_META: {
-                        this.linesLayer = layer;
-                        this.lineSizes = (this.linesLayer.renderer as ClassBreaksRenderer).classBreakInfos.map((cb) => {
-                            return (cb.symbol as SimpleLineSymbol).width;
-                        });
-                        break;
-                    }
-                    case this.PLACE_META: {
-                        this.placesLayer = layer;
-                        break;
-                    }
-                    case LAYER_CYCLING: {
-                        this.cyclingLayer = layer;
-                        break;
-                    }    
-                    case LAYER_AMTRAK: {
-                        this.amtrakLayer = layer;
-                        break;
-                    }
-                    case LAYER_CENSUS_COUNTIES: {
-                        this.countiesLayer = layer;
-                        break;
-                    }
-                    case LAYER_CENSUS_TRACTS: {
-                        this.tractsLayer = layer;
-                        this.tractOriginalColors = (layer.renderer as ClassBreaksRenderer).classBreakInfos
-                            .map(cb => (cb.symbol as SimpleFillSymbol).color.clone());
-                        break;
-                    }
-                }
+                entry.layer = layer;
+                this.extractBuiltSizes(key, layer);
                 return layer;
             } catch (e) {
-                throw new Error(`failed to build layer ${i + 1}/${this.layers.length}: ${e}`);
-            }}))
-        return res;
+                throw new Error(`failed to build layer ${i + 1}: ${e}`);
+            }
+        }))
+    }
+    private extractBuiltSizes(key: string, layer: FeatureLayer): void {
+        switch (key) {
+            case 'bus': {
+                const sizeVar = (layer.renderer as UniqueValueRenderer).visualVariables![0] as __esri.SizeVariable;
+                this.busStopSizes = sizeVar.stops!.map(s => (s as __esri.SizeStop).size as number);
+                break;
+            }
+            case 'metro': {
+                const sizeVar = (layer.renderer as UniqueValueRenderer).visualVariables![0] as __esri.SizeVariable;
+                this.metroStopSizes = sizeVar.stops!.map(s => (s as __esri.SizeStop).size as number);
+                break;
+            }
+            case 'tracts': {
+                this.tractOriginalColors = (layer.renderer as ClassBreaksRenderer).classBreakInfos
+                    .map(cb => (cb.symbol as SimpleFillSymbol).color.clone());
+                break;
+            }
+        }
     }
     private async setPanelViews(view: __esri.MapView, panelEls: Map<HTMLCalcitePanelElement, string>) {
         for (const [k, v] of panelEls) {
@@ -673,8 +626,8 @@ export class MapWindow extends HTMLElement {
         return block;
     }
     // BUILD A CALCITE SELECT TO FILTER BY BUS ROUTE
-    private async buildRoutesFilter(): Promise<HTMLCalciteDropdownElement> {
-        const sel = await buildCalciteDropdown({
+    private async buildRoutesDropdown(): Promise<HTMLCalciteDropdownElement> {
+        return await buildCalciteDropdown({
             heading: "Select MetroBus Routes",
             placeholder: "",
             selectMode: 'multiple',
@@ -695,8 +648,6 @@ export class MapWindow extends HTMLElement {
                 }
             }
         }, true);
-        this.routeCombobox = sel;
-        return sel;
     }
 
     // HIGHLIGHT ALL STOPS FROM SEVERAL BUS ROUTES
