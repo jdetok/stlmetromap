@@ -1,5 +1,11 @@
 // calcite.ts
 // Helper factories for building calcite elements, imported in map-window custom element
+import "@esri/calcite-components/dist/components/calcite-table";
+import "@esri/calcite-components/dist/components/calcite-table-header";
+import "@esri/calcite-components/dist/components/calcite-table-row";
+import "@esri/calcite-components/dist/components/calcite-slider";
+import "@esri/calcite-components/dist/components/calcite-label";
+import "@esri/calcite-components/dist/components/calcite-table-cell";
 
 // HELPER FOR BUIDING GENERIC CALCITE PANEL WITH THE PASSED ELEMENT AS ITS CHILD
 export function buildCalcitePanel(props: {
@@ -44,7 +50,8 @@ export type calciteSliderBlock = {
 export function buildCalciteSliderBlock(props: calciteSliderBlock): { block: HTMLCalciteBlockElement, slider: HTMLCalciteSliderElement } { 
     const block = Object.assign(document.createElement('calcite-block'), {
         heading: props.heading,
-        open: true,
+        // open: true,
+        expanded: true,
         className: props.cssClass ?? '',
     });
     const slider = Object.assign(document.createElement('calcite-slider'), { ...props.sliderProps });
@@ -63,7 +70,8 @@ export function buildCalciteTableBlock(
         heading: label,
         label: label,
         collapsible: collapsible,
-        open: open,
+        // open: open,
+        expanded: open,
         headingLevel: 2
     });
 
@@ -86,7 +94,7 @@ export function buildCalciteTable(props: calciteTableProps): HTMLCalciteTableEle
     if (!props.rows.length) throw new Error(`no rows passed`);
 
     // all rows must respect this length
-    const numCols = props.rows[0].length;
+    const numCols = props.rows[0]?.length;
 
     // build a row for each
     const rows: Array<HTMLCalciteTableRowElement> = [];
@@ -101,9 +109,12 @@ export function buildCalciteTable(props: calciteTableProps): HTMLCalciteTableEle
 
     // if hasHeader, set first row as the a slotted header element 
     if (props.hasHeader) {
-        props.rows[0].forEach((r: any) => {
-            rows[0].slot = 'table-header';
-            rows[0].append(Object.assign(document.createElement('calcite-table-header'), { heading: String(r) }));
+        const headerRow = props.rows?.[0];
+        headerRow?.forEach((r: any) => {
+            const row = rows[0];
+            if (!row) return;
+            row.slot = 'table-header';
+            row.append(Object.assign(document.createElement('calcite-table-header'), { heading: String(r) }));
         });
     }
 
@@ -112,7 +123,8 @@ export function buildCalciteTable(props: calciteTableProps): HTMLCalciteTableEle
     const cellRows = (props.hasHeader) ? rows.slice(1) : rows;
     cellRows.forEach((r: HTMLCalciteTableRowElement, i: number) => {
         const rowIdx = props.hasHeader ? i + 1 : i;
-        props.rows[rowIdx].forEach((val: any) => {
+        const row = props.rows?.[rowIdx];
+        row?.forEach((val: any) => {
             r.append(Object.assign(document.createElement('calcite-table-cell'), { innerText: String(val) ?? 'NA' }));
         });
     });
@@ -138,7 +150,8 @@ export function buildCalciteNotice(label: string, content: string): {
     });
 
     const notice = Object.assign(document.createElement('calcite-notice'), {
-        open: false,
+        expanded: false,
+        // open: false,
         kind: 'info',
         scale: 's',
         closable: true,
@@ -146,6 +159,7 @@ export function buildCalciteNotice(label: string, content: string): {
 
     // toggle notice on button click
     btn.addEventListener('click', () => {
+        notice.expanded = !notice.expanded;
         notice.open = !notice.open;
     });
     
@@ -231,7 +245,7 @@ export function buildCalciteAction(props: calciteActionProps): calciteActionRetu
         icon: props.icon,
         text: props.text,
     })
-    action.dataset.actionId = props.id;
+    action.dataset['actionId'] = props.id;
     if (props.onClick) {
         action.addEventListener("click", props.onClick);
     }

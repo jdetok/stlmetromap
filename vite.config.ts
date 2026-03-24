@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => ({
     optimizeDeps: {
         include: [
             "@arcgis/core/config",
+            "@arcgis/core/core",
             "@arcgis/core/Map",
             "@arcgis/core/views/MapView",
             "@arcgis/core/Graphic",

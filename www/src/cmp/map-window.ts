@@ -1,51 +1,35 @@
 // cmp/map-window.ts
 // Interactive map custom element definition
 // Imports generic helpers from calcite.ts and arcgis.ts for buildng specific elements of the map
-
 import "@arcgis/map-components/dist/components/arcgis-basemap-gallery";
 import "@arcgis/map-components/dist/components/arcgis-map";
 import "@arcgis/map-components/dist/components/arcgis-zoom";
 import "@arcgis/map-components/dist/components/arcgis-search";
 import "@arcgis/map-components/dist/components/arcgis-layer-list";
 import "@arcgis/map-components/dist/components/arcgis-legend";
-import "@arcgis/map-components/dist/components/arcgis-expand";
 import "@arcgis/map-components/dist/components/arcgis-print";
-import "@esri/calcite-components";
-import "@esri/calcite-components/dist/components/calcite-panel";
-import "@esri/calcite-components/dist/components/calcite-select";
-import "@esri/calcite-components/dist/components/calcite-option";
-import "@esri/calcite-components/dist/components/calcite-table";
-import "@esri/calcite-components/dist/components/calcite-table-header";
-import "@esri/calcite-components/dist/components/calcite-table-row";
-import "@esri/calcite-components/dist/components/calcite-slider";
-import "@esri/calcite-components/dist/components/calcite-label";
-import "@esri/calcite-components/dist/components/calcite-table-cell";
+import * as reactiveUtils from "@arcgis/core/core/reactiveUtils"
+import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer.js";
+import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer.js";
+import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol.js";
+import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol.js";
 import FeatureEffect from "@arcgis/core/layers/support/FeatureEffect";
-import Circle from "@arcgis/core/geometry/Circle";
 import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
-import Graphic from "@arcgis/core/Graphic";
-import Polygon from "@arcgis/core/geometry/Polygon";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
+import Polygon from "@arcgis/core/geometry/Polygon";
+import Graphic from "@arcgis/core/Graphic";
+import Color from "@arcgis/core/Color.js";
 import { STLCOORDS, PROJID, BASEMAP } from "../data.js";
 import { STYLE, MAP_STYLE } from "./styleshadow.js";
 import { drawCircle, newHighlightSetting, queryLayer, updateRenderedSizes } from "../arcgis.js";
 import {
     buildCalciteAction, buildCalcitePanel, buildCalciteSliderBlock, buildCalciteTableBlock, calciteActionProps,
-    buildCalciteLegendPanel,
-    buildCalciteTable,
-    buildCalciteActionBar,
-    buildCalciteDropdown,
+    buildCalciteLegendPanel, buildCalciteTable, buildCalciteActionBar, buildCalciteDropdown,
  } from "../calcite.js";
 import {
     FeatureLayerMeta, makeBusStopsLayer, makeMetroLinkLayer, makeLinesLayer, makePlacesLayer, LAYER_CENSUS_COUNTIES,
-    LAYER_CENSUS_TRACTS, LAYER_CYCLING, LAYER_AMTRAK, BUS_STOP_SIZE,
+    LAYER_CENSUS_TRACTS, LAYER_CYCLING, LAYER_AMTRAK,
 } from "../layers.js";
-import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer.js";
-import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol.js";
-import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer.js";
-import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol.js";
-import Point from "@arcgis/core/geometry/Point.js";
-import Color from "@arcgis/core/Color.js";
 
 // CUSTOM HIGHLIGHT SETTINGS
 const HL_PARKS = newHighlightSetting("parks", "mediumseagreen");
@@ -290,15 +274,9 @@ export class MapWindow extends HTMLElement {
             
             // SET OBJECT HIGHLIGHT COLORS
             const view = this.arcgisMap.view as __esri.MapView;
-            if (view.popup) {
-                view.popup.dockOptions = { breakpoint: false };
-                view.popup.dockEnabled = true;
-                view.watch("size", (view) => {
-                    const [w, h] = view.size;
-                    view.popup.dockEnabled = w >= 980 && h >= 980;
-                });
-            }
             view.highlights = HIGHLIGHTS;
+            
+            
 
             // assign same map view to all actionbar panels
             await this.setPanelViews(view, new Map([
@@ -308,9 +286,37 @@ export class MapWindow extends HTMLElement {
                 [this.printPanel, "arcgis-print"],
             ]));
    
+            // open legend when bus stop layer has been created
+            // this.busStopsLayer.when(async () => {
+            //     console.log("in legend open func: ", this.arcgisMap.offsetWidth);
+            // });
+            const maxW = 980;
+            const maxH = 980;
+            if (view.popup) {
+                view.popup.dockOptions = { breakpoint: false };
+                view.popup.dockEnabled = true;
+                reactiveUtils.watch(
+                    () => view.size,
+                    ([w, h]) => {
+                        if (!w || !h) throw new Error(`width or height is undefined: w: ${w}, h: ${h}`);
+                        if (view.popup) view.popup.dockEnabled = w >= maxW && h >= maxH;
+                    }
+                );
+            }
+            await reactiveUtils.whenOnce(
+                () => this.busStopsLayer.loadStatus === 'loaded').then(() => {
+                    if (!view.size) return;
+                    const [w, h] = view.size;
+                    if (!w || !h) throw new Error(`width or height is undefined: w: ${w}, h: ${h}`);
+                    if (w >= maxW || h >= maxH ) {
+                        console.log(`%copening legend (W:${w}Xh:${h})`, 'color: seagreen;');
+                        this.togglePanel('legend', this.actionBar, { legend: this.legendPanel });
+                    }
+                })
+            
             // draw circle on screen on click
             view.on("click", async (event) => {
-                const point = event.mapPoint;
+                // const point = event.mapPoint;
 
                 if (this.radiusGraphic) {
                     view.graphics.remove(this.radiusGraphic);
@@ -325,92 +331,89 @@ export class MapWindow extends HTMLElement {
                 view.graphics.add(this.radiusGraphic);
                 // await this.highlightStopsWithinMeters(view, point, this.circleMeters); 
             });
-            // open legend when bus stop layer has been created
-            this.busStopsLayer.when(async () => {
-                
-                if (this.arcgisMap.offsetWidth > 800) this.togglePanel('legend', this.actionBar, { legend: this.legendPanel });
-            });
             
         }, { once: true });
 
         return this.arcgisMap;
     }
-    private async highlightStopsWithinMeters(view: __esri.MapView, point: Point, meters: number, ): Promise<void> {
-        const layerView = await view.whenLayerView(this.busStopsLayer);
-        const query = Object.assign(this.busStopsLayer.createQuery(), {
-            geometry: point,
-            distance: meters,
-            units: "meters",
-        });
-        const { features } = await layerView.queryFeatures(query);
-        console.log(features);
-        this.busStopsLayer.featureEffect = new FeatureEffect({
-            filter: new FeatureFilter({objectIds: features.map(f => f.attributes.ObjectID)}),
-            includedEffect: "brightness(3)",
-            excludedEffect: "brightness(1) opacity(50%)"
-        })
-    }
+    // private async highlightStopsWithinMeters(view: __esri.MapView, point: Point, meters: number, ): Promise<void> {
+    //     const layerView = await view.whenLayerView(this.busStopsLayer);
+    //     const query = Object.assign(this.busStopsLayer.createQuery(), {
+    //         geometry: point,
+    //         distance: meters,
+    //         units: "meters",
+    //     });
+    //     const { features } = await layerView.queryFeatures(query);
+    //     console.log(features);
+    //     this.busStopsLayer.featureEffect = new FeatureEffect({
+    //         filter: new FeatureFilter({objectIds: features.map(f => f.attributes.ObjectID)}),
+    //         includedEffect: "brightness(3)",
+    //         excludedEffect: "brightness(1) opacity(50%)"
+    //     })
+    // }
     private async buildFeatureLayers(): Promise<FeatureLayer[]> {
-        let featureLayers: FeatureLayer[] = [];
-        this.layers.forEach(async (layerMeta, i) => {
-            try {
-                const layer = await this.makeFeatureLayer(layerMeta);
-                featureLayers.push(layer);
-                this.arcgisMap.map?.add(layer, i);
+        // let featureLayers: FeatureLayer[] = [];
+        const res = Promise.all(
+            this.layers.map(async (layerMeta, i) => {
+                try {
+                    const layer = await this.makeFeatureLayer(layerMeta);
+                    // featureLayers.push(layer);
+                    this.arcgisMap.map?.add(layer, i);
 
-                // assign named layers
-                switch (this.layers[i]) {
-                    case this.BUS_META: {
-                        this.busStopsLayer = layer;
-                        if (this.busStopsLayer.renderer) {
-                            const sizeVar = (this.busStopsLayer.renderer as UniqueValueRenderer).visualVariables![0] as __esri.SizeVariable;
-                            this.busStopSizes = sizeVar.stops!.map(s => (s as __esri.SizeStop).size as number);
+                    // assign named layers
+                    switch (this.layers[i]) {
+                        case this.BUS_META: {
+                            this.busStopsLayer = layer;
+                            if (this.busStopsLayer.renderer) {
+                                const sizeVar = (this.busStopsLayer.renderer as UniqueValueRenderer).visualVariables![0] as __esri.SizeVariable;
+                                this.busStopSizes = sizeVar.stops!.map(s => (s as __esri.SizeStop).size as number);
+                            }
+                            break;
                         }
-                        break;
-                    }
-                    case this.METRO_META: {
-                        this.metroStopsLayer = layer;
-                        if (this.metroStopsLayer.renderer) {
-                            const sizeVar = (this.metroStopsLayer.renderer as UniqueValueRenderer).visualVariables![0] as __esri.SizeVariable;
-                            this.metroStopSizes = sizeVar.stops!.map(s => (s as __esri.SizeStop).size as number);
+                        case this.METRO_META: {
+                            this.metroStopsLayer = layer;
+                            if (this.metroStopsLayer.renderer) {
+                                const sizeVar = (this.metroStopsLayer.renderer as UniqueValueRenderer).visualVariables![0] as __esri.SizeVariable;
+                                this.metroStopSizes = sizeVar.stops!.map(s => (s as __esri.SizeStop).size as number);
+                            }
+                            break;
                         }
-                        break;
+                        case this.LINES_META: {
+                            this.linesLayer = layer;
+                            this.lineSizes = (this.linesLayer.renderer as ClassBreaksRenderer).classBreakInfos.map((cb) => {
+                                return (cb.symbol as SimpleLineSymbol).width;
+                            });
+                            break;
+                        }
+                        case this.PLACE_META: {
+                            this.placesLayer = layer;
+                            break;
+                        }
+                        case LAYER_CYCLING: {
+                            this.cyclingLayer = layer;
+                            break;
+                        }    
+                        case LAYER_AMTRAK: {
+                            this.amtrakLayer = layer;
+                            break;
+                        }
+                        case LAYER_CENSUS_COUNTIES: {
+                            this.countiesLayer = layer;
+                            break;
+                        }
+                        case LAYER_CENSUS_TRACTS: {
+                            this.tractsLayer = layer;
+                            this.tractOriginalColors = (layer.renderer as ClassBreaksRenderer).classBreakInfos
+                                .map(cb => (cb.symbol as SimpleFillSymbol).color.clone());
+                            break;
+                        }
                     }
-                    case this.LINES_META: {
-                        this.linesLayer = layer;
-                        this.lineSizes = (this.linesLayer.renderer as ClassBreaksRenderer).classBreakInfos.map((cb) => {
-                            return (cb.symbol as SimpleLineSymbol).width;
-                        });
-                        break;
-                    }
-                    case this.PLACE_META: {
-                        this.placesLayer = layer;
-                        break;
-                    }
-                    case LAYER_CYCLING: {
-                        this.cyclingLayer = layer;
-                        break;
-                    }    
-                    case LAYER_AMTRAK: {
-                        this.amtrakLayer = layer;
-                        break;
-                    }
-                    case LAYER_CENSUS_COUNTIES: {
-                        this.countiesLayer = layer;
-                        break;
-                    }
-                    case LAYER_CENSUS_TRACTS: {
-                        this.tractsLayer = layer;
-                        this.tractOriginalColors = (layer.renderer as ClassBreaksRenderer).classBreakInfos
-                            .map(cb => (cb.symbol as SimpleFillSymbol).color.clone());
-                        break;
-                    }
+                    return layer;
+                } catch (e) {
+                    throw new Error(`failed to build layer ${i + 1}/${this.layers.length}: ${e}`);
                 }
-            } catch (e) {
-                throw new Error(`failed to build layer ${i + 1}/${this.layers.length}: ${e}`);
-            }
-        })
-        return featureLayers;
+            }))
+        return res;
     }
     private async setPanelViews(view: __esri.MapView, panelEls: Map<HTMLCalcitePanelElement, string>) {
         for (const [k, v] of panelEls) {
@@ -584,7 +587,7 @@ export class MapWindow extends HTMLElement {
     // SHOW/HIDE CALCITE PANELS FROM THE ACTION BAR
     private togglePanel(id: string, actionBar: any, panels: Record<string, HTMLElement>): void {
         actionBar.querySelectorAll("calcite-action").forEach((a: any) => {
-            a.active = a.dataset.actionId === id ? !a.active : false;
+            a.active = a.dataset['actionId'] === id ? !a.active : false;
         });
         Object.entries(panels).forEach(([key, panel]: [string, any]) => {
             panel.hidden = key !== id || !actionBar.querySelector(`[data-action-id="${id}"]`).active;
