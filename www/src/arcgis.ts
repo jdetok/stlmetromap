@@ -54,7 +54,7 @@ export function newHighlightSetting(name: string, color: __esri.ColorProperties)
 }
 
 // choropleth levels, pass min val, max val, rgb val
-export type cplethEls = [number, number, number[]];
+export type cplethEls = [number, number, readonly number[]];
 
 // create choropleth levels for the array of min/max/color
 const newChoroplethLevel = (c: cplethEls, line?: boolean) => {

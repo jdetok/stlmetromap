@@ -13,14 +13,19 @@ import Polygon from "@arcgis/core/geometry/Polygon";
 import Graphic from "@arcgis/core/Graphic";
 import Color from "@arcgis/core/Color.js";
 import { STYLE, MAP_STYLE } from "./styleshadow.js";
-import { arcgisMapProps, buildArcgisElement, buildArcgisMap, drawCircle, queryLayer, updateRenderedSizes } from "../arcgis.js";
+import {
+    arcgisMapProps, buildArcgisElement, buildArcgisMap, drawCircle,
+    makeChoroplethLevels, queryLayer, updateRenderedSizes, cplethEls
+} from "../arcgis.js";
 import {
     buildCalciteAction, buildCalcitePanel, buildCalciteSliderBlock, buildCalciteTableBlock, calciteActionProps,
     buildCalciteLegendPanel, buildCalciteTable, buildCalciteActionBar, buildCalciteDropdown,
+    buildCalciteSelectBlock,
  } from "../calcite.js";
 import {
     FeatureLayerMeta, makeBusStopsLayer, makeMetroLinkLayer, makeLinesLayer, makePlacesLayer, LAYER_CENSUS_COUNTIES,
     LAYER_CENSUS_TRACTS, LAYER_CYCLING, LAYER_AMTRAK,
+    TRACT_CLASSBREAKS,
 } from "../layers.js";
 import {
     STLCOORDS, PROJID, BASEMAP, TOGGLE_ACTIONS, HIGHLIGHTS,
@@ -40,13 +45,14 @@ export const TAG = "map-window";
 export class MapWindow extends HTMLElement {
     private maxW: number = 980;
     private maxH: number = 980;
-    private arcgisMap!: HTMLArcgisMapElement;
+    // private arcgisMap!: HTMLArcgisMapElement;
     private mapProps: arcgisMapProps = {
         basemap: BASEMAP,
         extent: STLCOORDS,
         onViewReady: this.onMapViewReady.bind(this),
     }
-    
+    private arcgisMap = buildArcgisMap(this.mapProps);
+
     // ARRAY OF BUILT FEATURE LAYER METAS (makeFeatureLayer builds these as FeatureLayers)
     private builtLayers: FeatureLayer[] = [];
 
@@ -66,7 +72,9 @@ export class MapWindow extends HTMLElement {
     private get metroStopsLayer(): FeatureLayer { return this.mapLayers.get('metro')!.layer }; 
     private get linesLayer(): FeatureLayer { return this.mapLayers.get('lines')!.layer }; 
     private get placesLayer(): FeatureLayer { return this.mapLayers.get('places')!.layer }; 
-    private get tractsLayer(): FeatureLayer { return this.mapLayers.get('tracts')!.layer }; 
+    private get tractsLayer(): FeatureLayer { return this.mapLayers.get('tracts')!.layer };
+    
+    private tractsChoroplethMap: Map<string, cplethEls[]> = TRACT_CLASSBREAKS;
     
     // HIGHLIGHT SETTING NAMES MAPPED TO HIGHLIGHT HANDLERS
     private highlightHandles: Map<string, __esri.Handle> = new Map();
@@ -112,6 +120,7 @@ export class MapWindow extends HTMLElement {
     private busStopSliderBlock!: HTMLCalciteBlockElement;
     private metroStopSliderBlock!: HTMLCalciteBlockElement;
     private lineSizeSliderBlock!: HTMLCalciteBlockElement;
+    private tractChoroSelBlock!: HTMLCalciteBlockElement;
 
     // SLIDER ELEMENTS
     private busStopSizeSlider!: HTMLCalciteSliderElement;
@@ -140,9 +149,7 @@ export class MapWindow extends HTMLElement {
         
         // build all action bars (in this)
         this.initActionBars(this.actBarMetas);
-        this.buildSlidersPanel();
         this.buildRouteInfoPanel();
-        this.arcgisMap = buildArcgisMap(this.mapProps);
     
         // build and append all elements to shadow dom
         root.append(
@@ -163,6 +170,7 @@ export class MapWindow extends HTMLElement {
     }
     // build sections requiring async
     async connectedCallback(): Promise<void> {
+        await this.buildSlidersPanel();
         this.routeDropdown = await this.buildRoutesDropdown();
         this.shadowRoot?.append(this.routeDropdown);
     }
@@ -260,9 +268,6 @@ export class MapWindow extends HTMLElement {
                 ([w, h]) => {
                     if (!w || !h) throw new Error(`width or height is undefined: w: ${w}, h: ${h}`);
                     if (view.popup) view.popup.dockEnabled = w >= maxW && h >= maxH;
-                    
-                    console.log(`%c${w}x${h}`, 'color: red;')
-                    console.log(view.popup);
                 }
             );
         }
@@ -517,8 +522,10 @@ export class MapWindow extends HTMLElement {
     }
     // this.sliderPanel is pre build with buildCalcitePanel
     // this builds and appends Calcite elements to the sliderPanel
-    private buildSlidersPanel(): void {
+    private async buildSlidersPanel(): Promise<void> {
+        this.tractChoroSelBlock = await this.buildTractChoroFieldSelector();
         this.slidersPanel.append(
+            this.tractChoroSelBlock,
             this.buildLineSizeSlider(),
             this.buildBusStopSizeSlider(),
             this.buildMetroStopSizeSlider(),
@@ -557,7 +564,7 @@ export class MapWindow extends HTMLElement {
                     this.metroStopSizeSlider.value as number,
                 ).clone();
             },
-            sliderProps: {
+             sliderProps: {
                 min: 0.1,   
                 max: 3,
                 step: 0.1,
@@ -615,6 +622,29 @@ export class MapWindow extends HTMLElement {
         });
         this.tractOpacitySlider = slider;
         return block;
+    }
+    private async buildTractChoroFieldSelector(): Promise<HTMLCalciteBlockElement> {
+        const head = 'Select Census Tract Chroropleth Field';
+        return await buildCalciteSelectBlock({
+            heading: head,
+            selProps: {
+                heading: head,
+                optsProps: {
+                    opts: [
+                        { label: 'Population Density', value: 'popl_dens'},
+                        { label: 'Median Income', value: 'med_inc'},
+                        { label: 'Median Rent', value: 'med_rent'},
+                        { label: 'Median Age', value: 'med_age'},
+                    ],
+                },
+                onSelChange: (val: string) => {
+                    const renderer = (this.tractsLayer.renderer as ClassBreaksRenderer);
+                    renderer.field = val;
+                    renderer.classBreakInfos = makeChoroplethLevels(this.tractsChoroplethMap.get(val)!);
+                    this.tractsLayer.renderer = renderer.clone();
+                }
+            }
+        });
     }
     // BUILD A CALCITE SELECT TO FILTER BY BUS ROUTE
     private async buildRoutesDropdown(): Promise<HTMLCalciteDropdownElement> {
