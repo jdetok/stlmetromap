@@ -42,13 +42,7 @@ export class MapWindow extends HTMLElement {
     private arcgisMap!: HTMLArcgisMapElement;
     private mapProps: arcgisMapProps = {
         basemap: BASEMAP,
-        extent: {
-            xmin: STLCOORDS.xmin,
-            ymin: STLCOORDS.ymin,
-            xmax: STLCOORDS.xmax,
-            ymax: STLCOORDS.ymax,
-            spatialReference: {wkid: PROJID}
-        } as __esri.Extent,
+        extent: STLCOORDS,
         onViewReady: this.onMapViewReady.bind(this),
     }
     
@@ -105,7 +99,7 @@ export class MapWindow extends HTMLElement {
     private TOGGLE_ACTIONS: calciteActionProps[] = TOGGLE_ACTIONS;
 
     // ROUTE DROPDOWN
-    private routesData: any[] = [];
+    private routesData: { type: string, coordinates: any, properties: Record<string, (string | number | boolean)> }[] = [];
     private routeDropdown!: HTMLCalciteDropdownElement;
 
     // ARRAYS OF FEATURE SIZES FOR SLIDERS
@@ -203,9 +197,7 @@ export class MapWindow extends HTMLElement {
 
         // BUILD FEATURE LAYERS
         this.builtLayers = await this.buildMapFeatureLayers();
-        console.log(`%cbuilt layers: ${this.builtLayers.length}`,
-            'color: seagreen; font-weight: 600;'
-        );
+        console.log(`%cbuilt layers: ${this.builtLayers.length}`, 'color: seagreen; font-weight: 600;');
 
         // SET OBJECT HIGHLIGHT COLORS
         const view = this.arcgisMap.view as __esri.MapView;
@@ -225,7 +217,7 @@ export class MapWindow extends HTMLElement {
         await this.openLegendOnLayerLoaded(view, this.busStopsLayer, maxW, maxH);
         
         // draw circle on screen on click
-        view.on("click", async (event) => {
+        view.on('click', async (event) => {
             if (this.radiusGraphic) {
                 view.graphics.remove(this.radiusGraphic);
             }
@@ -675,7 +667,7 @@ export class MapWindow extends HTMLElement {
 
         const props = feature.properties;
         this.routeInfoPanel.querySelectorAll("calcite-block")?.forEach((t) => t.remove());
-        this.routeInfoPanel.heading = `${route}: ${props.stops_total} stops`;
+        this.routeInfoPanel.heading = `${route}: ${props['stops_total']} stops`;
         this.routeInfoPanel.closed = false;
         this.routeInfoPanel.closable = true;
 
@@ -685,7 +677,7 @@ export class MapWindow extends HTMLElement {
             () => buildCalciteTable({
                 hasHeader: true, rows: [
                     ['Weekday', 'Saturday', 'Sunday'],
-                    [props.freq_wk, props.freq_sa, props.freq_su],
+                    [props['freq_wk'], props['freq_sa'], props['freq_su']],
                 ]
             }), `Frequencies were derived by
             taking the mode of the

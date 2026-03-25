@@ -7,7 +7,8 @@ export const STLCOORDS = {
     ymin: 38.53,
     xmax: -90.15,
     ymax: 38.75,
-};
+    spatialReference: {wkid: PROJID},
+} as __esri.Extent;
 
 export const TRACTS_LAYER_TTL = "Census Tract Population Density";
 export const TRACTS_LAYER_URL = "/layers/tracts";
