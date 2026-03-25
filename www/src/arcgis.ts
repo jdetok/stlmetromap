@@ -54,21 +54,31 @@ export function newHighlightSetting(name: string, color: __esri.ColorProperties)
 }
 
 // choropleth levels, pass min val, max val, rgb val
-export type cplethEls = [number, number, number[]];
-
+export type cplethEls = [number, number, readonly number[]];
+export type choroProps = {
+    levels?: cplethEls[],
+    level?: cplethEls,
+    opac: number,
+    line?: boolean,
+}
 // create choropleth levels for the array of min/max/color
-const newChoroplethLevel = (c: cplethEls, line?: boolean) => {
+const newChoroplethLevel = (props: choroProps) => {
+    if (!props.level) return;
     return {
-        minValue: c[0],
-        maxValue: c[1],
-        symbol: line ? new SimpleLineSymbol({ color: [...c[2], 0.65], width: 0.5 }) :
-            new SimpleFillSymbol({ color: [...c[2], 0.05] }),
+        minValue: props.level[0],
+        maxValue: props.level[1],
+        symbol: props.line ? new SimpleLineSymbol({ color: [...props.level[2], 0.65], width: 0.5 }) :
+            new SimpleFillSymbol({ color: [...props.level[2], props.opac] }),
     };
 };
-export const makeChoroplethLevels = (levels: cplethEls[], line?: boolean): __esri.ClassBreakInfoProperties[] => {
+
+export const makeChoroplethLevels = (props: choroProps): __esri.ClassBreakInfoProperties[] => {
+    if (!props.levels) throw new Error(`props.levels can't be empty`);
     let lvls: __esri.ClassBreakInfoProperties[] = [];
-    for (const l of levels) {
-        lvls.push(newChoroplethLevel(l, line));
+    for (const l of props.levels) {
+        lvls.push(newChoroplethLevel({
+            level: l, opac: props.opac, line: props.line ?? false
+        }) as __esri.ClassBreakInfoProperties);
     }
     return lvls;
 };

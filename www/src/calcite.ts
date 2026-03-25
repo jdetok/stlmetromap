@@ -4,6 +4,8 @@ import "@esri/calcite-components/dist/components/calcite-table";
 import "@esri/calcite-components/dist/components/calcite-table-header";
 import "@esri/calcite-components/dist/components/calcite-table-row";
 import "@esri/calcite-components/dist/components/calcite-slider";
+import "@esri/calcite-components/dist/components/calcite-select";
+import "@esri/calcite-components/dist/components/calcite-option";
 import "@esri/calcite-components/dist/components/calcite-label";
 import "@esri/calcite-components/dist/components/calcite-table-cell";
 import "@arcgis/map-components/dist/components/arcgis-basemap-gallery";
@@ -175,6 +177,8 @@ export function buildCalciteNotice(label: string, content: string): {
     return {notice: notice, btn: btn};
 }
 
+
+
 // build a single calcite button
 function buildCalciteButton(txt: string, appearance?: string, scale?: string, icon?: string): HTMLCalciteButtonElement {
     const btn = Object.assign(document.createElement("calcite-button"), {
@@ -271,11 +275,82 @@ export type calciteSelectProps = {
     cssClass?: string,
     optsProps?: {
         allOpt?: calciteOptionProps,
+        opts?: calciteOptionProps[],
         dataUrl?: string,
-        mapFeatures: (features: any[]) => any[],
+        mapFeatures?: (features: any[]) => any[],
     },
 }
-export type calciteComboboxProps = {
+export async function buildCalciteSelect(props: calciteSelectProps): Promise<HTMLCalciteSelectElement> {
+    const sel = Object.assign(document.createElement('calcite-select'), {
+        heading: props.heading,
+        label: props.heading,
+    });
+    if (props.cssClass) sel.classList.add(props.cssClass);
+    sel.addEventListener('calciteSelectChange', () => props.onSelChange(sel.value));
+    
+    const builtOpts: HTMLCalciteOptionElement[] = [];
+    
+    if (props.optsProps) {    
+        // all option
+        if (props.optsProps.allOpt) {
+            builtOpts.push(Object.assign(document.createElement('calcite-option'), {
+                label: props.optsProps.allOpt.label,
+                value: props.optsProps.allOpt.value,
+            }));
+        }
+        if (props.optsProps.dataUrl) {
+            try {
+                const data = await fetch(props.optsProps.dataUrl).then(r => r.json());
+                if (props.optsProps.mapFeatures) {
+                    const opts = props.optsProps.mapFeatures(data.features);
+                    for (const opt of opts) {
+                        builtOpts.push(Object.assign(document.createElement('calcite-option'), {
+                            label: opt,
+                            value: opt,
+                        }));
+                    }
+                } else {
+                    throw new Error(`must pass a function to optsProps.mapFeatures if optsPropts.dataUrl is set`);
+                }
+                
+            } catch (e) {
+                throw new Error(`failed to fetch data from ${props.optsProps.dataUrl}: ${e}`);
+            }
+        } else {
+            if (!props.optsProps.opts) throw new Error('optsProps.opts must be passed if optsProps.dataUrl is not set');
+            for (const opt of props.optsProps.opts) {
+                builtOpts.push(Object.assign(document.createElement('calcite-option'), {
+                    label: opt.label,
+                    value: opt.value,
+                }));
+            }
+        }
+        if (builtOpts.length === 0) {
+            throw new Error('no options');
+        }
+        sel.append(...builtOpts);
+    }
+    return sel;
+}
+
+export type calciteSelectBlock = {
+    heading: string,
+    selProps: calciteSelectProps,
+    onSelChange?: (vals: string[]) => void,
+    cssClass?: string,
+};
+export async function buildCalciteSelectBlock(props: calciteSelectBlock): Promise<HTMLCalciteBlockElement> {
+    const block = Object.assign(document.createElement('calcite-block'), {
+        heading: props.heading,
+        expanded: true,
+        className: props.cssClass ?? '',
+    });
+    const sel = await buildCalciteSelect(props.selProps);
+    block.append(sel);
+    return block;
+} 
+
+export type calciteDropdownProps = {
     heading: string,
     onSelChange: (vals: string[]) => void,
     cssClass?: string,
@@ -289,48 +364,8 @@ export type calciteComboboxProps = {
     },
 }
 
-export async function buildCalciteSelect(props: calciteSelectProps): Promise<HTMLCalciteSelectElement> {
-    const sel = Object.assign(document.createElement('calcite-select'), {
-        heading: props.heading,
-        label: props.heading,
-    });
-    if (props.cssClass) sel.classList.add(props.cssClass);
-    sel.addEventListener('calciteSelectChange', () => props.onSelChange(sel.value));
-
-    if (props.optsProps) {
-        let builtOpts: HTMLCalciteOptionElement[] = [];
-        
-        // all option
-        if (props.optsProps.allOpt) {
-            builtOpts.push(Object.assign(document.createElement('calcite-option'), {
-                label: props.optsProps.allOpt.label,
-                value: props.optsProps.allOpt.value,
-            }));
-        }
-        if (props.optsProps.dataUrl) {
-            try {
-                const data = await fetch(props.optsProps.dataUrl).then(r => r.json());
-                const opts = props.optsProps.mapFeatures(data.features);
-                for (const opt of opts) {
-                    builtOpts.push(Object.assign(document.createElement('calcite-option'), {
-                        label: opt,
-                        value: opt,
-                    }));
-                }
-            } catch (e) {
-                throw new Error(`failed to fetch data from ${props.optsProps.dataUrl}: ${e}`);
-            }
-        }
-        if (builtOpts.length === 0) {
-            throw new Error('no options');
-        }
-        sel.append(...builtOpts);
-    }
-    return sel;
-}
-
 // rather than combobox, create a dropdown with button and dropdown group selection multiple
-export async function buildCalciteDropdown(props: calciteComboboxProps, clearBtn?: boolean): Promise<HTMLCalciteDropdownElement> {
+export async function buildCalciteDropdown(props: calciteDropdownProps, clearBtn?: boolean): Promise<HTMLCalciteDropdownElement> {
     const down = Object.assign(document.createElement('calcite-dropdown'), {
         width: 'm',
         closeOnSelectDisabled: true,
@@ -388,45 +423,3 @@ export async function buildCalciteDropdown(props: calciteComboboxProps, clearBtn
     down.append(btn, dropGroup);
     return down;
 }
-
-export async function buildCalciteCombobox(props: calciteComboboxProps): Promise<HTMLCalciteComboboxElement> {
-    const combo = Object.assign(document.createElement('calcite-combobox'), {
-        heading: props.heading,
-        label: props.heading,
-        selectionMode: props.selectMode ?? 'multiple',
-        placeholderIcon: props.icon ?? 'filter',
-        placeholder: props.placeholder,
-    });
-    if (props.cssClass) combo.classList.add(props.cssClass);
-    combo.addEventListener('calciteComboboxChange', () => {
-        const vals = Array.from(combo.selectedItems).map((i: any) => i.value);
-        props.onSelChange(vals);
-    });
-    if (props.optsProps) {
-        let builtOpts: HTMLCalciteComboboxItemElement[] = [];
-        if (props.optsProps.allOpt) {
-            builtOpts.push(Object.assign(document.createElement('calcite-combobox-item'), {
-                textLabel: props.optsProps.allOpt.label,
-                value: props.optsProps.allOpt.value,
-            }));
-        }
-        if (props.optsProps.dataUrl) {
-            try {
-                const data = await fetch(props.optsProps.dataUrl).then(r => r.json());
-                const opts = props.optsProps.mapFeatures(data.features);
-                for (const opt of opts) {
-                    builtOpts.push(Object.assign(document.createElement('calcite-combobox-item'), {
-                        textLabel: opt,
-                        value: opt,
-                    }));
-                }
-            } catch (e) {
-                throw new Error(`failed to fetch data from ${props.optsProps.dataUrl}: ${e}`);
-            }
-        }
-        if (builtOpts.length === 0) throw new Error('no options');
-        combo.append(...builtOpts);
-    }
-    return combo;
-}
-

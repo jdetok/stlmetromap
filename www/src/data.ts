@@ -10,10 +10,10 @@ export const STLCOORDS = {
     spatialReference: {wkid: PROJID},
 } as __esri.Extent;
 
-export const TRACTS_LAYER_TTL = "Census Tract Population Density";
+export const TRACTS_LAYER_TTL = "US Census Tracts";
 export const TRACTS_LAYER_URL = "/layers/tracts";
 
-export const COUNTIES_LAYER_TTL = "St. Louis MSA Counties";
+export const COUNTIES_LAYER_TTL = "US Counties";
 export const COUNTIES_LAYER_URL = "/layers/counties";
 
 export const ML_LAYER_TTL = "MetroLink Stops";
@@ -103,6 +103,7 @@ export const TRACTS_FIELDS = [
     { name: "popl_dens", alias: "Population Density", type: "double" },
     { name: "med_age", alias: "Median Age", type: "double" },
     { name: "med_inc", alias: "Median Income", type: "double" },
+    { name: "med_rent", alias: "Median Rent", type: "double" },
     { name: "popl_pov", alias: "Population in Poverty", type: "integer" },
     { name: "popl_pov_pct", alias: "Percent in Poverty", type: "string" },
     { name: "stops_in_tract", alias: "Transit Stops in Tract", type: "string" },
@@ -115,6 +116,7 @@ export const TRACTS_FIELDINFOS = [
     { fieldName: "stops_in_tract", label: "Transit Stops in Tract" },
     { fieldName: "med_age", label: "Median Age" },
     { fieldName: "med_inc", label: "Median Income" },
+    { fieldName: "med_rent", label: "Median Rent" },
     { fieldName: "popl_pov", label: "Population in Poverty" },
     { fieldName: "popl_pov_pct", label: "Percent in Poverty" },
 ];
