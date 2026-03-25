@@ -213,7 +213,6 @@ export const TOGGLE_ACTIONS: calciteActionProps[] = [
     },
 ];
 
-
 // TOGGLE BUTTONS FOR CLEARING HIGHLIGHTED PLACES/BUS STOPS
 export const CLEAR_PLACES = { id: "reset", icon: "reset", text: "Clear Highlighted Places" };
 export const CLEAR_BUSES = { id: "bus_reset", icon: "bus", text: "Clear Highlighted Transit Stops" };

@@ -19,7 +19,7 @@ import Polygon from "@arcgis/core/geometry/Polygon";
 import Graphic from "@arcgis/core/Graphic";
 import Color from "@arcgis/core/Color.js";
 import { STYLE, MAP_STYLE } from "./styleshadow.js";
-import { arcgisMapProps, buildArcgisMap, drawCircle, queryLayer, updateRenderedSizes } from "../arcgis.js";
+import { arcgisMapProps, buildArcgisElement, buildArcgisMap, drawCircle, queryLayer, updateRenderedSizes } from "../arcgis.js";
 import {
     buildCalciteAction, buildCalcitePanel, buildCalciteSliderBlock, buildCalciteTableBlock, calciteActionProps,
     buildCalciteLegendPanel, buildCalciteTable, buildCalciteActionBar, buildCalciteDropdown,
@@ -33,6 +33,7 @@ import {
     CLEAR_BUSES, CLEAR_PLACES, FULLSCREEN, MAIN_ACTIONS
 } from "../data.js";
 
+type mapLayer = { fn?: Function, meta: FeatureLayerMeta, layer: FeatureLayer, i: number}
 type actbarWithTooltips = { bar: HTMLCalciteActionBarElement, tooltips: HTMLCalciteTooltipElement[] };
 
 // COMPONENT CLASS 
@@ -53,7 +54,8 @@ export class MapWindow extends HTMLElement {
     
     // ARRAY OF BUILT FEATURE LAYER METAS (makeFeatureLayer builds these as FeatureLayers)
     private builtLayers: FeatureLayer[] = [];
-    private mapLayers: Map<string, { fn?: Function, meta: FeatureLayerMeta, layer: FeatureLayer, i: number}> = new Map([
+
+    private mapLayers: Map<string, mapLayer> = new Map([
         ['counties', { meta: LAYER_CENSUS_COUNTIES, layer: new FeatureLayer, i: 0 }],
         ['tracts', { meta: LAYER_CENSUS_TRACTS, layer: new FeatureLayer, i: 1 }],
         ['amtrak', { meta: LAYER_AMTRAK, layer: new FeatureLayer, i: 2 }],
@@ -205,12 +207,15 @@ export class MapWindow extends HTMLElement {
             'color: seagreen; font-weight: 600;'
         );
 
-        // BUILD UTILITY WIDGETS
-        this.arcgisMap.append(this.buildZoom(), this.buildSearch());
-        
         // SET OBJECT HIGHLIGHT COLORS
         const view = this.arcgisMap.view as __esri.MapView;
         view.highlights = HIGHLIGHTS;
+        
+        // BUILD UTILITY WIDGETS
+        this.arcgisMap.append(
+            buildArcgisElement({ elStr: 'arcgis-zoom' }),
+            buildArcgisElement({ elStr: 'arcgis-search', view: view })
+        );
         
         await this.setPanelViews(view, new Map([...this.actionBarPanels].filter(([, v]) => v !== 'skip')));
         const maxW = 980;
@@ -711,14 +716,6 @@ export class MapWindow extends HTMLElement {
         );
         this.routeInfoPanel.append(accessTbl);
         this.routeInfoPanel.hidden = false;
-    }
-    private buildZoom(): HTMLArcgisZoomElement {
-        return document.createElement("arcgis-zoom");
-    }
-    private buildSearch(): HTMLArcgisSearchElement {
-        const search = document.createElement("arcgis-search");
-        search.view = this.arcgisMap.view;
-        return search;
     }
     private addStyling(style: string): HTMLStyleElement {
         return Object.assign(document.createElement("style"), { textContent: style });

@@ -15,13 +15,11 @@ import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import FeatureEffect from "@arcgis/core/layers/support/FeatureEffect";
 
-// arcgis compoonent helpers
-
 export type arcgisMapProps = {
     basemap: string | __esri.Basemap | undefined,
     extent: __esri.Extent,
     onViewReady: () => Promise<void>,
-}
+};
 export function buildArcgisMap(props: arcgisMapProps): HTMLArcgisMapElement {
     const map = Object.assign(document.createElement("arcgis-map"), {
         basemap: props.basemap,
@@ -29,8 +27,21 @@ export function buildArcgisMap(props: arcgisMapProps): HTMLArcgisMapElement {
     });
     map.addEventListener('arcgisViewReadyChange', props.onViewReady, { once: true });
     return map;
-}
+};
 
+// GENERAL ARCGIS COMPONENT HELPERS
+export type arcgisElementProps = {
+    elStr: 'arcgis-zoom' | 'arcgis-search'
+    view?: __esri.MapView
+};
+export type arcgisElementReturn = HTMLArcgisZoomElement | HTMLArcgisSearchElement;
+export function buildArcgisElement(props: arcgisElementProps): arcgisElementReturn {
+    const el = document.createElement(props.elStr);
+    if (props.view) {
+        el.view = props.view;
+    }
+    return el;
+}
 // HELPER TO CREATE CUSTOM HIGHLIGHT SETTINGS
 export function newHighlightSetting(name: string, color: __esri.ColorProperties): __esri.HighlightOptionsProperties {
     return {
