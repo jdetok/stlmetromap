@@ -53,13 +53,48 @@ const MED_COLOR = [255, 25, 25, 0.3];
 const COUNTIES_OUTLINE_COLOR = [0, 0, 0, 0.5];
 const COUNTIES_OUTLINE_SIZE = 1.5;
 const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
+const CHOROPLETH = {
+    lvl1: [94, 150, 98],
+    lvl2: [17, 200, 152],
+    lvl3: [0, 210, 255],
+    lvl4: [44, 60, 255],
+    lvl5: [50, 1, 63],
+} as const;
+
 const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
-    [0, 2500, [94, 150, 98]],
-    [2500, 5000, [17, 200, 152]],
-    [5000, 7500, [0, 210, 255]],
-    [7500, 10000, [44, 60, 255]],
-    [10000, 99999, [50, 1, 63]],
+    [0, 2500, CHOROPLETH.lvl1],
+    [2500, 5000, CHOROPLETH.lvl2],
+    [5000, 7500, CHOROPLETH.lvl3],
+    [7500, 10000, CHOROPLETH.lvl4],
+    [10000, 99999, CHOROPLETH.lvl5],
 ];
+const MEDRENT_CHOROPLETH_LEVELS: cplethEls[] = [
+    [0, 700, CHOROPLETH.lvl1],
+    [700, 950, CHOROPLETH.lvl2],
+    [950, 1350, CHOROPLETH.lvl3],
+    [1350, 2000, CHOROPLETH.lvl4],
+    [2000, 5000, CHOROPLETH.lvl5],
+];
+const MEDINC_CHOROPLETH_LEVELS: cplethEls[] = [
+    [0, 30000, CHOROPLETH.lvl1],
+    [30000, 50000, CHOROPLETH.lvl2],
+    [50000, 75000, CHOROPLETH.lvl3],
+    [75000, 100000, CHOROPLETH.lvl4],
+    [100000, 300000, CHOROPLETH.lvl5],
+];
+const MEDAGE_CHOROPLETH_LEVELS: cplethEls[] = [
+    [0, 30, CHOROPLETH.lvl1],
+    [30, 35, CHOROPLETH.lvl2],
+    [35, 45, CHOROPLETH.lvl3],
+    [45, 60, CHOROPLETH.lvl4],
+    [60, 100, CHOROPLETH.lvl5],
+];
+export const TRACT_CLASSBREAKS: Map<string, cplethEls[]> = new Map([
+    ['popl_dens', POPLDENS_CHOROPLETH_LEVELS],
+    ['med_inc', MEDINC_CHOROPLETH_LEVELS],
+    ['med_age', MEDAGE_CHOROPLETH_LEVELS],
+    ['med_rent', MEDRENT_CHOROPLETH_LEVELS],
+]);
 const LINES_CLASSBREAKS: cplethEls[] = [
     [0, 19, [62, 225, 67]],
     [20, 29, [50, 150, 127]], // slateish green
@@ -80,7 +115,7 @@ export const makeLinesLayer = (
     fields: LINES_FIELDS,
     renderer: new ClassBreaksRenderer({
         field: "freq_wk",
-        classBreakInfos: makeChoroplethLevels(LINES_CLASSBREAKS, true),
+        classBreakInfos: makeChoroplethLevels({ levels: LINES_CLASSBREAKS, opac: 0.65, line: true}),
         defaultSymbol: new SimpleLineSymbol({ color: "gray", width: 3 })
     }),
     toGraphics: toPolyline,
@@ -470,7 +505,10 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
     fields: TRACTS_FIELDS as __esri.FieldProperties[],
     renderer: new ClassBreaksRenderer({
         field: "popl_dens",
-        classBreakInfos: makeChoroplethLevels(POPLDENS_CHOROPLETH_LEVELS),
+        classBreakInfos: makeChoroplethLevels({
+            levels: POPLDENS_CHOROPLETH_LEVELS,
+            opac: 0.05,
+        }),
     }),
     popupTemplate: {
         title: "{tract_name}",
