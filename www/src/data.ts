@@ -1,3 +1,5 @@
+import { newHighlightSetting } from "./arcgis";
+import { calciteActionProps } from "./calcite";
 export const BASEMAP = 'dark-gray';
 export const PROJID = 4326;
 export const STLCOORDS = {
@@ -160,7 +162,6 @@ export const AMTRAK_FIELDINFOS = [
     { fieldName: "operator", label: "Operator" },
 ];
 
-
 export const SOCIAL_FIELDS = [
     { name: "ObjectID", alias: "ObjectID", type: "oid" },
     { name: "name", alias: "Name", type: "string" },
@@ -168,3 +169,62 @@ export const SOCIAL_FIELDS = [
     { name: "operator", alias: "Operator", type: "string" },
     { name: "brand", alias: "Brand", type: "string" },
 ];
+
+// CUSTOM HIGHLIGHT SETTINGS
+const HL_PARKS = newHighlightSetting("parks", "mediumseagreen");
+const HL_SCHOOLS = newHighlightSetting("schools", "khaki");
+const HL_CHURCH = newHighlightSetting("church", "violet");
+const HL_MED = newHighlightSetting("med", "mediumvioletred");
+const HL_GROCERY = newHighlightSetting("grocery", "white");
+export const HIGHLIGHTS: __esri.CollectionProperties<__esri.HighlightOptionsProperties> = [
+    newHighlightSetting("default", "cyan"),
+    HL_PARKS,
+    HL_SCHOOLS,
+    HL_CHURCH, 
+    HL_MED,
+    HL_GROCERY,
+];
+
+// CALCITE OBJECTS
+// ACTION CONFIGS FOR THE TOGGLE BAR. EACH RENDERS INTO A BUTTON WITH A BUTTON TO HIGHLIGHT FEATURES
+// RETURNED FROM THE WHERE STRING
+export const TOGGLE_ACTIONS: calciteActionProps[] = [
+    {
+        id: "parks", icon: "tree", text: "Highlight Parks",
+        where: `type = 'park'`, highlightName: HL_PARKS.name!,
+    }, {
+        id: "medical", icon: "medical", text: "Highlight Hospitals",
+        where: `type = 'medical'`, highlightName: HL_MED.name!,
+    }, {
+        id: "university", icon: "mooc", text: "Highlight Universities",
+        where: `type = 'university'`, highlightName: HL_SCHOOLS.name!,
+    }, {
+        id: "school", icon: "education", text: "Highlight Schools",
+        where: `type = 'school'`, highlightName: HL_SCHOOLS.name!,
+    }, {
+        id: "grocery", icon: "shopping-cart", text: "Highlight Grocery Stores",
+        where: `type = 'grocery'`, highlightName: HL_GROCERY.name!,
+    }, {
+        id: "church", icon: "organization", text: "Highlight Places of Worship",
+        where: `type = 'church'`, highlightName: HL_CHURCH.name!,
+    }, {
+        id: "social_facility", icon: "home", text: "Highlight Community Centers",
+        where: `type = 'social_facility'`, highlightName: HL_MED.name!,
+    },
+];
+
+
+// TOGGLE BUTTONS FOR CLEARING HIGHLIGHTED PLACES/BUS STOPS
+export const CLEAR_PLACES = { id: "reset", icon: "reset", text: "Clear Highlighted Places" };
+export const CLEAR_BUSES = { id: "bus_reset", icon: "bus", text: "Clear Highlighted Transit Stops" };
+
+// ACTION BAR WITH PANELS/UTILITIES
+export const MAIN_ACTIONS: calciteActionProps[] = [
+    { id: "legend", icon: "legend", text: "Legend" },
+    { id: "sliders", icon: "sliders", text: "Appearance Sliders" },
+    { id: "layers", icon: "layers", text: "Toggle Layers" },
+    { id: "basemaps", icon: "basemap", text: "Basemaps" },
+    { id: "print", icon: "print", text: "Export" },
+];
+// REQUEST FULL SCREEN
+export const FULLSCREEN = { id: "fs", icon: "extent", text: "Fullscreen" };

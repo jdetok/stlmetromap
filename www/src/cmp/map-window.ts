@@ -11,15 +11,15 @@ import * as reactiveUtils from "@arcgis/core/core/reactiveUtils"
 import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer.js";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer.js";
 import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol.js";
+import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol.js";
 import FeatureEffect from "@arcgis/core/layers/support/FeatureEffect";
 import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Polygon from "@arcgis/core/geometry/Polygon";
 import Graphic from "@arcgis/core/Graphic";
 import Color from "@arcgis/core/Color.js";
-import { STLCOORDS, PROJID, BASEMAP } from "../data.js";
 import { STYLE, MAP_STYLE } from "./styleshadow.js";
-import { arcgisMapProps, buildArcgisMap, drawCircle, newHighlightSetting, queryLayer, updateRenderedSizes } from "../arcgis.js";
+import { arcgisMapProps, buildArcgisMap, drawCircle, queryLayer, updateRenderedSizes } from "../arcgis.js";
 import {
     buildCalciteAction, buildCalcitePanel, buildCalciteSliderBlock, buildCalciteTableBlock, calciteActionProps,
     buildCalciteLegendPanel, buildCalciteTable, buildCalciteActionBar, buildCalciteDropdown,
@@ -28,64 +28,12 @@ import {
     FeatureLayerMeta, makeBusStopsLayer, makeMetroLinkLayer, makeLinesLayer, makePlacesLayer, LAYER_CENSUS_COUNTIES,
     LAYER_CENSUS_TRACTS, LAYER_CYCLING, LAYER_AMTRAK,
 } from "../layers.js";
-
-// CUSTOM HIGHLIGHT SETTINGS
-const HL_PARKS = newHighlightSetting("parks", "mediumseagreen");
-const HL_SCHOOLS = newHighlightSetting("schools", "khaki");
-const HL_CHURCH = newHighlightSetting("church", "violet");
-const HL_MED = newHighlightSetting("med", "mediumvioletred");
-const HL_GROCERY = newHighlightSetting("grocery", "white");
-const HIGHLIGHTS: __esri.CollectionProperties<__esri.HighlightOptionsProperties> = [
-    newHighlightSetting("default", "cyan"),
-    HL_PARKS,
-    HL_SCHOOLS,
-    HL_CHURCH, 
-    HL_MED,
-    HL_GROCERY,
-];
+import {
+    STLCOORDS, PROJID, BASEMAP, TOGGLE_ACTIONS, HIGHLIGHTS,
+    CLEAR_BUSES, CLEAR_PLACES, FULLSCREEN, MAIN_ACTIONS
+} from "../data.js";
 
 type actbarWithTooltips = { bar: HTMLCalciteActionBarElement, tooltips: HTMLCalciteTooltipElement[] };
-
-// ACTION CONFIGS FOR THE TOGGLE BAR. EACH RENDERS INTO A BUTTON WITH A BUTTON TO HIGHLIGHT FEATURES
-// RETURNED FROM THE WHERE STRING
-const TOGGLE_ACTIONS: calciteActionProps[] = [
-    {
-        id: "parks", icon: "tree", text: "Highlight Parks",
-        where: `type = 'park'`, highlightName: HL_PARKS.name!,
-    }, {
-        id: "medical", icon: "medical", text: "Highlight Hospitals",
-        where: `type = 'medical'`, highlightName: HL_MED.name!,
-    }, {
-        id: "university", icon: "mooc", text: "Highlight Universities",
-        where: `type = 'university'`, highlightName: HL_SCHOOLS.name!,
-    }, {
-        id: "school", icon: "education", text: "Highlight Schools",
-        where: `type = 'school'`, highlightName: HL_SCHOOLS.name!,
-    }, {
-        id: "grocery", icon: "shopping-cart", text: "Highlight Grocery Stores",
-        where: `type = 'grocery'`, highlightName: HL_GROCERY.name!,
-    }, {
-        id: "church", icon: "organization", text: "Highlight Places of Worship",
-        where: `type = 'church'`, highlightName: HL_CHURCH.name!,
-    }, {
-        id: "social_facility", icon: "home", text: "Highlight Community Centers",
-        where: `type = 'social_facility'`, highlightName: HL_MED.name!,
-    },
-];
-// TOGGLE BUTTONS FOR CLEARING HIGHLIGHTED PLACES/BUS STOPS
-const CLEAR_PLACES = { id: "reset", icon: "reset", text: "Clear Highlighted Places" };
-const CLEAR_BUSES = { id: "bus_reset", icon: "bus", text: "Clear Highlighted Transit Stops" };
-
-// ACTION BAR WITH PANELS/UTILITIES
-const MAIN_ACTIONS: calciteActionProps[] = [
-    { id: "legend", icon: "legend", text: "Legend" },
-    { id: "sliders", icon: "sliders", text: "Appearance Sliders" },
-    { id: "layers", icon: "layers", text: "Toggle Layers" },
-    { id: "basemaps", icon: "basemap", text: "Basemaps" },
-    { id: "print", icon: "print", text: "Export" },
-];
-// REQUEST FULL SCREEN
-const FULLSCREEN = { id: "fs", icon: "extent", text: "Fullscreen" };
 
 // COMPONENT CLASS 
 export const TAG = "map-window";
@@ -103,29 +51,29 @@ export class MapWindow extends HTMLElement {
         onViewReady: this.onMapViewReady.bind(this),
     }
     
-    // HIGHLIGHT SETTING NAMES MAPPED TO HIGHLIGHT HANDLERS
-    private highlightHandles: Map<string, __esri.Handle> = new Map();
-
-    private mapLayers: Map<string, { fn?: Function, meta: FeatureLayerMeta, layer: FeatureLayer}> = new Map([
-        ['counties', { meta: LAYER_CENSUS_COUNTIES, layer: new FeatureLayer }],
-        ['tracts', { meta: LAYER_CENSUS_TRACTS, layer: new FeatureLayer }],
-        ['amtrak', { meta: LAYER_AMTRAK, layer: new FeatureLayer }],
-        ['places', { fn: makePlacesLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer }],
-        ['cycling', { meta: LAYER_CYCLING, layer: new FeatureLayer }],
-        ['lines', { fn: makeLinesLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer }],
-        ['metro', { fn: makeMetroLinkLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer }],
-        ['bus', { fn: makeBusStopsLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer }],
-    ]);
     // ARRAY OF BUILT FEATURE LAYER METAS (makeFeatureLayer builds these as FeatureLayers)
     private builtLayers: FeatureLayer[] = [];
-
+    private mapLayers: Map<string, { fn?: Function, meta: FeatureLayerMeta, layer: FeatureLayer, i: number}> = new Map([
+        ['counties', { meta: LAYER_CENSUS_COUNTIES, layer: new FeatureLayer, i: 0 }],
+        ['tracts', { meta: LAYER_CENSUS_TRACTS, layer: new FeatureLayer, i: 1 }],
+        ['amtrak', { meta: LAYER_AMTRAK, layer: new FeatureLayer, i: 2 }],
+        ['cycling', { meta: LAYER_CYCLING, layer: new FeatureLayer, i: 3 }],
+        ['places', { fn: makePlacesLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer, i: 4 }],
+        ['lines', { fn: makeLinesLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer, i: 5 }],
+        ['metro', { fn: makeMetroLinkLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer, i: 6 }],
+        ['bus', { fn: makeBusStopsLayer, meta: {} as FeatureLayerMeta, layer: new FeatureLayer, i: 7 }],
+    ]);
+    
     // NAMED FEATURE LAYERS
     private get busStopsLayer(): FeatureLayer { return this.mapLayers.get('bus')!.layer }; 
     private get metroStopsLayer(): FeatureLayer { return this.mapLayers.get('metro')!.layer }; 
     private get linesLayer(): FeatureLayer { return this.mapLayers.get('lines')!.layer }; 
     private get placesLayer(): FeatureLayer { return this.mapLayers.get('places')!.layer }; 
     private get tractsLayer(): FeatureLayer { return this.mapLayers.get('tracts')!.layer }; 
-
+    
+    // HIGHLIGHT SETTING NAMES MAPPED TO HIGHLIGHT HANDLERS
+    private highlightHandles: Map<string, __esri.Handle> = new Map();
+    
     // CALCITE PANELS
     private routeInfoPanel: HTMLCalcitePanelElement = buildCalcitePanel({ heading: 'Route Info', cssClass: 'route-info' }); 
     private legendPanel: HTMLCalcitePanelElement = buildCalciteLegendPanel('Legend');
@@ -314,19 +262,26 @@ export class MapWindow extends HTMLElement {
             }
         })
     }
+    // build all layers concurrently, sort on 'i' field to add to map in order
     private async buildMapFeatureLayers(): Promise<FeatureLayer[]> {
-        return Promise.all([...this.mapLayers.entries()].map(async ([key, entry], i) => {
+        const builtLayers: Map<number, FeatureLayer> = new Map();
+        await Promise.all([...this.mapLayers.entries()].map(async ([key, entry]) => {
             try {
                 const layer = await this.makeFeatureLayer(entry.meta);
-                this.arcgisMap.map?.add(layer, i);
+                builtLayers.set(entry.i, layer);
                 entry.layer = layer;
                 this.extractBuiltSizes(key, layer);
                 return layer;
             } catch (e) {
-                throw new Error(`failed to build layer ${i + 1}: ${e}`);
+                throw new Error(`failed to build layer ${entry.i + 1}: ${e}`);
             }
-        }))
+        }));
+        // add layers to map after all have loaded
+        const sortedLayers = [...builtLayers.entries()].sort(([i1,], [i2,]) => i1 - i2).map(([, layer]) => layer);
+        sortedLayers.forEach((layer, i) => this.arcgisMap.map?.add(layer, i));
+        return sortedLayers;
     }
+    // capture graphics sizes at build time for sliders
     private extractBuiltSizes(key: string, layer: FeatureLayer): void {
         switch (key) {
             case 'bus': {
@@ -339,6 +294,11 @@ export class MapWindow extends HTMLElement {
                 this.metroStopSizes = sizeVar.stops!.map(s => (s as __esri.SizeStop).size as number);
                 break;
             }
+            case 'lines': {
+                this.lineSizes = (layer.renderer as ClassBreaksRenderer)
+                    .classBreakInfos.map((cb) => (cb.symbol as SimpleLineSymbol).width);
+                break;
+            }
             case 'tracts': {
                 this.tractOriginalColors = (layer.renderer as ClassBreaksRenderer).classBreakInfos
                     .map(cb => (cb.symbol as SimpleFillSymbol).color.clone());
@@ -346,6 +306,7 @@ export class MapWindow extends HTMLElement {
             }
         }
     }
+    // assign map view to each panel that requires it
     private async setPanelViews(view: __esri.MapView, panelEls: Map<HTMLCalcitePanelElement, string>) {
         for (const [k, v] of panelEls) {
             await customElements.whenDefined(v);
