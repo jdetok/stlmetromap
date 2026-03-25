@@ -1,6 +1,8 @@
 // arcgis.ts
 // Helpers for creating ArcGIS features/graphics 
 import "@arcgis/map-components/dist/components/arcgis-map";
+import "@arcgis/map-components/dist/components/arcgis-zoom";
+import "@arcgis/map-components/dist/components/arcgis-search";
 import Point from "@arcgis/core/geometry/Point";
 import Polyline from "@arcgis/core/geometry/Polyline";
 import Polygon from "@arcgis/core/geometry/Polygon.js";
@@ -155,16 +157,13 @@ export type circleProps = {
     outlineWidth: number,
     outlineStyle: string,
 }
-export async function drawCircle(event: any, props: circleProps): Promise<Graphic> {
-    const point = event.mapPoint;
-
-    const circle = new Circle({
-        center: point,
-        radius: props.radius,
-        radiusUnit: 'meters',
-    });
+export async function drawCircle(point: __esri.Point, props: circleProps): Promise<Graphic> {
     return new Graphic({
-        geometry: circle,
+        geometry: new Circle({
+            center: point,
+            radius: props.radius,
+            radiusUnit: 'meters',
+        }),
         symbol: new SimpleFillSymbol({
             color: props.fillColor,
             outline: {

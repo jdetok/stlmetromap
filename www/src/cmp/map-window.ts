@@ -1,12 +1,6 @@
 // cmp/map-window.ts
 // Interactive map custom element definition
 // Imports generic helpers from calcite.ts and arcgis.ts for buildng specific elements of the map
-import "@arcgis/map-components/dist/components/arcgis-basemap-gallery";
-import "@arcgis/map-components/dist/components/arcgis-zoom";
-import "@arcgis/map-components/dist/components/arcgis-search";
-import "@arcgis/map-components/dist/components/arcgis-layer-list";
-import "@arcgis/map-components/dist/components/arcgis-legend";
-import "@arcgis/map-components/dist/components/arcgis-print";
 import * as reactiveUtils from "@arcgis/core/core/reactiveUtils"
 import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer.js";
 import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer.js";
@@ -44,6 +38,8 @@ type routeLinesData = {
 // COMPONENT CLASS 
 export const TAG = "map-window";
 export class MapWindow extends HTMLElement {
+    private maxW: number = 980;
+    private maxH: number = 980;
     private arcgisMap!: HTMLArcgisMapElement;
     private mapProps: arcgisMapProps = {
         basemap: BASEMAP,
@@ -224,27 +220,36 @@ export class MapWindow extends HTMLElement {
         );
         
         await this.setPanelViews(view, new Map([...this.actionBarPanels].filter(([, v]) => v !== 'skip')));
-        const maxW = 980;
-        const maxH = 980;
     
-        this.setDockablePopupsBySize(view, maxW, maxH);
-        await this.openLegendOnLayerLoaded(view, this.busStopsLayer, maxW, maxH);
+        this.setDockablePopupsBySize(view, this.maxW, this.maxH);
+        await this.openLegendOnLayerLoaded(view, this.busStopsLayer, this.maxW, this.maxH);
         
         // draw circle on screen on click
-        view.on('click', async (event) => {
-            if (this.radiusGraphic) {
-                view.graphics.remove(this.radiusGraphic);
-            }
-            this.radiusGraphic = await drawCircle(event, {
+        view.on('click', async (event: __esri.ViewClickEvent) => {
+            this.drawCircleOnStopClick(view, event);
+        });
+
+        console.timeEnd(logTimeStr);
+    }
+    private async drawCircleOnStopClick(view: __esri.MapView, event: __esri.ViewClickEvent): Promise<void> {
+        const hit = await view.hitTest(event, { include: [this.busStopsLayer, this.metroStopsLayer] });
+        if (!hit.results.length) return;
+
+        if (this.radiusGraphic) {
+            view.graphics.remove(this.radiusGraphic);
+        }
+
+        const point = (hit.results[0] as __esri.GraphicHit).graphic.geometry as __esri.Point;
+        this.radiusGraphic = await drawCircle(point, {
                 radius: this.circleMeters,
                 fillColor: [255, 255, 255, 0.05],
                 outlineColor: [255, 255, 255, 0.5],
                 outlineWidth: 1.5,
                 outlineStyle: 'dash',
-            })
-            view.graphics.add(this.radiusGraphic);
-        });
-        console.timeEnd(logTimeStr);
+            }
+        );
+        view.graphics.add(this.radiusGraphic);
+        this.highlightStopsWithinMeters(view);
     }
     private setDockablePopupsBySize(view: __esri.MapView, maxW: number, maxH: number): void {
         if (view.popup) {
@@ -415,6 +420,19 @@ export class MapWindow extends HTMLElement {
         }
         action.active = true;
         await this.highlightFeatures(this.placesLayer, props.where ?? '1=1', props.id, props.highlightName ?? 'default');
+    }
+    private async highlightStopsWithinMeters(view: __esri.MapView): Promise<void> {
+        if (!this.radiusGraphic) return;
+        const layerView = await view.whenLayerView(this.busStopsLayer) as __esri.FeatureLayerView;
+        
+        layerView.featureEffect = new FeatureEffect({
+            filter: new FeatureFilter({
+                geometry: this.radiusGraphic.geometry,
+                spatialRelationship: 'intersects',
+            }),
+            includedEffect: "brightness(2)",
+            excludedEffect: "brightness(1)",
+        });
     }
     // HIGHLIGHT SPECIFIC FEATURES BASED ON whereClause
     private async highlightFeatures(
