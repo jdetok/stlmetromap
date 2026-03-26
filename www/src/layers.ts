@@ -61,50 +61,41 @@ const CHOROPLETH = {
     lvl5: [50, 1, 63],
 } as const;
 
-const POPLDENS_CHOROPLETH_LEVELS: cplethEls[] = [
-    [0, 2500, CHOROPLETH.lvl1],
-    [2500, 5000, CHOROPLETH.lvl2],
-    [5000, 7500, CHOROPLETH.lvl3],
-    [7500, 10000, CHOROPLETH.lvl4],
-    [10000, 99999, CHOROPLETH.lvl5],
-];
-const MEDRENT_CHOROPLETH_LEVELS: cplethEls[] = [
-    [0, 700, CHOROPLETH.lvl1],
-    [700, 950, CHOROPLETH.lvl2],
-    [950, 1350, CHOROPLETH.lvl3],
-    [1350, 2000, CHOROPLETH.lvl4],
-    [2000, 5000, CHOROPLETH.lvl5],
-];
-const MEDINC_CHOROPLETH_LEVELS: cplethEls[] = [
-    [0, 30000, CHOROPLETH.lvl1],
-    [30000, 50000, CHOROPLETH.lvl2],
-    [50000, 75000, CHOROPLETH.lvl3],
-    [75000, 100000, CHOROPLETH.lvl4],
-    [100000, 300000, CHOROPLETH.lvl5],
-];
-const MEDAGE_CHOROPLETH_LEVELS: cplethEls[] = [
-    [0, 30, CHOROPLETH.lvl1],
-    [30, 35, CHOROPLETH.lvl2],
-    [35, 45, CHOROPLETH.lvl3],
-    [45, 60, CHOROPLETH.lvl4],
-    [60, 100, CHOROPLETH.lvl5],
-];
-export const TRACT_CLASSBREAKS: Map<string, cplethEls[]> = new Map([
-    ['popl_dens', POPLDENS_CHOROPLETH_LEVELS],
-    ['med_inc', MEDINC_CHOROPLETH_LEVELS],
-    ['med_age', MEDAGE_CHOROPLETH_LEVELS],
-    ['med_rent', MEDRENT_CHOROPLETH_LEVELS],
+// pass only the breaks (6 for 5 levels)
+const makeChoroRanges = (numRanges: number, ranges: number[]): cplethEls[] => {
+    if (ranges.length !== numRanges + 1 ) {
+        throw new Error(`length of array (${ranges.length}) should equal numRanges + 1 (${numRanges} + 1: ${numRanges + 1})`);
+    }
+    const cplethLevels: cplethEls[] = [];
+
+    ranges.forEach((r: number, i) => {
+        if (i === numRanges) return;
+        cplethLevels.push([r, ranges[i+1] as number, CHOROPLETH[`lvl${i + 1}`]])
+    })
+    return cplethLevels;
+}
+// helper to access individual tracts fields by their fieldName, enabling dynamic selector
+export const tractsField = (field: string): __esri.FieldInfo => {
+    return TRACTS_FIELDINFOS.find((f) => f.fieldName === field) as __esri.FieldInfo ?? {
+        fieldName: field, label: field
+    };
+};
+export const TRACT_CLASSBREAKS: Map<__esri.FieldInfo, cplethEls[]> = new Map([
+    [tractsField('popl_dens'), makeChoroRanges(5, [0, 2500, 5000, 7500, 10000, 100000])],
+    [tractsField('pov_dens'), makeChoroRanges(5, [0, 150, 450, 1000, 3000, 40000])],
+    [tractsField('med_inc'), makeChoroRanges(5, [0, 30000, 45000, 70000, 100000, 400000])],
+    [tractsField('med_age'), makeChoroRanges(5, [0, 30, 35, 45, 60, 100])],
+    [tractsField('med_rent'), makeChoroRanges(5, [0, 700, 950, 1350, 2000, 5000])],
 ]);
 const LINES_CLASSBREAKS: cplethEls[] = [
     [0, 19, [62, 225, 67]],
-    [20, 29, [50, 150, 127]], // slateish green
-    [30, 44, [0, 127, 255]], // blue lighter
+    [20, 29, [50, 150, 127]],
+    [30, 44, [0, 127, 255]],
     [45, 59, [255, 200, 127]],
     [60, 60, [255, 100, 100]],
     [61, 720, [255, 70, 10]],
 ];
 
-// export const LAYER_LINES: FeatureLayerMeta = {
 export const makeLinesLayer = (
     onRouteClick: (route: string) => void,
     onRoutesClick: (route: string | string[]) => void
@@ -137,8 +128,8 @@ export const makeLinesLayer = (
             LINES_FIELDINFOS.forEach(({ fieldName, label }) => {
                 if (fieldName === "route_desc") return; // handled separately
                 const row = tbl.insertRow();
-                row.insertCell().textContent = label;
-                row.insertCell().textContent = attrs?.[fieldName] ?? "—";
+                row.insertCell().textContent = label!;
+                row.insertCell().textContent = attrs?.[fieldName!] ?? "—";
             });
             div.appendChild(tbl);
 
@@ -230,8 +221,8 @@ export const makeMetroLinkLayer = (
             STOP_FIELDINFOS.forEach(({ fieldName, label }) => {
                 if (fieldName === "route_names") return; // handled separately
                 const row = tbl.insertRow();
-                row.insertCell().textContent = label;
-                row.insertCell().textContent = attrs?.[fieldName] ?? "—";
+                row.insertCell().textContent = label!;
+                row.insertCell().textContent = attrs?.[fieldName!] ?? "—";
             });
             div.appendChild(tbl);
 
@@ -308,8 +299,8 @@ export const makeBusStopsLayer = (
             STOP_FIELDINFOS.forEach(({ fieldName, label }) => {
                 if (fieldName === "route_names") return; // handled separately
                 const row = tbl.insertRow();
-                row.insertCell().textContent = label;
-                row.insertCell().textContent = attrs?.[fieldName] ?? "—";
+                row.insertCell().textContent = label!;
+                row.insertCell().textContent = attrs?.[fieldName!] ?? "—";
             });
             div.appendChild(tbl);
 
@@ -426,8 +417,8 @@ export const makePlacesLayer = (
             PLACE_FIELDINFOS.forEach(({ fieldName, label }) => {
                 if (fieldName === "bus_near") return; // handled separately
                 const row = tbl.insertRow();
-                row.insertCell().textContent = label;
-                row.insertCell().textContent = attrs?.[fieldName] ?? "—";
+                row.insertCell().textContent = label!;
+                row.insertCell().textContent = attrs?.[fieldName!] ?? "—";
             });
             div.appendChild(tbl);
 
@@ -506,7 +497,7 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
     renderer: new ClassBreaksRenderer({
         field: "popl_dens",
         classBreakInfos: makeChoroplethLevels({
-            levels: POPLDENS_CHOROPLETH_LEVELS,
+            levels: TRACT_CLASSBREAKS.get(tractsField('popl_dens')),
             opac: 0.05,
         }),
     }),
@@ -515,11 +506,12 @@ export const LAYER_CENSUS_TRACTS: FeatureLayerMeta = {
         content: [
             {
                 type: "fields",
-                fieldInfos: TRACTS_FIELDINFOS,
+                fieldInfos:
+                    TRACTS_FIELDINFOS,
             },
         ],
     },
-    toGraphics: toPolygon,
+    toGraphics: toPolygon
 };
 
 export const LAYER_CYCLING: FeatureLayerMeta = {

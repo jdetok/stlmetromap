@@ -70,20 +70,21 @@ with stopcnt as (
 		join public.stops b on st_coveredby(b.stop_loc::geometry, st_transform(a.geom, 4326))
 		group by a.geoid
 	)
-select 
+select
     a.geoid, t.geoid as tiger_geoid, t.tractce as tract, t.namelsad as tract_name, t.countyfp, x.namelsad as county_name,
-    t.aland, a.b01001001 as popl, round(a.b01001001::numeric * 2589988.0 / nullif(t.aland, 0), 2) as popl_dens, 
-    case when b.b01002001 < 0 then 0 else b.b01002001 end  as med_age, 
-    case when d.b06011001 < 0 then 0 else d.b06011001 end as med_inc, 
-    case when f.b25064001 < 0 then 0 else f.b25064001 end as med_rent, 
+    t.aland, a.b01001001 as popl, round(a.b01001001::numeric * 2589988.0 / nullif(t.aland, 0), 2) as popl_dens,
+    case when b.b01002001 < 0 then 0 else b.b01002001 end  as med_age,
+    case when d.b06011001 < 0 then 0 else d.b06011001 end as med_inc,
+    case when f.b25064001 < 0 then 0 else f.b25064001 end as med_rent,
     a.b01001002 as popl_male, a.b01001026 as popl_female,
     b.b01002002 as med_age_male, b.b01002003 as med_age_female,
     e.b17001002 as popl_pov, round(e.b17001002::numeric / nullif(a.b01001001::numeric, 0) * 100, 2)::varchar(10) || '%' as popl_pov_pct,
+    round(e.b17001002::numeric * 2589988.0 / nullif(t.aland, 0), 2) as pov_dens,
     c.b02001002 as popl_white, round(c.b02001002::numeric / nullif(a.b01001001::numeric, 0) * 100, 2)::varchar(10) || '%' as pct_white,
     c.b02001003 as popl_black, round(c.b02001003::numeric / nullif(a.b01001001::numeric, 0) * 100, 2)::varchar(10) || '%' as pct_black,
     c.b02001008 as popl_mixed, round(c.b02001008::numeric / nullif(a.b01001001::numeric, 0) * 100, 2)::varchar(10) || '%' as pct_mixed,
     c.b02001005 as popl_asian, round(c.b02001005::numeric / nullif(a.b01001001::numeric, 0) * 100, 2)::varchar(10) || '%' as pct_asian,
-    c.b02001004 as popl_ind_al, c.b02001006 as popl_haw,  
+    c.b02001004 as popl_ind_al, c.b02001006 as popl_haw,
     round((c.b02001004 + c.b02001006)::numeric / nullif(a.b01001001::numeric, 0) * 100, 2)::varchar(10) || '%' as pct_ind_al_haw,
     c.b02001007 as popl_other, round(c.b02001007::numeric / nullif(a.b01001001::numeric, 0) * 100, 2)::varchar(10) || '%' as pct_other,
     g.b28008002 as has_cmptr, coalesce(z.stops, 0) as stops_in_tract,

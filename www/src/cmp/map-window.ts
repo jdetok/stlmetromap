@@ -21,11 +21,12 @@ import {
     buildCalciteAction, buildCalcitePanel, buildCalciteSliderBlock, buildCalciteTableBlock, calciteActionProps,
     buildCalciteLegendPanel, buildCalciteTable, buildCalciteActionBar, buildCalciteDropdown,
     buildCalciteSelectBlock,
+    calciteOptionProps,
  } from "../calcite.js";
 import {
     FeatureLayerMeta, makeBusStopsLayer, makeMetroLinkLayer, makeLinesLayer, makePlacesLayer, LAYER_CENSUS_COUNTIES,
-    LAYER_CENSUS_TRACTS, LAYER_CYCLING, LAYER_AMTRAK,
-    TRACT_CLASSBREAKS,
+    LAYER_CENSUS_TRACTS, LAYER_CYCLING, LAYER_AMTRAK, TRACT_CLASSBREAKS,
+    tractsField,
 } from "../layers.js";
 import {
     STLCOORDS, PROJID, BASEMAP, TOGGLE_ACTIONS, HIGHLIGHTS,
@@ -74,7 +75,7 @@ export class MapWindow extends HTMLElement {
     private get placesLayer(): FeatureLayer { return this.mapLayers.get('places')!.layer }; 
     private get tractsLayer(): FeatureLayer { return this.mapLayers.get('tracts')!.layer };
     
-    private tractsChoroplethMap: Map<string, cplethEls[]> = TRACT_CLASSBREAKS;
+    private tractsChoroplethMap: Map<__esri.FieldInfo, cplethEls[]> = TRACT_CLASSBREAKS;
     
     // HIGHLIGHT SETTING NAMES MAPPED TO HIGHLIGHT HANDLERS
     private highlightHandles: Map<string, __esri.Handle> = new Map();
@@ -85,7 +86,7 @@ export class MapWindow extends HTMLElement {
     private layerListPanel: HTMLCalcitePanelElement = buildCalcitePanel({ elementType: "arcgis-layer-list", heading: "Layers"});
     private basemapPanel: HTMLCalcitePanelElement = buildCalcitePanel({ elementType: "arcgis-basemap-gallery", heading: "Basemaps"});
     private printPanel: HTMLCalcitePanelElement = buildCalcitePanel({ elementType: "arcgis-print", heading: "Export" });
-    private slidersPanel: HTMLCalcitePanelElement = buildCalcitePanel({ heading: 'Sliders', cssClass: 'action-panel' });
+    private slidersPanel: HTMLCalcitePanelElement = buildCalcitePanel({ heading: 'Edit Map Appearance', cssClass: 'action-panel' });
 
     // skip as val if the panel does get the map view assigned to it
     private actionBarPanels = new Map([
@@ -527,10 +528,10 @@ export class MapWindow extends HTMLElement {
         this.tractChoroSelBlock = await this.buildTractChoroFieldSelector();
         this.slidersPanel.append(
             this.tractChoroSelBlock,
+            this.buildTractOpacitySlider(),
             this.buildLineSizeSlider(),
             this.buildBusStopSizeSlider(),
             this.buildMetroStopSizeSlider(),
-            this.buildTractOpacitySlider(),
         );
     }
     private buildBusStopSizeSlider(): HTMLCalciteBlockElement {
@@ -632,18 +633,16 @@ export class MapWindow extends HTMLElement {
             selProps: {
                 heading: head,
                 optsProps: {
-                    opts: [
-                        { label: 'Population Density', value: 'popl_dens'},
-                        { label: 'Median Income', value: 'med_inc'},
-                        { label: 'Median Rent', value: 'med_rent'},
-                        { label: 'Median Age', value: 'med_age'},
-                    ],
+                    opts: [...this.tractsChoroplethMap.keys()].map(({ label, fieldName }) => ({
+                        label,
+                        value: fieldName,
+                    })) as calciteOptionProps[],
                 },
                 onSelChange: (val: string) => {
                     const renderer = (this.tractsLayer.renderer as ClassBreaksRenderer);
                     renderer.field = val;
                     renderer.classBreakInfos = makeChoroplethLevels({
-                        levels: this.tractsChoroplethMap.get(val),
+                        levels: this.tractsChoroplethMap.get(tractsField(val)),
                         opac: this.currentTractOpacity
                     }!);
                     this.tractsLayer.renderer = renderer.clone();

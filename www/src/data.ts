@@ -1,5 +1,6 @@
 import { newHighlightSetting } from "./arcgis";
 import { calciteActionProps } from "./calcite";
+
 export const BASEMAP = 'dark-gray';
 export const PROJID = 4326;
 export const STLCOORDS = {
@@ -24,154 +25,6 @@ export const BUS_LAYER_URL = "/layers/metrobus";
 
 export const CYCLE_LAYER_TTL = "Bicycle/Walking Paths";
 export const CYCLE_LAYER_URL = "/layers/cycle";
-
-export const PLACE_FIELDS: __esri.FieldProperties[] = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "name", alias: "Name", type: "string" },
-    { name: "type", alias: "Type", type: "string" },
-    { name: "operator", alias: "Operator", type: "string" },
-    { name: "bus_near", alias: "Bus Routes within 1/2Mi.", type: "string" },
-    { name: "rail_near", alias: "Rail Routes within 1Mi.", type: "string" },
-];
-
-export const PLACE_FIELDINFOS = [
-    { fieldName: "name", label: "Name" },
-    { fieldName: "operator", label: "Operator" },
-    { fieldName: "bus_near", label: "Bus Routes within 1/2Mi." },
-    { fieldName: "rail_near", label: "Rail Routes within 1Mi." },
-];
-
-export const LINES_FIELDS: __esri.FieldProperties[] = [
-    {name: "ObjectID", alias: "ObjectID", type: "oid"},
-    {name: "route_desc", alias: "route_desc", type: "string"},
-    {name: "route_type", alias: "route_type", type: "string"},
-    {name: "stops_total", alias: "stops_total", type: "integer"},
-    {name: "freq_wk", alias: "Weekday Frequency (minutes)", type: "integer"},
-    {name: "freq_sa", alias: "freq_sa", type: "integer"},
-    {name: "freq_su", alias: "freq_su", type: "integer"},
-    
-];
-export const LINES_FIELDINFOS = [
-    {fieldName: "stops_total", label: "Total Stops", },
-    {fieldName: "freq_wk", label: "Weekday Frequency (minutes)", },
-    {fieldName: "freq_sa", label: "Saturday Frequency (minutes)", },
-    {fieldName: "freq_su", label: "Sunday Frequency (minutes)", },
-];
-
-export const STOP_FIELDS: __esri.FieldProperties[] = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "stop_id", alias: "Stop ID", type: "string" },
-    { name: "stop_name", alias: "Name", type: "string" },
-    { name: "wheelchair_access", alias: "Wheelchair Accessible", type: "string" },
-    { name: "route_count", alias: "Route Count", type: "integer" },
-    { name: "route_names", alias: "Route Names", type: "string" },
-    { name: "route_ids", alias: "Route Nums", type: "string" },
-    { name: "amenity_access", alias: "Amenity Access", type: "string" },
-    { name: "grocery_access", alias: "Grocery Store Access", type: "string" },
-    { name: "school_access", alias: "School/Kindergarten Access", type: "string" },
-    { name: "college_access", alias: "College/University Access", type: "string" },
-    { name: "park_access", alias: "Park Access", type: "string" },
-    { name: "facility_access", alias: "Social Facility Access", type: "string" },
-    { name: "medical_access", alias: "Medical Facility Access", type: "string" },
-    { name: "church_access", alias: "Place of Worship Access", type: "string" },
-    { name: "entertainment_access", alias: "Entertainment Access", type: "string" },
-];
-
-export const STOP_FIELDINFOS = [
-    // { fieldName: "stop_name", label: "Name" },
-    { fieldName: "route_names", label: "Route Names" },
-    { fieldName: "wheelchair_access", label: "Wheelchair Accessible" },
-    { fieldName: "amenity_access", label: "Amenity Access" },
-    { fieldName: "grocery_access", label: "Grocery Store Access" },
-    { fieldName: "school_access", label: "School/Kindergarten Access" },
-    { fieldName: "college_access", label: "College/University Access" },
-    { fieldName: "park_access", label: "Park Access" },
-    { fieldName: "facility_access", label: "Social Facility Access" },
-    { fieldName: "medical_access", label: "Medical Facility Access" },
-    { fieldName: "church_access", label: "Place of Worship Access" },
-    { fieldName: "entertainment_access", label: "Entertainment Access" },
-];
-
-export const TRACTS_FIELDS = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "geoid", alias: "geoid", type: "string" },
-    { name: "tract", alias: "Tract", type: "string" },
-    { name: "tract_name", alias: "Tract Name", type: "string" },
-    { name: "countyfp", alias: "County FP", type: "string" },
-    { name: "county_name", alias: "County", type: "string" },
-    { name: "popl", alias: "Population", type: "integer" },
-    { name: "popl_dens", alias: "Population Density", type: "double" },
-    { name: "med_age", alias: "Median Age", type: "double" },
-    { name: "med_inc", alias: "Median Income", type: "double" },
-    { name: "med_rent", alias: "Median Rent", type: "double" },
-    { name: "popl_pov", alias: "Population in Poverty", type: "integer" },
-    { name: "popl_pov_pct", alias: "Percent in Poverty", type: "string" },
-    { name: "stops_in_tract", alias: "Transit Stops in Tract", type: "string" },
-];
-
-export const TRACTS_FIELDINFOS = [
-    { fieldName: "county_name", label: "County" },
-    { fieldName: "popl", label: "Population" },
-    { fieldName: "popl_dens", label: "Persons/Sq.Mi." },
-    { fieldName: "stops_in_tract", label: "Transit Stops in Tract" },
-    { fieldName: "med_age", label: "Median Age" },
-    { fieldName: "med_inc", label: "Median Income" },
-    { fieldName: "med_rent", label: "Median Rent" },
-    { fieldName: "popl_pov", label: "Population in Poverty" },
-    { fieldName: "popl_pov_pct", label: "Percent in Poverty" },
-];
-
-export const COUNTIES_FIELDS = [
-    { name: "countyfp", alias: "County FP", type: "string" },
-    { name: "county_name", alias: "County", type: "string" },
-    { name: "popl", alias: "Population", type: "integer" },
-    { name: "popl_dens", alias: "Population Density", type: "double" },
-    { name: "med_age", alias: "Median Age", type: "double" },
-    { name: "med_inc", alias: "Median Income", type: "double" },
-    { name: "popl_pov", alias: "Population in Poverty", type: "integer" },
-    { name: "popl_pov_pct", alias: "Percent in Poverty", type: "string" },
-    { name: "stops_in_county", alias: "Transit Stops in County", type: "string" },
-];
-
-export const COUNTIES_FIELDINFOS = [
-    { fieldName: "ObjectID", label: "ObjectID" },
-    { fieldName: "geoid", label: "geoid" },
-    { fieldName: "countyfp", label: "County FP" },
-    { fieldName: "county_names", label: "County" },
-    { fieldName: "popl", label: "Population" },
-    { fieldName: "popl_dens", label: "Population Density" },
-    { fieldName: "med_age", label: "Median Age" },
-    { fieldName: "med_inc", label: "Median Income" },
-    { fieldName: "popl_pov", label: "Population in Poverty" },
-    { fieldName: "popl_pov_pct", label: "Percent in Poverty" },
-    { fieldName: "stops_in_county", label: "Transit Stops in County" },
-];
-
-export const CYCLING_FIELDS = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "name", alias: "Name", type: "string" },
-    { name: "highway", alias: "Highway", type: "string" },
-    { name: "surface", alias: "Surface", type: "string" },
-];
-
-export const AMTRAK_FIELDS: __esri.FieldProperties[] = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "name", alias: "Name", type: "string" },
-    { name: "operator", alias: "Operator", type: "string" },
-];
-
-export const AMTRAK_FIELDINFOS = [
-    { fieldName: "name", label: "Name" },
-    { fieldName: "operator", label: "Operator" },
-];
-
-export const SOCIAL_FIELDS = [
-    { name: "ObjectID", alias: "ObjectID", type: "oid" },
-    { name: "name", alias: "Name", type: "string" },
-    { name: "amenity", alias: "Amenity", type: "string" },
-    { name: "operator", alias: "Operator", type: "string" },
-    { name: "brand", alias: "Brand", type: "string" },
-];
 
 // CUSTOM HIGHLIGHT SETTINGS
 const HL_PARKS = newHighlightSetting("parks", "mediumseagreen");
@@ -230,3 +83,107 @@ export const MAIN_ACTIONS: calciteActionProps[] = [
 ];
 // REQUEST FULL SCREEN
 export const FULLSCREEN = { id: "fs", icon: "extent", text: "Fullscreen" };
+
+export const fieldInfos = (fields: __esri.FieldProperties[], exclude: string[]): __esri.FieldInfo[] => {
+    return [...fields].filter((f) => !exclude.includes(f.name!)).map(({ name, alias }) => ({
+        fieldName: name,
+        label: alias,
+    })) as __esri.FieldInfo[];
+}
+
+export const PLACE_FIELDS: __esri.FieldProperties[] = [
+    { name: "ObjectID", alias: "ObjectID", type: "oid" },
+    { name: "name", alias: "Name", type: "string" },
+    { name: "type", alias: "Type", type: "string" },
+    { name: "operator", alias: "Operator", type: "string" },
+    { name: "bus_near", alias: "Bus Routes within 1/2Mi.", type: "string" },
+    { name: "rail_near", alias: "Rail Routes within 1Mi.", type: "string" },
+];
+export const PLACE_FIELDINFOS = fieldInfos(PLACE_FIELDS, ['ObjectID', 'type']);
+
+export const LINES_FIELDS: __esri.FieldProperties[] = [
+    {name: "ObjectID", alias: "ObjectID", type: "oid"},
+    {name: "route_desc", alias: "route_desc", type: "string"},
+    {name: "route_type", alias: "route_type", type: "string"},
+    {name: "stops_total", alias: "Total Stops", type: "integer"},
+    {name: "freq_wk", alias: "Weekday Frequency (minutes)", type: "integer"},
+    {name: "freq_sa", alias: "Saturday Frequency (minutes)", type: "integer"},
+    {name: "freq_su", alias: "Sunday Frequency (minutes)", type: "integer"},
+];
+
+export const LINES_FIELDINFOS = fieldInfos(
+    LINES_FIELDS, ['ObjectID', 'route_desc', 'route_type']
+)
+
+export const STOP_FIELDS: __esri.FieldProperties[] = [
+    { name: "ObjectID", alias: "ObjectID", type: "oid" },
+    { name: "stop_id", alias: "Stop ID", type: "string" },
+    { name: "stop_name", alias: "Name", type: "string" },
+    { name: "wheelchair_access", alias: "Wheelchair Accessible", type: "string" },
+    { name: "route_count", alias: "Route Count", type: "integer" },
+    { name: "route_names", alias: "Route Names", type: "string" },
+    { name: "route_ids", alias: "Route Nums", type: "string" },
+    { name: "amenity_access", alias: "Amenity Access", type: "string" },
+    { name: "grocery_access", alias: "Grocery Store Access", type: "string" },
+    { name: "school_access", alias: "School/Kindergarten Access", type: "string" },
+    { name: "college_access", alias: "College/University Access", type: "string" },
+    { name: "park_access", alias: "Park Access", type: "string" },
+    { name: "facility_access", alias: "Social Facility Access", type: "string" },
+    { name: "medical_access", alias: "Medical Facility Access", type: "string" },
+    { name: "church_access", alias: "Place of Worship Access", type: "string" },
+    { name: "entertainment_access", alias: "Entertainment Access", type: "string" },
+];
+
+export const STOP_FIELDINFOS = fieldInfos(
+    STOP_FIELDS, ['ObjectID', 'stop_id', 'stop_name', 'route_ids', 'route_count']
+)
+
+export const TRACTS_FIELDS: __esri.FieldProperties[] = [
+    { name: "ObjectID", alias: "ObjectID", type: "oid" },
+    { name: "geoid", alias: "geoid", type: "string" },
+    { name: "tract", alias: "Tract", type: "string" },
+    { name: "tract_name", alias: "Tract Name", type: "string" },
+    { name: "countyfp", alias: "County FP", type: "string" },
+    { name: "county_name", alias: "County", type: "string" },
+    { name: "popl", alias: "Population", type: "integer" },
+    { name: "popl_dens", alias: "Persons/Sq.Mi", type: "double" },
+    { name: "med_age", alias: "Median Age", type: "double" },
+    { name: "med_inc", alias: "Median Income", type: "double" },
+    { name: "med_rent", alias: "Median Rent", type: "double" },
+    { name: "popl_pov", alias: "Population in Poverty", type: "integer" },
+    { name: "pov_dens", alias: "Persons/Sq.Mi in Poverty", type: "double" },
+    { name: "popl_pov_pct", alias: "% Population in Poverty", type: "string" },
+    { name: "stops_in_tract", alias: "Transit Stops in Tract", type: "string" },
+];
+
+export const TRACTS_FIELDINFOS = fieldInfos(
+    TRACTS_FIELDS, ['ObjectID', 'geoid', 'tract', 'tract_name', 'countyfp']);
+
+export const COUNTIES_FIELDS: __esri.FieldProperties[] = [
+    { name: "ObjectID", alias: "ObjectID", type: "oid" },
+    { name: "countyfp", alias: "County FP", type: "string" },
+    { name: "county_name", alias: "County", type: "string" },
+    { name: "popl", alias: "Population", type: "integer" },
+    { name: "popl_dens", alias: "Population Density", type: "double" },
+    { name: "med_age", alias: "Median Age", type: "double" },
+    { name: "med_inc", alias: "Median Income", type: "double" },
+    { name: "popl_pov", alias: "Population in Poverty", type: "integer" },
+    { name: "popl_pov_pct", alias: "Percent in Poverty", type: "string" },
+    { name: "stops_in_county", alias: "Transit Stops in County", type: "string" },
+];
+export const COUNTIES_FIELDINFOS = fieldInfos(COUNTIES_FIELDS, ['ObjectID', 'countyfp']);
+
+export const CYCLING_FIELDS: __esri.FieldProperties[] = [
+    { name: "ObjectID", alias: "ObjectID", type: "oid" },
+    { name: "name", alias: "Name", type: "string" },
+    { name: "highway", alias: "Highway", type: "string" },
+    { name: "surface", alias: "Surface", type: "string" },
+];
+export const CYCLING_FIELDINFOS = fieldInfos(CYCLING_FIELDS, ['ObjectID', 'name', 'highway']);
+
+export const AMTRAK_FIELDS: __esri.FieldProperties[] = [
+    { name: "ObjectID", alias: "ObjectID", type: "oid" },
+    { name: "name", alias: "Name", type: "string" },
+    { name: "operator", alias: "Operator", type: "string" },
+];
+export const AMTRAK_FIELDINFOS = fieldInfos(AMTRAK_FIELDS, ['ObjectID']);
