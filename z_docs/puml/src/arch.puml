@@ -22,6 +22,8 @@ fetch <-> ext : get acs pg dump from\nhttps://backup.censusreporter.org/\ncensus
 fetch -> bdb : schema restored\nfrom dump file
 fetch <-> ext : fetch tiger shapefiles
 fetch -> bdb : ogr2ogr imports shapefiles\ninto postgres
+fetch <-> ext : fetch GTFS data from metro transit
+fetch -> bdb : gtfs-via-postgres inserts\nthe gtfs data into postgres
 == Step 2: Build Project Database ==
 bdb -> bdb : build db dump\nwith data needed\nfor project
 bdb -> pdb : restore dump\nin project db\ncontainer

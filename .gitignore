@@ -13,3 +13,4 @@ db/**/*json
 **/pbf/
 **/*.dump
 *.mp4
+*.odt

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+
+<!-- page for CSCC poster -->
+
+<html>
+<head>
+    <title>STL Transit Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <script type="module" src="/js/main.js"></script>
+    <link rel="stylesheet" href="/css/ccsc.css" />
+</head>
+
+<body>
+    <div class="cont">
+        <div class="ttl">Utilizing Open Source Technologies with the Proprietrary ESRI ArcGIS JavaScript SDK to Self Host Spatial Data for an Interactive Transit Map</div>
+        <div class="subttl">Justin DeKock | Saint Louis University | M.S. Information Systems | Mentor: Maria Weber</div>
+        <div class="sect">
+            <h2>Project purpose:</h2>
+            <p>
+                The purpose of the project is to provide an interactive way for researchers, policy makers, 
+                and people generally interested to explore geospatial and demographic data as it pertains 
+                to the access to transit in the St. Louis Metropolitan Area. While some of the project's 
+                features may be useful for transit riders, the primary intent of the project is not to 
+                provide accurate and up to date information to riders about the St. Louis Metro Transit system. 
+                Riders should visit the Metro Transit website for updated information on frequencies, alerts, etc. 
+            </p>
+        </div>
+        <div class="sect">
+            <h2>Data Sources:</h2>
+            <ul>
+                <li><b>General Transit Feed Specification (GTFS) Data</b>
+                    <ul><li>Provided by St. Louis Metro Transit</li></ul>
+                </li>
+                <li><b>US Census Bureau Data:</b>
+                    <ul>
+                        <li>American Community Survey (ACS) 2024 Dataset</li>
+                        <li>TIGER (Toplogically Integrated Geographic Encoding and Referencing) 2024 Dataset</li>
+                    </ul>
+                </li>
+                <li><b>Misc. Spatial Data</b>
+                    <ul><li>Provided by Open Street Map (OSM)</li></ul>
+                </li>   
+            </ul>
+        </div>
+        <div class="sect">
+            <h2>Open Source Technologies Utilized:</h2>
+            <ul>
+                <li>Docker
+                    <ul><li>To containerize application components</li></ul>
+                </li>
+                <li>Postgres/PostGIS
+                    <ul><li>Reliable and accessible storage of spatial data</li></ul>
+                </li>
+                <li>NGINX
+                    <ul><li>Proxy web server for caching, forwarding requests, serving static files, etc.</li></ul>
+                </li>
+                <li>Go Programming Language
+                    <ul><li>Backend API written in Go to take advantage of performance increases from a compiled language</li></ul>
+                </li>
+                <li>Open Street Map (OSM)
+                    <ul><li>Massive community driven GIS project</li></ul>
+                </li>
+            </ul>
+        </div>
+        <div class="sect">
+            <h2>Open Source Projects Utilized:</h2>
+            <ul>
+                <li><a target="_blank" href="https://github.com/public-transport/gtfs-via-postgres">gtfs-via-postgres</a>
+                    <ul><li>GTFS data into Postgres</li></ul>
+                </li>
+                <li><a target="_blank" href="https://osmcode.org/osmium-tool/">osmium</a>
+                    <ul><li>Concatenate several OSM export files</li></ul>
+                </li>
+                <li><a target="_blank" href="https://osm2pgsql.org/">osm2pgsql</a>
+                    <ul><li>Import OSM export file into Postgres</li></ul>
+                </li>
+                <li><a target="_blank" href="https://gdal.org/en/stable/programs/ogr2ogr.html">ogr2ogr</a>
+                    <ul><li>Import TIGER data into Postgres</li></ul>
+                </li>
+            </ul>
+        </div>
+        <div class="sect">
+            <h2>Useful Features:</h2>
+            <ul>
+                <li><b>Visual customizations</b>
+                    <ul><li>Every visual element of the map can be modified in some way to create more useful visualizations</li></ul>
+                </li>
+                <li><b>Proximity to transit stops</b>
+                    <ul>
+                        <li>Each rendered polygon includes a reference to every transit stop within 0.5mi of its perimeter</li>
+                        <li>From the polygon's popup, each route with a stop within that distance can be highlighted</li>
+                    </ul>
+                </li>
+                <li><b>Stop/route line rendering</b>
+                    <ul>
+                        <li>The visual appearance of each rendered stop/route line is based on data regarding that stop/line</li>
+                        <li>Stops are sized according to the number of routes that serve said stop</li>
+                        <li>Route lines are colored based on their weekday frequency</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="sect">
+            <h2>Intended Improvements:</h2>
+            <span>This project is still in early release. I plan on adding a number of features before formally releasing.</span>
+            <ul>
+                <li><b>Real-time data integration</b>
+                    <ul>
+                        <li>Real-time estimates for the next expected vehicle arrival will be implemented for each stop</li>
+                        <li>Real-time GTFS data may be introduced to provide real-time renderings for selected routes</li>
+                    </ul>
+                </li>
+                <li><b>Additional web pages</b>
+                    <ul>
+                        <li>Informational pages will be added with charts/tables/graphs detailing transit routes, demographics served by routes, etc.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="ss"><img src="/img/ccsc.png" alt="Map Screenshot" loading="lazy"></div>
+    </div>
+</body>
+</html>
