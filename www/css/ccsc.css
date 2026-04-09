@@ -1,0 +1,66 @@
+/* styling for cscc poster */
+body {
+    margin: 0 auto;
+}
+
+.cont {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto 1fr 1fr 2fr;
+    text-align: center;
+    margin: 1rem auto;
+    overflow: auto;
+    padding: .5rem;
+    gap: .5rem;
+    border: 5px solid black;
+    border-radius: 2rem;
+    box-sizing: border-box;
+    /* responsive 4x3 */
+    width: min(98vw, 133.333vh);
+    height: min(75vw, 98vh);
+}
+
+/* title spans first row */
+.ttl {
+    grid-column: 1 / -1; 
+    font-size: 1.6rem;
+    font-weight: 575;
+}
+
+.subttl {
+    grid-column: 1 / -1; 
+    font-size: 1.2rem;
+    font-weight: 550;
+}
+
+/* individual poster sections */
+.sect {
+    margin: 0 auto;
+    border: 2px solid black;
+    border-radius: 1rem;
+    box-sizing: border-box;
+    width: 100%;
+    overflow: auto;
+}
+
+.sect h2 {
+    font-size: 1.4rem;
+    font-weight: 550;
+}
+
+.sect ul, .sect li {
+    text-align: left;
+}
+
+.ss {
+    grid-column: 1 / -1; 
+    border: 2px solid black;
+    border-radius: 1rem;
+    box-sizing: border-box;
+    width: 100%;
+    overflow: auto;
+}
+
+.ss img {
+    max-width: 100%;
+}

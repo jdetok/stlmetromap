@@ -50,7 +50,9 @@ services:
         volumes:
             - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
             - ./www/index.html:/var/www/index.html:ro
+            - ./www/ccsc.html:/var/www/ccsc.html:ro
             - ./www/js:/var/www/js:ro
             - ./www/css:/var/www/css:ro
+            - ./www/img:/var/www/img:ro
 volumes: 
     postgis_data:
