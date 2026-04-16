@@ -62,7 +62,7 @@ const CHOROPLETH = {
 } as const;
 
 // pass only the breaks (6 for 5 levels)
-const makeChoroRanges = (numRanges: number, ranges: number[]): cplethEls[] => {
+export const makeChoroRanges = (numRanges: number, ranges: number[]): cplethEls[] => {
     if (ranges.length !== numRanges + 1 ) {
         throw new Error(`length of array (${ranges.length}) should equal numRanges + 1 (${numRanges} + 1: ${numRanges + 1})`);
     }
