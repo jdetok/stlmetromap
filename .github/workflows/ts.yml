@@ -1,0 +1,32 @@
+name: ts
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: checkout repo
+              uses: actions/checkout@v4
+
+            - name: setup node
+              uses: actions/setup-node@v4
+              with: 
+                node-version: '20'
+                cache: 'npm'
+
+            - name: install deps
+              run: npm install
+
+            - name: type check
+              run: npx tsc --noEmit
+
+            - name: run vitest tests
+              run: npm run test
+            
+            - name: build project
+              run: npm run build
+              
