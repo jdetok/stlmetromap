@@ -37,9 +37,11 @@ export function buildArcgisMap(props: arcgisMapProps): HTMLArcgisMapElement {
     return map;
 };
 
+export type arcgisElementType = 'arcgis-zoom' | 'arcgis-search';
+
 // GENERAL ARCGIS COMPONENT HELPERS
 export type arcgisElementProps = {
-    elStr: 'arcgis-zoom' | 'arcgis-search'
+    elStr: arcgisElementType
     view?: __esri.MapView
 };
 export type arcgisElementReturn = HTMLArcgisZoomElement | HTMLArcgisSearchElement;
