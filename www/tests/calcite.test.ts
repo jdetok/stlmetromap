@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import {
     buildCalciteAction, buildCalciteActionBar, buildCalciteActionBarWithActions, buildCalciteButton, buildCalciteDropdown, buildCalciteNotice,
     buildCalcitePanel, buildCalciteSelect, buildCalciteSelectBlock, buildCalciteTable,
-    buildCalciteTableBlock, buildCalciteTooltip, calciteActionBarProps, calciteActionProps,
+    buildCalciteTableBlock, buildCalciteTooltip, calciteActionBarProps, calciteActionBarWithTooltips, calciteActionProps,
     defaultHideBtnId,
+    hideActionBar,
 } from '../src/calcite';
 
 beforeEach(() => {
@@ -106,24 +107,62 @@ describe('buildCalciteActionBarWithActions()', () => {
     });
     
     describe('test hide button behavior', () => {
+        const getHideBtn = (rtn: calciteActionBarWithTooltips, id: string) => rtn.actionBar.querySelector(id);
+
         it('appends a hide button with custom properties if actionProps are passed as hideBtn', () => {
             const result = buildCalciteActionBarWithActions({ ...props, hideBtn: mockProp });
-            expect(result.actionBar.querySelector(mockPropId)).toBeDefined();
+            expect(getHideBtn(result, mockPropId)).toBeDefined();
         });
 
         it('appends a hide button with default properties if true is passed as hideBtn', () => {
             const result = buildCalciteActionBarWithActions({ ...props, hideBtn: true });
-            expect(result.actionBar.querySelector(defaultHideBtnId)).toBeDefined();
+            expect(getHideBtn(result, defaultHideBtnId)).toBeDefined();
         });
 
         it('does not append a hide button if hideBtn is not passed', () => {
             const result = buildCalciteActionBarWithActions(props);
-            expect(result.actionBar.querySelector(defaultHideBtnId)).toBeNull();
+            expect(getHideBtn(result, defaultHideBtnId)).toBeNull();
         });
 
         it('does not append a hide button if false is passed as hideBtn', () => {
             const result = buildCalciteActionBarWithActions({ ...props, hideBtn: false });
-            expect(result.actionBar.querySelector(defaultHideBtnId)).toBeNull();
+            expect(getHideBtn(result, defaultHideBtnId)).toBeNull();
+        });
+
+        describe('hides all actions in actionBar except the hide button', () => {
+            let actions: HTMLCalciteActionElement[];
+            let hiddenActsBefore: HTMLCalciteActionElement[];
+            let hiddenActsAfterOne: HTMLCalciteActionElement[];
+            let hiddenActsAfterTwo: HTMLCalciteActionElement[];
+
+            const filterHidden = () => actions.filter((a) => a.hidden);
+
+            beforeAll(async () => {
+                const result = buildCalciteActionBarWithActions({ ...props, hideBtn: true, actionsProps: mockActionProps });
+                actions = Array.from(result.actionBar.querySelectorAll('calcite-action'));
+                hiddenActsBefore = filterHidden();
+
+                // hide all actions
+                await hideActionBar(result.actionBar);
+                hiddenActsAfterOne = filterHidden();
+
+                // re show all actions
+                await hideActionBar(result.actionBar);
+                hiddenActsAfterTwo = filterHidden();
+            });
+
+            it('no actions hidden before calling hideActionBar', () => {
+                expect(hiddenActsBefore.length).toBe(0);
+            });
+
+            // after call, there all actions should be hidden except for the hideBtn itself
+            it('all actions except hideBtn are hidden after calling hideActionBar once', () => {
+                expect(hiddenActsAfterOne.length).toBe(actions.length - 1);
+            });
+
+            it('no actions hidden after calling hideActionBar twice', () => {
+                expect(hiddenActsAfterTwo.length).toBe(0);
+            });
         });
     });
 });

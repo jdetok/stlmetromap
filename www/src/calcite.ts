@@ -119,23 +119,13 @@ export function buildCalciteActionBarWithActions(props: calciteActionBarProps): 
     }
 
     if (props.hideBtn) {
-        const hideIcon = 'chevrons-right';
-        const showIcon = 'chevrons-left';
         const defTxt = 'Hide Action Bar';
         const defaultHideProps: calciteActionProps = {
             id: defaultHideId,
-            icon: hideIcon,
+            icon: defaultActbarIcons.hide,
             text: defTxt,
-            tooltipProps: { text: defTxt, placement: 'auto'},
-            onClick: async () => {
-                const actions = actionBar.querySelectorAll('calcite-action');
-                actionBar.querySelectorAll('calcite-action').forEach((act) => {
-                    if (act.id === defaultHideBtnId) return;
-                    act.hidden = !act.hidden;
-                });
-                const hideBtn = (actionBar.querySelector(`#${defaultHideBtnId}`) as HTMLCalciteActionElement);
-                hideBtn.icon = [...actions].some((a) => a.hidden) ? showIcon : hideIcon;
-            }
+            tooltipProps: { text: defTxt, placement: 'auto' },
+            onClick: async () => hideActionBar(actionBar),
         };
         const hideProps = typeof props.hideBtn === 'object' ? props.hideBtn : defaultHideProps;
         const { action: hideAct, tooltip: hideTT } = buildCalciteAction(hideProps);
@@ -146,6 +136,21 @@ export function buildCalciteActionBarWithActions(props: calciteActionBarProps): 
     actionBar.append(...actions ?? props.actions ?? null);
     return { actionBar, tooltips: tooltips.length > 0 ? tooltips : null };
 }
+
+export const defaultActbarIcons = { show: 'chevrons-right', hide: 'chevrons-right' };
+export async function hideActionBar(
+    actionBar: HTMLCalciteActionBarElement,
+    icons: { show: string, hide: string } = defaultActbarIcons
+) {
+    const actions = actionBar.querySelectorAll('calcite-action');
+    actionBar.querySelectorAll('calcite-action').forEach((act) => {
+        if (act.id === defaultHideBtnId) return;
+        act.hidden = !act.hidden;
+    });
+    const hideBtn = (actionBar.querySelector(`#${defaultHideBtnId}`) as HTMLCalciteActionElement);
+    hideBtn.icon = [...actions].some((a) => a.hidden) ? icons.show : icons.hide;
+}
+
 export function buildCalciteLegendPanel(heading: string): HTMLCalcitePanelElement {
     const panel = document.createElement("calcite-panel");
     panel.heading = heading;
