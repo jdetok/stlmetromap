@@ -1,30 +1,20 @@
 // calcite.ts
 // Helper factories for building calcite elements, imported in map-window custom element
-import "@esri/calcite-components/dist/components/calcite-table";
-import "@esri/calcite-components/dist/components/calcite-table-header";
-import "@esri/calcite-components/dist/components/calcite-table-row";
-import "@esri/calcite-components/dist/components/calcite-slider";
-import "@esri/calcite-components/dist/components/calcite-select";
-import "@esri/calcite-components/dist/components/calcite-option";
-import "@esri/calcite-components/dist/components/calcite-label";
-import "@esri/calcite-components/dist/components/calcite-table-cell";
-import "@arcgis/map-components/dist/components/arcgis-basemap-gallery";
-import "@arcgis/map-components/dist/components/arcgis-layer-list";
-import "@arcgis/map-components/dist/components/arcgis-legend";
-import "@arcgis/map-components/dist/components/arcgis-print";
-
-// HELPER FOR BUIDING GENERIC CALCITE PANEL WITH THE PASSED ELEMENT AS ITS CHILD
-export function buildCalcitePanel(props: {
+export type actbarWithTooltips = { bar: HTMLCalciteActionBarElement, tooltips: HTMLCalciteTooltipElement[] };
+export type calcitePanelProps = {
     elementType?: string,
     heading?: string,
     closable?: boolean,
     cssClass?: string,
-}): HTMLCalcitePanelElement {
+};
+
+// HELPER FOR BUIDING GENERIC CALCITE PANEL WITH THE PASSED ELEMENT AS ITS CHILD
+export function buildCalcitePanel(props: calcitePanelProps): HTMLCalcitePanelElement {
     const panel = document.createElement("calcite-panel");
     if (props.heading) panel.heading = props.heading;
     panel.hidden = true;
     panel.closable = props.closable ?? true;
-    if (props.cssClass) panel.classList.add(props.cssClass)
+    if (props.cssClass) panel.classList.add(props.cssClass);
     if (props.elementType) {
         const content = document.createElement(props.elementType) as any;
         panel.appendChild(content);
@@ -107,6 +97,9 @@ export function buildCalciteActionBar(props: calciteActionBarProps): HTMLCalcite
     if (props.cssClass) actionBar.classList.add(props.cssClass);
     return actionBar;
 }
+
+export const defaultHideId = 'hide-all';
+export const defaultHideBtnId = `toggle-action-${defaultHideId}`;
 export function buildCalciteActionBarWithActions(props: calciteActionBarProps): calciteActionBarWithTooltips {
     const actionBar = Object.assign(document.createElement("calcite-action-bar"), {
         layout: props.layout ?? 'horizontal',
@@ -126,25 +119,13 @@ export function buildCalciteActionBarWithActions(props: calciteActionBarProps): 
     }
 
     if (props.hideBtn) {
-        const defId = 'hide-all';
-        const hideIcon = 'chevrons-right';
-        const showIcon = 'chevrons-left';
-        const hideId = `toggle-action-${defId}`;
         const defTxt = 'Hide Action Bar';
         const defaultHideProps: calciteActionProps = {
-            id: defId,
-            icon: hideIcon,
+            id: defaultHideId,
+            icon: defaultActbarIcons.hide,
             text: defTxt,
-            tooltipProps: { text: defTxt, placement: 'auto'},
-            onClick: async () => {
-                const actions = actionBar.querySelectorAll('calcite-action');
-                actionBar.querySelectorAll('calcite-action').forEach((act) => {
-                    if (act.id === hideId) return;
-                    act.hidden = !act.hidden;
-                });
-                const hideBtn = (actionBar.querySelector(`#${hideId}`) as HTMLCalciteActionElement);
-                hideBtn.icon = [...actions].some((a) => a.hidden) ? showIcon : hideIcon;
-            }
+            tooltipProps: { text: defTxt, placement: 'auto' },
+            onClick: async () => hideActionBar(actionBar),
         };
         const hideProps = typeof props.hideBtn === 'object' ? props.hideBtn : defaultHideProps;
         const { action: hideAct, tooltip: hideTT } = buildCalciteAction(hideProps);
@@ -153,8 +134,53 @@ export function buildCalciteActionBarWithActions(props: calciteActionBarProps): 
     }
 
     actionBar.append(...actions ?? props.actions ?? null);
-    return { actionBar, tooltips };
+    return { actionBar, tooltips: tooltips.length > 0 ? tooltips : null };
 }
+
+export const defaultActbarIcons = { show: 'chevrons-right', hide: 'chevrons-right' };
+export async function hideActionBar(
+    actionBar: HTMLCalciteActionBarElement,
+    icons: { show: string, hide: string } = defaultActbarIcons
+) {
+    const actions = actionBar.querySelectorAll('calcite-action');
+    actionBar.querySelectorAll('calcite-action').forEach((act) => {
+        if (act.id === defaultHideBtnId) return;
+        act.hidden = !act.hidden;
+    });
+    const hideBtn = (actionBar.querySelector(`#${defaultHideBtnId}`) as HTMLCalciteActionElement);
+    hideBtn.icon = [...actions].some((a) => a.hidden) ? icons.show : icons.hide;
+}
+
+export type actBarsProps = {
+    cssClass?: string;
+    meta: Array<[string, () => actbarWithTooltips]>;
+    parent: HTMLElement & { tooltips: HTMLCalciteTooltipElement[] };
+};
+export function initActionBars(props: actBarsProps): HTMLDivElement {
+    const container = document.createElement('div');
+    if (props.cssClass) container.classList.add(props.cssClass);
+    for (const [bar, fn] of props.meta) {
+        const actBar = fn();
+        props.parent[bar] = actBar.bar;
+        container.appendChild(props.parent[bar]);
+        props.parent.tooltips.push(...actBar.tooltips);
+    }
+    return container;
+}
+// to be passed as a click listener for calcite actions in an action bar. opens a calcite panel on click
+export function toggleActionPanel(
+    id: string, actionBar: HTMLCalciteActionBarElement,
+    panels: Record<string, HTMLElement>
+): void {
+    actionBar.querySelectorAll("calcite-action").forEach((a: HTMLCalciteActionElement) => {
+        a.active = a.dataset['actionId'] === id ? !a.active : false;
+    });
+    Object.entries(panels).forEach(([key, panel]: [string, any]) => {
+        panel.hidden = key !== id || !(actionBar.querySelector(`[data-action-id="${id}"]`) as any).active;
+        if (!panel.hidden) panel.closed = false;
+    });
+}
+
 export function buildCalciteLegendPanel(heading: string): HTMLCalcitePanelElement {
     const panel = document.createElement("calcite-panel");
     panel.heading = heading;
@@ -199,7 +225,7 @@ export function buildCalciteTableBlock(
     });
 
     if (infoContent) {
-        const notice = buildCalciteNotice(label, infoContent);
+        const notice = buildCalciteNotice({ label, content: infoContent });
         block.append(notice.btn, notice.notice);
     }
 
@@ -260,10 +286,10 @@ export function buildCalciteTable(props: calciteTableProps): HTMLCalciteTableEle
 
 // calcite notice with info button
 // closable block for medium amounts of text, naturally expands its container
-export function buildCalciteNotice(label: string, content: string): {
+export function buildCalciteNotice(props: { label: string, content: string }): {
     notice: HTMLCalciteNoticeElement, btn: HTMLCalciteActionElement
 } {
-    const actId = `popover-trigger-${label.replace(/\s+/g, '-')}`;
+    const actId = `popover-trigger-${props.label.replace(/\s+/g, '-')}`;
     const btn = Object.assign(document.createElement('calcite-action'), {
         slot: 'control',
         icon: 'information',
@@ -288,7 +314,7 @@ export function buildCalciteNotice(label: string, content: string): {
     
     notice.appendChild(Object.assign(document.createElement('div'), {
         slot: 'message',
-        innerText: content,
+        innerText: props.content,
     }));
 
     return {notice: notice, btn: btn};
@@ -297,15 +323,15 @@ export function buildCalciteNotice(label: string, content: string): {
 
 
 // build a single calcite button
-function buildCalciteButton(txt: string, appearance?: string, scale?: string, icon?: string): HTMLCalciteButtonElement {
+export function buildCalciteButton(props: { txt: string, appearance?: string, scale?: string, icon?: string }): HTMLCalciteButtonElement {
     const btn = Object.assign(document.createElement("calcite-button"), {
-        textContent: txt.trim(),
-        appearance: appearance?.trim() ?? "outline",
-        scale: scale?.trim() ?? "s",
+        textContent: props.txt.trim(),
+        appearance: props.appearance?.trim() ?? "outline",
+        scale: props.scale?.trim() ?? "s",
     });
     btn.setAttribute("appearance", "outline");
     btn.setAttribute("scale", "s");
-    if (icon) btn.iconStart = icon;
+    if (props.icon) btn.iconStart = props.icon;
     return btn;
 }
 export function makeRoutesButtons(routeNames: string,
@@ -316,12 +342,12 @@ export function makeRoutesButtons(routeNames: string,
     if (routeNames) {
         routeNames.split(", ").forEach((route: string) => {
             if (route.includes("No bus stop")) return;
-            const btn = buildCalciteButton(route);
+            const btn = buildCalciteButton({ txt: route });
             btn.addEventListener("click", () => onRouteClick(route.trim()));
             routeBtns.push(btn);
         });
         if (routeBtns.length > 1) {
-            const allBtn = buildCalciteButton("Highlight Each");
+            const allBtn = buildCalciteButton({ txt: "Highlight Each" });
             allBtn.addEventListener("click", () => {
                 const routes = routeNames.split(", ").map(r => r.trim());
                 onRoutesClick(routes);
@@ -440,7 +466,7 @@ export async function buildCalciteDropdown(props: calciteDropdownProps, clearBtn
     });
     if (props.cssClass) down.classList.add(props.cssClass);
 
-    const btn = Object.assign(buildCalciteButton(props.heading), { slot: 'trigger' });
+    const btn = Object.assign(buildCalciteButton({txt: props.heading}), { slot: 'trigger' });
     if (props.icon) btn.iconStart = props.icon;
     const dropGroup = Object.assign(document.createElement('calcite-dropdown-group'), {
         groupTitle: props.heading,
@@ -478,7 +504,7 @@ export async function buildCalciteDropdown(props: calciteDropdownProps, clearBtn
     });
 
     if (clearBtn) {
-        const clearBtn = buildCalciteButton('')
+        const clearBtn = buildCalciteButton({ txt: '' });
         clearBtn.slot = 'trigger';
         clearBtn.iconStart = 'reset';
         clearBtn.addEventListener('click', () => {

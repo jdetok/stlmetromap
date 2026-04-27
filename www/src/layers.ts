@@ -1,15 +1,22 @@
-import SimpleRenderer from "@arcgis/core/renderers/SimpleRenderer";
-import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
-import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol";
+import SizeVariable from "@arcgis/core/renderers/visualVariables/SizeVariable.js";
+import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
 import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer";
 import SimpleMarkerSymbol from "@arcgis/core/symbols/SimpleMarkerSymbol.js";
-import SizeVariable from "@arcgis/core/renderers/visualVariables/SizeVariable.js";
-import Graphic from "@arcgis/core/Graphic";
-import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
+import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
+import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol";
+import SimpleRenderer from "@arcgis/core/renderers/SimpleRenderer";
 import Renderer from "@arcgis/core/renderers/Renderer";
-import "@esri/calcite-components/dist/components/calcite-button";
-import { makeRoutesButtons } from "./calcite.js";
-import { cplethEls, makeChoroplethLevels, toPoint, toPolygon, toPolyline } from "./arcgis.js";
+import Graphic from "@arcgis/core/Graphic";
+import {
+    makeRoutesButtons
+} from "./calcite.js";
+import {
+    choropleth,
+    cplethEls, makeChoroplethLevels,
+    makeChoroplethRanges,
+    toPoint, toPolygon, toPolyline,
+    tractFieldFromInfos
+} from "./arcgis.js";
 import {
     TRACTS_LAYER_URL, TRACTS_LAYER_TTL, TRACTS_FIELDS, TRACTS_FIELDINFOS,
     COUNTIES_LAYER_URL, COUNTIES_LAYER_TTL, COUNTIES_FIELDS, COUNTIES_FIELDINFOS,
@@ -53,7 +60,7 @@ const MED_COLOR = [255, 25, 25, 0.3];
 const COUNTIES_OUTLINE_COLOR = [0, 0, 0, 0.5];
 const COUNTIES_OUTLINE_SIZE = 1.5;
 const COUNTIES_INNER_COLOR = [255, 255, 255, 0];
-const CHOROPLETH = {
+const CHOROPLETH: choropleth = {
     lvl1: [94, 150, 98],
     lvl2: [17, 200, 152],
     lvl3: [0, 210, 255],
@@ -62,23 +69,12 @@ const CHOROPLETH = {
 } as const;
 
 // pass only the breaks (6 for 5 levels)
-const makeChoroRanges = (numRanges: number, ranges: number[]): cplethEls[] => {
-    if (ranges.length !== numRanges + 1 ) {
-        throw new Error(`length of array (${ranges.length}) should equal numRanges + 1 (${numRanges} + 1: ${numRanges + 1})`);
-    }
-    const cplethLevels: cplethEls[] = [];
-
-    ranges.forEach((r: number, i) => {
-        if (i === numRanges) return;
-        cplethLevels.push([r, ranges[i+1] as number, CHOROPLETH[`lvl${i + 1}`]])
-    })
-    return cplethLevels;
+export const makeChoroRanges = (numRanges: number, ranges: number[]): cplethEls[] => {
+    return makeChoroplethRanges(numRanges, ranges, CHOROPLETH);
 }
 // helper to access individual tracts fields by their fieldName, enabling dynamic selector
 export const tractsField = (field: string): __esri.FieldInfo => {
-    return TRACTS_FIELDINFOS.find((f) => f.fieldName === field) as __esri.FieldInfo ?? {
-        fieldName: field, label: field
-    };
+    return tractFieldFromInfos(TRACTS_FIELDINFOS, field);
 };
 export const TRACT_CLASSBREAKS: Map<__esri.FieldInfo, cplethEls[]> = new Map([
     [tractsField('popl_dens'), makeChoroRanges(5, [0, 2500, 5000, 7500, 10000, 100000])],

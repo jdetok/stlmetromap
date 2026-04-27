@@ -1,6 +1,9 @@
 import { newHighlightSetting } from "./arcgis";
 import { calciteActionProps } from "./calcite";
 
+export const MEDIAQ_MAXW = 980;
+export const MEDIAQ_MAXH = 980;
+
 export const BASEMAP = 'dark-gray';
 export const PROJID = 4326;
 export const STLCOORDS = {

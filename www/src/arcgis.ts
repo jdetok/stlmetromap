@@ -17,6 +17,12 @@ import ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import FeatureEffect from "@arcgis/core/layers/support/FeatureEffect";
 
+export function tractFieldFromInfos(globalFieldInfos: __esri.FieldInfo[], field: string): __esri.FieldInfo {
+    return globalFieldInfos.find((f) => f.fieldName === field) as __esri.FieldInfo ?? {
+        fieldName: field, label: field
+    };
+}
+
 export type arcgisMapProps = {
     basemap: string | __esri.Basemap | undefined,
     extent: __esri.Extent,
@@ -31,9 +37,11 @@ export function buildArcgisMap(props: arcgisMapProps): HTMLArcgisMapElement {
     return map;
 };
 
+export type arcgisElementType = 'arcgis-zoom' | 'arcgis-search';
+
 // GENERAL ARCGIS COMPONENT HELPERS
 export type arcgisElementProps = {
-    elStr: 'arcgis-zoom' | 'arcgis-search'
+    elStr: arcgisElementType
     view?: __esri.MapView
 };
 export type arcgisElementReturn = HTMLArcgisZoomElement | HTMLArcgisSearchElement;
@@ -61,6 +69,26 @@ export type choroProps = {
     opac: number,
     line?: boolean,
 }
+export type choropleth = {
+    lvl1: [number, number, number],
+    lvl2: [number, number, number],
+    lvl3: [number, number, number],
+    lvl4: [number, number, number],
+    lvl5: [number, number, number],
+};
+export function makeChoroplethRanges(numRanges: number, ranges: number[], cpleth: choropleth): cplethEls[] {
+    if (ranges.length !== numRanges + 1 ) {
+        throw new Error(`length of array (${ranges.length}) should equal numRanges + 1 (${numRanges} + 1: ${numRanges + 1})`);
+    }
+    const cplethLevels: cplethEls[] = [];
+
+    ranges.forEach((r: number, i) => {
+        if (i === numRanges) return;
+        cplethLevels.push([r, ranges[i+1] as number, cpleth[`lvl${i + 1}`]])
+    })
+    return cplethLevels;
+}
+
 // create choropleth levels for the array of min/max/color
 const newChoroplethLevel = (props: choroProps) => {
     if (!props.level) return;

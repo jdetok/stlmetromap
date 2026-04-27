@@ -48,7 +48,8 @@ map-window {
 }
 
 .subt {
-    display: flex;
+    /* display: flex; */
+    display: none;
     flex-direction: row;
     font-size: 1.1rem;
     font-weight: 500;

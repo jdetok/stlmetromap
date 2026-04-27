@@ -6,7 +6,10 @@
     "scripts": {
         "dev": "vite build --watch",
         "build": "vite build",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit",
+        "test": "vitest",
+        "cvg": "vitest run --coverage",
+        "test:ui": "vitest --ui"
     },
     "repository": {
         "type": "git",
@@ -21,8 +24,14 @@
     },
     "homepage": "https://github.com/jdetok/stlmetromap#readme",
     "devDependencies": {
+        "@testing-library/dom": "^10.4.1",
+        "@vitest/coverage-v8": "^4.1.4",
+        "@vitest/ui": "^4.1.4",
+        "happy-dom": "^20.9.0",
+        "msw": "^2.13.3",
         "typescript": "^5.9.3",
-        "vite": "^7.3.1"
+        "vite": "^7.3.1",
+        "vitest": "^4.1.4"
     },
     "dependencies": {
         "@arcgis/core": "^4.34.8",

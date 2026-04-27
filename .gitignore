@@ -3,7 +3,6 @@ tmp/
 google_transit/
 .env
 node_modules/
-package-lock.json
 www/js/**/*.js*
 www/js/**/*.css*
 data/*json
@@ -14,3 +13,5 @@ db/**/*json
 **/*.dump
 *.mp4
 *.odt
+coverage/
+z_docs/prompt/
