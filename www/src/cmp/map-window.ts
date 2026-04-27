@@ -31,7 +31,8 @@ import {
 } from "../layers.js";
 import {
     STLCOORDS, PROJID, BASEMAP, TOGGLE_ACTIONS, HIGHLIGHTS,
-    CLEAR_BUSES, CLEAR_PLACES, FULLSCREEN, MAIN_ACTIONS
+    CLEAR_BUSES, CLEAR_PLACES, FULLSCREEN, MAIN_ACTIONS,
+    MEDIAQ_MAXW, MEDIAQ_MAXH,
 } from "../data.js";
 
 type mapLayer = { fn?: Function, meta: FeatureLayerMeta, layer: FeatureLayer, i: number}
@@ -45,15 +46,13 @@ type routeLinesData = {
 // COMPONENT CLASS 
 export const TAG = "map-window";
 export class MapWindow extends HTMLElement {
-    private maxW: number = 980;
-    private maxH: number = 980;
-    // private arcgisMap!: HTMLArcgisMapElement;
+    // REFERENCE TO ARCGIS MAP ELEMENT
     private mapProps: arcgisMapProps = {
         basemap: BASEMAP,
         extent: STLCOORDS,
         onViewReady: this.onMapViewReady.bind(this),
     }
-    private arcgisMap = buildArcgisMap(this.mapProps);
+    private arcgisMap: HTMLArcgisMapElement = buildArcgisMap(this.mapProps);
 
     // ARRAY OF BUILT FEATURE LAYER METAS (makeFeatureLayer builds these as FeatureLayers)
     private builtLayers: FeatureLayer[] = [];
@@ -89,6 +88,8 @@ export class MapWindow extends HTMLElement {
         ['toggleBar', this.buildToggleBar.bind(this)],
         ['actionBar', this.buildMainActionBar.bind(this)]
     ];
+    private actionBarContainer!: HTMLDivElement;
+    private actionBarClass: string = 'actbars';
 
     // CALCITE PANELS
     private routeInfoPanel: HTMLCalcitePanelElement = buildCalcitePanel({ heading: 'Route Info', cssClass: 'route-info' }); 
@@ -148,17 +149,16 @@ export class MapWindow extends HTMLElement {
         // build feature layer metas imported as functions
         this.initLayerMetas();
         
-        // build all action bars (in this)
-        this.initActionBars(this.actBarMetas);
+        // build all action bars in a container
+        this.actionBarContainer = this.initActionBars(this.actBarMetas);
         this.buildRouteInfoPanel();
     
         // build and append all elements to shadow dom
         root.append(
             this.addStyling(STYLE),
+            this.actionBarContainer,
             this.arcgisMap,
             this.routeInfoPanel,
-            this.toggleBar,
-            this.actionBar,
             ...this.actionBarPanels.keys(),
             ...this.tooltips,
         );
@@ -192,22 +192,23 @@ export class MapWindow extends HTMLElement {
         }
     }
     // set the action bar keys (have to be defined in this) with their associated function
-    private initActionBars(meta: Array<[string, () => actbarWithTooltips]>): void {
+    private initActionBars(meta: Array<[string, () => actbarWithTooltips]>): HTMLDivElement {
+        const container = document.createElement('div');
+        container.classList.add(this.actionBarClass);
         for (const [bar, fn] of meta) {
             const actBar = fn();
             this[bar] = actBar.bar;
+            container.appendChild(this[bar]);
             this.tooltips.push(...actBar.tooltips);
         }
+        return container;
     }
     private onResize(): void {
-        const isWide = this.offsetWidth >= 900;
+        const isWide = this.offsetWidth >= MEDIAQ_MAXW;
         const newLayout = isWide ? 'horizontal' : 'vertical';
         
         if (this.toggleBar?.layout !== newLayout) {
             this.toggleBar.layout = newLayout;
-        }
-        if (this.actionBar?.layout !== newLayout) {
-            this.actionBar.layout = newLayout;
         }
     }
     private async onMapViewReady(): Promise<void> {
@@ -231,8 +232,8 @@ export class MapWindow extends HTMLElement {
         
         await this.setPanelViews(view, new Map([...this.actionBarPanels].filter(([, v]) => v !== 'skip')));
     
-        this.setDockablePopupsBySize(view, this.maxW, this.maxH);
-        await this.openLegendOnLayerLoaded(view, this.busStopsLayer, this.maxW, this.maxH);
+        this.setDockablePopupsBySize(view, MEDIAQ_MAXW, MEDIAQ_MAXH);
+        await this.openLegendOnLayerLoaded(view, this.busStopsLayer, MEDIAQ_MAXW, MEDIAQ_MAXH);
         
         // draw circle on screen on click
         view.on('click', async (event: __esri.ViewClickEvent) => {
@@ -270,6 +271,7 @@ export class MapWindow extends HTMLElement {
         view.graphics.add(this.radiusGraphic);
         this.highlightStopsWithinMeters(view);
     }
+    // determine whether popups are auto docked by size
     private setDockablePopupsBySize(view: __esri.MapView, maxW: number, maxH: number): void {
         if (view.popup) {
             view.popup.dockOptions = { breakpoint: false };
@@ -427,6 +429,7 @@ export class MapWindow extends HTMLElement {
             layout: 'horizontal',
             actionsProps: actProps,
             hideBtn: true,
+            cssClass:  'main',
          });
 
         this.actionBar = actionBar;
@@ -468,8 +471,9 @@ export class MapWindow extends HTMLElement {
         })
 
         const { actionBar, tooltips } = buildCalciteActionBarWithActions({
-            layout: window.innerWidth < 900 ? 'vertical' : 'horizontal',
-            cssClass: 'place_toggles',
+            layout: window.innerWidth < MEDIAQ_MAXW ? 'vertical' : 'horizontal',
+            // cssClass: 'place_toggles',
+            cssClass: 'toggle',
             actionsProps: actProps,
             hideBtn: true,
         });

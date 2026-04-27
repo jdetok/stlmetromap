@@ -14,7 +14,7 @@ beforeEach(() => {
             view: any
         });
     }
-    if (!customElements.get('arcgis-search')) {
+    if (!customElements.get('arcg;is-search')) {
         customElements.define('arcgis-search', class extends HTMLElement {
             view: any
         });

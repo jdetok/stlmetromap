@@ -14,3 +14,4 @@ db/**/*json
 *.mp4
 *.odt
 coverage/
+z_docs/prompt/

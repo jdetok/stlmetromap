@@ -1,3 +1,4 @@
+import { MEDIAQ_MAXW, MEDIAQ_MAXH } from "../data";
 export const STYLE = `
 :host {
     display: block;
@@ -17,26 +18,47 @@ export const STYLE = `
     --calcite-spacing-lg: 0.75rem;
     --route-combo-width: 215px;
     --route-combo-left: 0.8rem;
+    --from-side: 0.8rem;
+    --from-bottom: 1.6rem;
 }
 #filterbar {
-    left: 0.8rem;
+    left: var(--from-side);
     width: min-content;
 }
-.place_toggles {
+/*
+    calcite-action-bar components are contained in the .actbars grid
+    for large screens (> maxw import) both action bars are rendered horizontal,
+    with the main action bar on top and the places toggle bar on bottom.
+    for smaller screen, the toggle bar is rendered vertically and placed on top
+    with the main bar on bottom, still horizontal
+*/
+.actbars {
+    display: grid;
+    gap: 0.2rem;
+    grid-template-areas: "a" "." "b";
     position: absolute;
-    bottom: 1.6rem;
-    right: 0.8rem;
-    /*z-index: 10;*/
+    bottom: var(--from-bottom);
+    right: var(--from-side);
+    left: unset;
+    z-index: 15;
+}
+.actbars > * {
+    right: var(--from-side);
+    left: unset;
+    margin-left: auto;
+}
+calcite-action-bar {
+    width: fit-content;
+}
+calcite-action-bar.main {
+    grid-area: a;
+}
+calcite-action-bar.toggle {
+    grid-area: b;
 }
 .esri-features {
     max-height: 20%;
     color: green;
-}
-calcite-action-bar {
-    position: absolute;
-    bottom: 4.5rem;
-    right: 0.8rem;
-    z-index: 15;
 }
 calcite-panel {
     position: absolute;
@@ -61,7 +83,7 @@ calcite-dropdown {
     --calcite-dropdown-width: var(--route-combo-width);
     left: var(--route-combo-left);
 }
-@media (max-width: 980px) {
+@media (max-width: ${MEDIAQ_MAXW}px) {
     calcite-dropdown {
         top: 0.4rem;
         bottom: unset;
@@ -91,17 +113,9 @@ calcite-dropdown {
     arcgis-search {
         display: none;
     }
-
-    calcite-action-bar {
-        position: absolute;
-        bottom: 1.4rem;
-        right: 0.4rem;
-        z-index: 15;
-    }
-    .place_toggles {
-        position: absolute;
-        bottom: 4rem;
-        right: 0.4rem;
+    /* flip areas for smaller screen (toggle goes on top) */
+    .actbars {
+        grid-template-areas: "b" "." "a";
     }
 }
 calcite-dropdown-item {
@@ -172,7 +186,7 @@ calcite-button {
 .esri-popup {
     max-height: 40% !important;
 }
-@media ( max-width: 980px ) and (max-height: 980px ) {
+@media (max-width: ${MEDIAQ_MAXW}px) and (max-height: ${MEDIAQ_MAXH}px ) {
     .esri-popup {
         width: fit-content;
         max-width: 100%;
@@ -180,9 +194,3 @@ calcite-button {
     }
 }
 `;
-
-
-// `
-// div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup.esri-popup--aligned-bottom-center.esri-popup--shadow
-// div > div.esri-view-root > div.esri-ui.calcite-mode-light > div.esri-ui-inner-container.esri-ui-manual-container > div.esri-component.esri-popup.esri-popup--is-docked.esri-popup--is-docked-top-right
-// `
