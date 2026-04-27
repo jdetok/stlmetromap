@@ -392,7 +392,7 @@ export class MapWindow extends HTMLElement {
     }
     // SHOW/HIDE CALCITE PANELS FROM THE ACTION BAR
     private togglePanel(id: string, actionBar: any, panels: Record<string, HTMLElement>): void {
-        actionBar.querySelectorAll("calcite-action").forEach((a: any) => {
+        actionBar.querySelectorAll("calcite-action").forEach((a: HTMLCalciteActionElement) => {
             a.active = a.dataset['actionId'] === id ? !a.active : false;
         });
         Object.entries(panels).forEach(([key, panel]: [string, any]) => {
